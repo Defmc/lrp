@@ -14,6 +14,20 @@ macro_rules! grammar {
     }}
 }
 
+fn transitive<T>(seed: T, map: impl Fn(T) -> T) -> T
+where
+    T: Clone + PartialEq,
+{
+    let mut val = seed;
+    loop {
+        let new = map(val.clone());
+        if new == val {
+            return val;
+        }
+        val = new;
+    }
+}
+
     let rules = grammar! {
         "Start" -> "Add",
         "Add" -> "Add" "+" "Factor"
