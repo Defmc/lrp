@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+
 macro_rules! rule {
     ($grammar:tt, $rule:literal -> $($($terms:literal)*)|*) => {
         $grammar.insert($rule, vec![$(vec![$($terms),*]),*]);
@@ -24,5 +25,8 @@ macro_rules! grammar {
         "Lvalue" -> "int" | "ident"
     };
 
+    let terminals = HashSet::from(["int", "ident", "(", "*", "+", ")"]);
+
     println!("rules: {rules:?}");
+    println!("terminals: {terminals:?}\n");
 }
