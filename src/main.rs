@@ -14,6 +14,20 @@ macro_rules! grammar {
     }}
 }
 
+/* FIRST table:
+ * S = B
+ * A = ab
+ * B = Ac
+ *
+ * {
+ * A: a,
+ * B: FIRST(A) = a,
+ * S: FIRST(B) = a
+ * }
+ */
+
+type Grammar = HashMap<&'static str, Vec<Vec<&'static str>>>;
+type Table = HashMap<&'static str, HashSet<&'static str>>;
 fn transitive<T>(seed: T, map: impl Fn(T) -> T) -> T
 where
     T: Clone + PartialEq,
@@ -28,6 +42,18 @@ where
     }
 }
 
+fn gen_first_table(grammar: &Grammar) -> Table {
+    let mut table = Table::new();
+    for (name, rules) in grammar {
+        table.insert(name, HashSet::new());
+        for rule in rules.iter().filter(|r| &r[0] != name) {
+            table.get_mut(name).unwrap().insert(rule[0]);
+        }
+    }
+    table
+}
+
+fn main() {
     let rules = grammar! {
         "Start" -> "Add",
         "Add" -> "Add" "+" "Factor"
@@ -43,4 +69,7 @@ where
 
     println!("rules: {rules:?}");
     println!("terminals: {terminals:?}\n");
+
+    let first_table = gen_first_table(&rules);
+    println!("first-step FIRST table: {first_table:?}");
 }
