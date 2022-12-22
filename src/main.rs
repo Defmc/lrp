@@ -28,6 +28,8 @@ macro_rules! grammar {
 
 type Grammar = HashMap<&'static str, Vec<Vec<&'static str>>>;
 type Table = HashMap<&'static str, HashSet<&'static str>>;
+type TermSet = HashSet<&'static str>;
+
 fn transitive<T>(seed: T, map: impl Fn(T) -> T) -> T
 where
     T: Clone + PartialEq,
@@ -53,6 +55,29 @@ fn gen_first_table(grammar: &Grammar) -> Table {
     table
 }
 
+fn first_step(grammar: &Table, terminals: &TermSet) -> Table {
+    let mut table = Table::new();
+    for (name, firsts) in grammar {
+        table.insert(name, HashSet::new());
+        for first in firsts {
+            if terminals.contains(first) {
+                table.get_mut(name).unwrap().insert(first);
+            } else {
+                merge(table.get_mut(name).unwrap(), &grammar[first]);
+            }
+        }
+    }
+    table
+}
+
+fn merge(rhs: &mut HashSet<&'static str>, lhs: &HashSet<&'static str>) {
+    for item in lhs {
+        if !rhs.contains(item) {
+            rhs.insert(item);
+        }
+    }
+}
+
 fn main() {
     let rules = grammar! {
         "Start" -> "Add",
@@ -72,4 +97,8 @@ fn main() {
 
     let first_table = gen_first_table(&rules);
     println!("first-step FIRST table: {first_table:?}");
+
+    let final_first = transitive(first_table, |t| first_step(&t, &terminals));
+    println!("final FIRST table: {final_first:?}\n");
+
 }
