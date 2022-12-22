@@ -26,6 +26,19 @@ macro_rules! grammar {
  * }
  */
 
+/* FOLLOW table:
+ * S = B
+ * A = ab
+ * B = Ac
+ *
+ * A = ... R a -> {R: a}
+ * A = ... R B -> {R: FOLLOW(B)}
+ * A = ... R -> {R: FOLLOW(A)}
+ * {
+ * A: c,
+ * }
+ */
+
 type Grammar = HashMap<&'static str, Vec<Vec<&'static str>>>;
 type Table = HashMap<&'static str, HashSet<&'static str>>;
 type TermSet = HashSet<&'static str>;
@@ -50,6 +63,27 @@ fn gen_first_table(grammar: &Grammar) -> Table {
         table.insert(name, HashSet::new());
         for rule in rules.iter().filter(|r| &r[0] != name) {
             table.get_mut(name).unwrap().insert(rule[0]);
+        }
+    }
+    table
+}
+
+fn gen_follow_table(grammar: &Grammar, terminals: &TermSet) -> Table {
+    let mut table = Table::new();
+    for (name, rules) in grammar {
+        for rule in rules {
+            for term_idx in 0..rule.len() - 1 {
+                if !terminals.contains(rule[term_idx]) {
+                    table
+                        .entry(rule[term_idx])
+                        .or_insert_with(HashSet::new)
+                        .insert(rule[term_idx + 1]);
+                }
+            }
+            let last = rule.last().unwrap();
+            if !terminals.contains(last) {
+                table.entry(last).or_insert_with(HashSet::new).insert(name);
+            }
         }
     }
     table
@@ -100,5 +134,8 @@ fn main() {
 
     let final_first = transitive(first_table, |t| first_step(&t, &terminals));
     println!("final FIRST table: {final_first:?}\n");
+
+    let follow_table = gen_follow_table(&rules, &terminals);
+    println!("first-step FOLLOW table: {follow_table:?}");
 
 }
