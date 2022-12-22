@@ -104,6 +104,21 @@ fn first_step(grammar: &Table, terminals: &TermSet) -> Table {
     table
 }
 
+fn follow_step(grammar: &Table, terminals: &TermSet) -> Table {
+    let mut table = Table::new();
+    for (noterm, terms) in grammar {
+        table.insert(noterm, HashSet::new());
+        for term in terms {
+            if terminals.contains(term) {
+                table.get_mut(noterm).unwrap().insert(term);
+            } else if let Some(entry) = grammar.get(term) {
+                merge(table.get_mut(noterm).unwrap(), entry);
+            }
+        }
+    }
+    table
+}
+
 fn merge(rhs: &mut HashSet<&'static str>, lhs: &HashSet<&'static str>) {
     for item in lhs {
         if !rhs.contains(item) {
@@ -138,4 +153,6 @@ fn main() {
     let follow_table = gen_follow_table(&rules, &terminals);
     println!("first-step FOLLOW table: {follow_table:?}");
 
+    let final_follow = transitive(follow_table, |t| follow_step(&t, &terminals));
+    println!("final FOLLOW talbe: {final_follow:?}");
 }
