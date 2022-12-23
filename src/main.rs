@@ -14,36 +14,18 @@ macro_rules! grammar {
     }}
 }
 
-/* FIRST table:
- * S = B
- * A = ab
- * B = Ac
- *
- * {
- * A: a,
- * B: FIRST(A) = a,
- * S: FIRST(B) = a
- * }
- */
-
 /* FOLLOW table:
  * S = B
  * A = ab
  * B = Ac
  *
- * A = ... R a -> {R: a}
- * A = ... R B -> {R: FOLLOW(B)}
- * A = ... R -> {R: FOLLOW(A)}
  * {
  * A: c,
  * }
  */
 
-type Grammar = HashMap<&'static str, Vec<Vec<&'static str>>>;
-type Table = HashMap<&'static str, HashSet<&'static str>>;
-type TermSet = HashSet<&'static str>;
-
-fn transitive<T>(seed: T, map: impl Fn(T) -> T) -> T
+/// for a given f(x), processes `x` until f(x) = f(f(x)) -> f(f(f(f....f(x)))) = f(x)
+pub fn transitive<T>(seed: T, map: impl Fn(T) -> T) -> T
 where
     T: Clone + PartialEq,
 {
@@ -57,78 +39,153 @@ where
     }
 }
 
-fn gen_first_table(grammar: &Grammar) -> Table {
-    let mut table = Table::new();
-    for (name, rules) in grammar {
-        table.insert(name, HashSet::new());
-        for rule in rules.iter().filter(|r| &r[0] != name) {
-            table.get_mut(name).unwrap().insert(rule[0]);
-        }
-    }
-    table
+/// grammars.
+/// rule:
+///     choice1: [term1, term2, ...],
+///     choice2: [term1, term2, ...],
+///     ...,
+/// rule2...
+pub type Grammar = HashMap<&'static str, Vec<Vec<&'static str>>>;
+
+/// Terms table,
+/// in FIRST:
+/// A = a . . . . -> {A: a}
+/// A = a . | b . -> {A: a, b}
+/// A = B . . . . -> {A: FIRST(B)}
+///
+/// in FOLLOW:
+/// A = . . . T a -> {T: a}
+/// A = . . . T B -> {T: FOLLOW(B)}
+/// A = . . . . T -> {T: FOLLOW(A)}
+pub type Table = HashMap<&'static str, HashSet<&'static str>>;
+
+/// terminal sets
+pub type TermSet = HashSet<&'static str>;
+
+#[derive(Debug)]
+pub struct Parser {
+    pub grammar: Grammar,
+    pub terminals: TermSet,
+    pub first: Table,
+    pub follow: Table,
 }
 
-fn gen_follow_table(grammar: &Grammar, terminals: &TermSet) -> Table {
-    let mut table = Table::new();
-    for (name, rules) in grammar {
-        for rule in rules {
-            for term_idx in 0..rule.len() - 1 {
-                if !terminals.contains(rule[term_idx]) {
-                    table
-                        .entry(rule[term_idx])
-                        .or_insert_with(HashSet::new)
-                        .insert(rule[term_idx + 1]);
+impl Parser {
+    #[must_use]
+    pub fn new(grammar: Grammar, terminals: TermSet) -> Self {
+        let first = Self::gen_first(&grammar);
+        let follow = Self::gen_follow(&grammar, &terminals);
+        Self {
+            grammar,
+            terminals,
+            first,
+            follow,
+        }
+    }
+
+    /// # Panics
+    /// Never.
+    #[must_use]
+    pub fn gen_first(grammar: &Grammar) -> Table {
+        let mut table = Table::new();
+        for (name, rules) in grammar {
+            table.insert(name, HashSet::new());
+            for rule in rules.iter().filter(|r| &r[0] != name) {
+                table.get_mut(name).unwrap().insert(rule[0]);
+            }
+        }
+        table
+    }
+
+    /// # Panics
+    /// Never.
+    #[must_use]
+    pub fn gen_follow(grammar: &Grammar, terminals: &TermSet) -> Table {
+        let mut table = Table::new();
+        for (name, rules) in grammar {
+            for rule in rules {
+                for term_idx in 0..rule.len() - 1 {
+                    if !terminals.contains(rule[term_idx]) {
+                        table
+                            .entry(rule[term_idx])
+                            .or_insert_with(HashSet::new)
+                            .insert(rule[term_idx + 1]);
+                    }
+                }
+                let last = rule.last().unwrap();
+                if !terminals.contains(last) {
+                    table.entry(last).or_insert_with(HashSet::new).insert(name);
                 }
             }
-            let last = rule.last().unwrap();
-            if !terminals.contains(last) {
-                table.entry(last).or_insert_with(HashSet::new).insert(name);
+        }
+        table
+    }
+
+    pub fn proc_first(&mut self) {
+        self.first = transitive(self.first.clone(), |t| self.first_step(&t));
+    }
+
+    pub fn proc_follow(&mut self) {
+        self.follow = transitive(self.follow.clone(), |t| self.follow_step(&t));
+    }
+
+    /// # Panics
+    /// Never.
+    #[must_use]
+    pub fn first_step(&self, input: &Table) -> Table {
+        let mut table = Table::new();
+        for (name, firsts) in input {
+            table.insert(name, HashSet::new());
+            for first in firsts {
+                if self.is_terminal(first) {
+                    table.get_mut(name).unwrap().insert(first);
+                } else {
+                    table.get_mut(name).unwrap().extend(&input[first]);
+                }
             }
         }
+        table
     }
-    table
-}
 
-fn first_step(grammar: &Table, terminals: &TermSet) -> Table {
-    let mut table = Table::new();
-    for (name, firsts) in grammar {
-        table.insert(name, HashSet::new());
-        for first in firsts {
-            if terminals.contains(first) {
-                table.get_mut(name).unwrap().insert(first);
-            } else {
-                merge(table.get_mut(name).unwrap(), &grammar[first]);
+    /// # Panics
+    /// Never.
+    #[must_use]
+    pub fn follow_step(&self, input: &Table) -> Table {
+        let mut table = Table::new();
+        for (noterm, terms) in input {
+            table.insert(noterm, HashSet::new());
+            for term in terms {
+                if self.is_terminal(term) {
+                    table.get_mut(noterm).unwrap().insert(term);
+                } else if let Some(entry) = input.get(term) {
+                    table.get_mut(noterm).unwrap().extend(entry);
+                }
             }
         }
+        table
     }
-    table
-}
 
-fn follow_step(grammar: &Table, terminals: &TermSet) -> Table {
-    let mut table = Table::new();
-    for (noterm, terms) in grammar {
-        table.insert(noterm, HashSet::new());
-        for term in terms {
-            if terminals.contains(term) {
-                table.get_mut(noterm).unwrap().insert(term);
-            } else if let Some(entry) = grammar.get(term) {
-                merge(table.get_mut(noterm).unwrap(), entry);
-            }
-        }
-    }
-    table
-}
-
-fn merge(rhs: &mut HashSet<&'static str>, lhs: &HashSet<&'static str>) {
-    for item in lhs {
-        if !rhs.contains(item) {
-            rhs.insert(item);
-        }
+    #[must_use]
+    pub fn is_terminal(&self, term: &str) -> bool {
+        self.terminals.contains(term)
     }
 }
 
 fn main() {
-    let rules = grammar! {
+    /*
+    * BNF grammar:
+       Start -> Add
+       Add -> Add + Factor
+       Add -> Factor
+       Factor -> Factor * Term
+       Factor -> Term
+       Term -> Expr
+       Term -> Lvalue
+       Expr -> ( Add )
+       Lvalue -> int
+       Lvalue -> ident
+    */
+    let grammar = grammar! {
         "Start" -> "Add",
         "Add" -> "Add" "+" "Factor"
             | "Factor",
@@ -138,21 +195,17 @@ fn main() {
         "Expr" -> "(" "Add" ")",
         "Lvalue" -> "int" | "ident"
     };
-
     let terminals = HashSet::from(["int", "ident", "(", "*", "+", ")"]);
 
-    println!("rules: {rules:?}");
+    println!("grammar: {grammar:?}");
     println!("terminals: {terminals:?}\n");
 
-    let first_table = gen_first_table(&rules);
-    println!("first-step FIRST table: {first_table:?}");
+    let mut parser = Parser::new(grammar, terminals);
+    println!("first-step FIRST table: {:?}", parser.first);
+    parser.proc_first();
+    println!("final FIRST table: {:?}\n", parser.first);
 
-    let final_first = transitive(first_table, |t| first_step(&t, &terminals));
-    println!("final FIRST table: {final_first:?}\n");
-
-    let follow_table = gen_follow_table(&rules, &terminals);
-    println!("first-step FOLLOW table: {follow_table:?}");
-
-    let final_follow = transitive(follow_table, |t| follow_step(&t, &terminals));
-    println!("final FOLLOW talbe: {final_follow:?}");
+    println!("first-step FOLLOW table: {:?}", parser.follow);
+    parser.proc_follow();
+    println!("final FOLLOW talbe: {:?}", parser.follow);
 }
