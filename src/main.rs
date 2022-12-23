@@ -55,14 +55,43 @@ pub type Grammar = HashMap<&'static str, Vec<Vec<&'static str>>>;
 ///
 /// in FOLLOW:
 /// A = . . . T a -> {T: a}
-/// A = . . . T B -> {T: FOLLOW(B)}
+/// A = . . . T B -> {T: FIRST(B)}
 /// A = . . . . T -> {T: FOLLOW(A)}
 pub type Table = HashMap<&'static str, HashSet<&'static str>>;
+pub type State = HashSet<Position>;
 
 /// terminal sets
 pub type TermSet = HashSet<&'static str>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub struct Position {
+    pub stack: Vec<&'static str>,
+    pub idx: usize,
+}
+
+impl From<Vec<&'static str>> for Position {
+    fn from(value: Vec<&'static str>) -> Self {
+        Position {
+            stack: value,
+            idx: 0,
+        }
+    }
+}
+
+impl Position {
+    pub fn adv(&mut self) {
+        self.idx += 1;
+    }
+
+    pub fn locus(&self) -> Option<&'static str> {
+        self.stack.get(self.idx + 1).copied()
+    }
+
+    pub fn top(&self) -> Option<&'static str> {
+        self.stack.get(self.idx).copied()
+    }
+}
+
 pub struct Parser {
     pub grammar: Grammar,
     pub terminals: TermSet,
