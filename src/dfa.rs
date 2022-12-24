@@ -1,22 +1,22 @@
-use crate::ActTable;
+use crate::{ActTable, Rule, Term};
 
 #[derive(Debug, Clone)]
 pub enum State {
     Shift(usize),
-    Reduce(usize, &'static str, &'static str),
+    Reduce(usize, Term, Rule),
     Acc,
     Error,
 }
 
 #[derive(Debug, Clone)]
 pub enum Item {
-    Simple(&'static str),
-    Compound(&'static str, Vec<Item>),
+    Simple(Rule),
+    Compound(Rule, Vec<Item>),
     Empty,
 }
 
 impl Item {
-    pub fn name(&self) -> Option<&'static str> {
+    pub fn name(&self) -> Option<Rule> {
         match self {
             Self::Simple(n) => Some(n),
             Self::Compound(n, ..) => Some(n),
@@ -28,7 +28,7 @@ impl Item {
 #[derive(Debug, Clone)]
 pub struct Dfa {
     pub stack: Vec<usize>,
-    pub buffer: Vec<&'static str>,
+    pub buffer: Vec<Term>,
     pub forest: Vec<Item>,
     pub table: ActTable,
     pub top: usize,
@@ -36,7 +36,7 @@ pub struct Dfa {
 }
 
 impl Dfa {
-    pub fn new(buffer: Vec<&'static str>, table: ActTable) -> Self {
+    pub fn new(buffer: Vec<Term>, table: ActTable) -> Self {
         Self {
             stack: vec![0],
             buffer,
@@ -62,13 +62,13 @@ impl Dfa {
         println!("accepted: {:?}", self.forest.pop().unwrap());
     }
 
-    pub fn start(&mut self, symbol: &'static str) {
+    pub fn start(&mut self, symbol: Term) {
         while self.finished.is_none() {
             self.travel(symbol)
         }
     }
 
-    pub fn travel(&mut self, symbol: &'static str) {
+    pub fn travel(&mut self, symbol: Term) {
         println!("item: {}:{}", self.top, symbol);
         println!("forest: {:?}", self.forest);
         match self.table[self.top][symbol] {
@@ -79,7 +79,7 @@ impl Dfa {
         }
     }
 
-    pub fn reduce(&mut self, qty: usize, next_sym: &'static str, name: &'static str) {
+    pub fn reduce(&mut self, qty: usize, next_sym: Term, name: Rule) {
         println!("reduce({qty}, {next_sym}, {name})");
         let mut prod = Vec::with_capacity(qty);
         for _ in 0..qty {
