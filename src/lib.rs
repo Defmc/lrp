@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 
 /// grammars.
 /// rule:
@@ -6,12 +6,17 @@ use std::collections::{HashMap, HashSet};
 ///     choice2: [term1, term2, ...],
 ///     ...,
 /// rule2...
-pub type Grammar = HashMap<Rule, Vec<Vec<Term>>>;
+///
+pub type Map<K, V> = BTreeMap<K, V>;
+pub type Set<T> = BTreeSet<T>;
 
-pub type ActTable = Vec<HashMap<Rule, State>>;
+pub type Grammar = Map<Rule, Vec<Vec<Term>>>;
+
+pub type ActTable = Vec<Map<Rule, State>>;
 
 pub type Rule = &'static str;
 pub type Term = &'static str;
+pub type State = Set<Position>;
 
 /// Terms table,
 /// in FIRST:
@@ -23,10 +28,10 @@ pub type Term = &'static str;
 /// A = . . . T a -> {T: a}
 /// A = . . . T B -> {T: FIRST(B)}
 /// A = . . . . T -> {T: FOLLOW(A)}
-pub type Table = HashMap<Rule, TermSet>;
+pub type Table = Map<Rule, TermSet>;
 
 /// terminal sets
-pub type TermSet = HashSet<Term>;
+pub type TermSet = Set<Term>;
 
 /// for a given f(x), processes `x` until f(x) = f(f(x)) -> f(f(f(f....f(x)))) = f(x)
 pub fn transitive<T>(seed: T, map: impl Fn(T) -> T) -> T
@@ -47,3 +52,5 @@ pub mod dfa;
 pub use dfa::*;
 pub mod tabler;
 pub use tabler::*;
+pub mod pos;
+pub use pos::*;

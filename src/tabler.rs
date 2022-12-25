@@ -1,6 +1,4 @@
-use std::collections::HashSet;
-
-use crate::{transitive, Grammar, Table, TermSet};
+use crate::{transitive, Grammar, Position, Rule, Set, State, Table, Term, TermSet};
 
 #[derive(Debug, Default)]
 pub struct Tabler {
@@ -31,7 +29,7 @@ impl Tabler {
     pub fn gen_first(&self) -> Table {
         let mut table = Table::new();
         for (name, rules) in &self.grammar {
-            table.insert(name, HashSet::new());
+            table.insert(name, Set::new());
             for rule in rules.iter().filter(|r| &r[0] != name) {
                 table.get_mut(name).unwrap().insert(rule[0]);
             }
@@ -48,7 +46,7 @@ impl Tabler {
             for rule in rules {
                 for term_idx in 0..rule.len() - 1 {
                     if !self.is_terminal(rule[term_idx]) {
-                        let entry = table.entry(rule[term_idx]).or_insert_with(HashSet::new);
+                        let entry = table.entry(rule[term_idx]).or_insert_with(Set::new);
                         if self.is_terminal(rule[term_idx + 1]) {
                             // A = . . . T a -> {T: a}
                             entry.insert(rule[term_idx + 1]);
@@ -61,7 +59,7 @@ impl Tabler {
                 let last = rule.last().unwrap();
                 if !self.is_terminal(last) {
                     // A = . . . . T -> {T: FOLLOW(A)}
-                    table.entry(last).or_insert_with(HashSet::new).insert(name);
+                    table.entry(last).or_insert_with(Set::new).insert(name);
                 }
             }
         }
@@ -82,7 +80,7 @@ impl Tabler {
     pub fn first_step(&self, input: &Table) -> Table {
         let mut table = Table::new();
         for (name, firsts) in input {
-            table.insert(name, HashSet::new());
+            table.insert(name, Set::new());
             for first in firsts {
                 if self.is_terminal(first) {
                     table.get_mut(name).unwrap().insert(first);
@@ -100,7 +98,7 @@ impl Tabler {
     pub fn follow_step(&self, input: &Table) -> Table {
         let mut table = Table::new();
         for (noterm, terms) in input {
-            table.insert(noterm, HashSet::new());
+            table.insert(noterm, Set::new());
             for term in terms {
                 if self.is_terminal(term) {
                     table.get_mut(noterm).unwrap().insert(term);
@@ -115,5 +113,55 @@ impl Tabler {
     #[must_use]
     pub fn is_terminal(&self, term: &str) -> bool {
         self.terminals.contains(term)
+    }
+
+    #[must_use]
+    pub fn pos<'a>(
+        &'a self,
+        rule: Rule,
+        pos: usize,
+        look: Set<Term>,
+    ) -> impl Iterator<Item = Position> + 'a {
+        self.grammar[rule]
+            .iter()
+            .map(move |s| Position::new(rule, s.clone(), pos, look.clone()))
+    }
+
+    #[must_use]
+    pub fn closure(&self, state: State) -> State {
+        let mut new_state = State::new();
+        for pos in &state {
+            if let Some(top) = pos.top() {
+                if !self.is_terminal(top) {
+                    let look = if let Some(locus) = pos.locus() {
+                        if self.is_terminal(locus) {
+                            Set::from([locus])
+                        } else {
+                            self.first[locus].clone()
+                        }
+                    } else {
+                        self.follow[&top].clone()
+                    };
+                    for prod in &self.grammar[top] {
+                        new_state.insert(Position::new(top, prod.clone(), 0, look.clone()));
+                    }
+                }
+            }
+        }
+        new_state.extend(state);
+        new_state
+    }
+
+    pub fn first_of(&self, syms: Vec<Term>) -> Set<Term> {
+        let mut firsts = Set::new();
+        for sym in syms {
+            if self.is_terminal(&sym) {
+                println!("warn: getting first of a terminal");
+                firsts.insert(sym);
+            } else {
+                firsts.extend(self.first[sym].clone());
+            }
+        }
+        firsts
     }
 }

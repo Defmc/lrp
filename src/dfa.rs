@@ -71,12 +71,12 @@ impl Dfa {
     pub fn travel(&mut self, symbol: Term) {
         println!("item: {}:{}", self.top, symbol);
         println!("forest: {:?}", self.forest);
-        match self.table[self.top][symbol] {
-            State::Shift(to) => self.shift(to),
-            State::Reduce(to, sym, name) => self.reduce(to, sym, name),
-            State::Acc => self.accept(),
-            State::Error => panic!("incompatible input"),
-        }
+        // match self.table[self.top][symbol] {
+        //     State::Shift(to) => self.shift(to),
+        //     State::Reduce(to, sym, name) => self.reduce(to, sym, name),
+        //     State::Acc => self.accept(),
+        //     State::Error => panic!("incompatible input"),
+        // }
     }
 
     pub fn reduce(&mut self, qty: usize, next_sym: Term, name: Rule) {
