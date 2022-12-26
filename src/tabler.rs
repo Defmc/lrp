@@ -45,6 +45,10 @@ impl Tabler {
         for (name, rules) in &self.grammar {
             for rule in rules {
                 for term_idx in 0..rule.len() - 1 {
+                    // A = . . . A a -> {A: FIRST(A)} -> {A: A} -> {}
+                    if &rule[term_idx] == name {
+                        continue;
+                    }
                     if !self.is_terminal(rule[term_idx]) {
                         let entry = table.entry(rule[term_idx]).or_insert_with(Set::new);
                         if self.is_terminal(rule[term_idx + 1]) {
@@ -57,8 +61,9 @@ impl Tabler {
                     }
                 }
                 let last = rule.last().unwrap();
-                if !self.is_terminal(last) {
-                    // A = . . . . T -> {T: FOLLOW(A)}
+                // A = . . . . T -> {T: FOLLOW(A)}
+                // But if A = . . . . A -> {A: FOLLOW(A)} -> {A: A} -> {}
+                if !self.is_terminal(last) && last != name {
                     table.entry(last).or_insert_with(Set::new).insert(name);
                 }
             }
@@ -68,10 +73,14 @@ impl Tabler {
 
     pub fn proc_first(&mut self) {
         self.first = transitive(self.first.clone(), |t| self.first_step(&t));
+        // FIRST must be a subset of TERMINALS
+        debug_assert!(self.first.values().flatten().all(|t| self.is_terminal(t)));
     }
 
     pub fn proc_follow(&mut self) {
         self.follow = transitive(self.follow.clone(), |t| self.follow_step(&t));
+        // FOLLOW must be a subset of TERMINALS
+        debug_assert!(self.follow.values().flatten().all(|t| self.is_terminal(t)));
     }
 
     /// # Panics
@@ -152,16 +161,8 @@ impl Tabler {
         new_state
     }
 
-    pub fn first_of(&self, syms: Vec<Term>) -> Set<Term> {
-        let mut firsts = Set::new();
-        for sym in syms {
-            if self.is_terminal(&sym) {
-                println!("warn: getting first of a terminal");
-                firsts.insert(sym);
-            } else {
-                firsts.extend(self.first[sym].clone());
-            }
-        }
-        firsts
+    #[must_use]
+    pub fn prop_closure(&self, state: State) -> State {
+        transitive(state, |s| self.closure(s))
     }
 }
