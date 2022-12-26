@@ -47,17 +47,17 @@ impl Position {
 
     #[must_use]
     pub fn locus(&self) -> Option<Term> {
-        self.seq.get(self.point).copied()
+        self.peek(1)
     }
 
     #[must_use]
     pub fn peek(&self, qty: usize) -> Option<Term> {
-        self.seq.get(self.point + qty - 1).copied()
+        self.seq.get(self.point + qty).copied()
     }
 
     #[must_use]
     pub fn top(&self) -> Option<Term> {
-        self.seq.get(self.point.checked_sub(1)?).copied()
+        self.seq.get(self.point).copied()
     }
 
     #[must_use]
