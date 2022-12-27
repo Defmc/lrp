@@ -12,7 +12,7 @@ pub type Set<T> = BTreeSet<T>;
 
 pub type Grammar = Map<Rule, Vec<Vec<Term>>>;
 
-pub type ActTable = Vec<Map<Rule, State>>;
+pub type ActTable = Vec<Map<Term, Action>>;
 
 pub type Rule = &'static str;
 pub type Term = &'static str;

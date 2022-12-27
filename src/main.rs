@@ -1,4 +1,4 @@
-use lrp::{transitive, Dfa, Map, Position, Set, State, Tabler};
+use lrp::{Action, Map, Position, Set, Tabler};
 
 macro_rules! rule {
     ($grammar:tt, $rule:literal -> $($($terms:literal)*)|*) => {
@@ -79,48 +79,30 @@ fn main() {
         }
     }
 
-    // let actions = vec![
-    //     HashMap::from([
-    //         ("$", State::Reduce(0, "program", "empty")),
-    //         ("varDecl", State::Reduce(0, "program", "empty")),
-    //         ("constDecl", State::Reduce(0, "program", "empty")),
-    //         ("statement", State::Reduce(0, "program", "empty")),
-    //         ("program", State::Shift(1)),
-    //     ]),
-    //     HashMap::from([
-    //         ("$", State::Acc),
-    //         ("declaration", State::Shift(2)),
-    //         ("varDecl", State::Shift(3)),
-    //         ("constDecl", State::Shift(4)),
-    //         ("statement", State::Shift(5)),
-    //     ]),
-    //     HashMap::from([
-    //         ("$", State::Reduce(2, "program", "sequence")),
-    //         ("varDecl", State::Reduce(2, "program", "sequence")),
-    //         ("constDecl", State::Reduce(2, "program", "sequence")),
-    //         ("statement", State::Reduce(2, "program", "sequence")),
-    //     ]),
-    //     HashMap::from([
-    //         ("$", State::Reduce(1, "declaration", "var")),
-    //         ("varDecl", State::Reduce(1, "declaration", "var")),
-    //         ("constDecl", State::Reduce(1, "declaration", "var")),
-    //         ("statement", State::Reduce(1, "declaration", "var")),
-    //     ]),
-    //     HashMap::from([
-    //         ("$", State::Reduce(1, "declaration", "const")),
-    //         ("varDecl", State::Reduce(1, "declaration", "const")),
-    //         ("constDecl", State::Reduce(1, "declaration", "const")),
-    //         ("statement", State::Reduce(1, "declaration", "const")),
-    //     ]),
-    //     HashMap::from([
-    //         ("$", State::Reduce(1, "declaration", "statement")),
-    //         ("varDecl", State::Reduce(1, "declaration", "statement")),
-    //         ("constDecl", State::Reduce(1, "declaration", "statement")),
-    //         ("statement", State::Reduce(1, "declaration", "statement")),
-    //     ]),
-    // ];
-    //
-    // let mut dfa = Dfa::new(vec!["var", "abc", "$"], actions);
-    // dfa.start("declaration");
-    // println!("items: {:?}", dfa.forest);
+    parser.proc_actions("S");
+
+    let terms: Vec<_> = parser.syms.iter().chain(["$"].iter()).copied().collect();
+    print!("  | ");
+    for term in &terms {
+        print!("{term}  ");
+    }
+    for (i, line) in parser.actions.iter().enumerate() {
+        print!("\n{i} | ");
+        for term in &terms {
+            if let Some(a) = line.get(term) {
+                let p = match a {
+                    Action::Conflict(..) => "cn".into(),
+                    Action::Acc => "ac".into(),
+                    Action::Reduce(..) => "re".into(),
+                    Action::Shift(s) => format!("s{s}"),
+                    Action::Goto(g) => format!("g{g}"),
+                };
+                print!("{p}");
+            } else {
+                print!("  ");
+            }
+            print!(" ");
+        }
+    }
+    println!("\n{:?}", parser.actions);
 }

@@ -61,8 +61,8 @@ impl Position {
     }
 
     #[must_use]
-    pub fn can_adv(&self) -> bool {
-        self.point <= self.seq.len()
+    pub fn finished(&self) -> bool {
+        self.point >= self.seq.len()
     }
 
     pub fn adv(&mut self) {
@@ -74,7 +74,7 @@ impl Position {
     }
 
     pub fn clone_next(&self) -> Option<Self> {
-        if self.can_adv() {
+        if !self.finished() {
             let mut next = self.clone();
             next.adv();
             Some(next)

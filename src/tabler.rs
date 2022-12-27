@@ -223,9 +223,9 @@ impl Tabler {
         for goto in &kernels {
             println!("\t{goto}");
         }
-        if self.kernels.contains_key(&kernels) {
+        if let Some(state) = self.kernels.get(&kernels) {
+            println!("repeated (state {state})");
             None?;
-            println!("repeated");
         }
         let new = self.prop_closure(kernels.clone());
         println!("closures");
@@ -239,10 +239,37 @@ impl Tabler {
         }
     }
 
+    pub fn proc_actions(&mut self, start: Rule) {
+        for row in &self.states {
+            let mut map: Map<Term, Action> = Map::new();
+            for item in row {
+                for (term, act) in self.decision(start, item) {
+                    if map.contains_key(term) {
+                        *map.get_mut(term).unwrap() =
+                            Action::Conflict(Box::new(map.get(term).unwrap().clone()), act.into());
+                    } else {
+                        map.insert(term, act);
+                    }
+                }
+            }
+            self.actions.push(map);
+        }
+    }
+
     #[must_use]
-    pub fn decision(&self, start: Rule, pos: Position) -> Map<Term, Action> {
-        if pos.can_adv() {
-            todo!()
+    pub fn decision(&self, start: Rule, pos: &Position) -> Map<Term, Action> {
+        if let Some(locus) = pos.top() {
+            let next = pos.clone_next().unwrap();
+            let state = self
+                .kernels
+                .iter()
+                .find_map(|(k, &s)| if k.contains(&next) { Some(s) } else { None })
+                .expect("`kernels` is incomplete");
+            if self.is_terminal(locus) {
+                Map::from([(locus, Action::Shift(state))])
+            } else {
+                Map::from([(locus, Action::Goto(state))])
+            }
         } else {
             pos.look
                 .iter()
