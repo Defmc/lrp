@@ -202,11 +202,7 @@ impl Tabler {
                     .flatten()
                     .collect();
                 for goto in gotos {
-                    let goto: State = goto
-                        .into_iter()
-                        .filter(|g| self.pos_states.get(g).is_none())
-                        .collect();
-                    if goto.is_empty() {
+                    if goto.len() == 1 && self.pos_states.contains_key(goto.first().unwrap()) {
                         continue;
                     }
                     println!("out state {state_idx}");
