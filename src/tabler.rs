@@ -9,9 +9,9 @@ pub struct Tabler {
     pub first: Table,
     pub follow: Table,
     pub actions: ActTable,
-    pub pos_states: Map<Position, usize>,
     pub syms: TermSet,
-    pub closures: Map<usize, State>,
+    pub states: Vec<State>,
+    pub kernels: Map<State, usize>,
 }
 
 impl Tabler {
@@ -19,7 +19,7 @@ impl Tabler {
     pub fn new(grammar: Grammar, terminals: TermSet) -> Self {
         let syms = grammar
             .keys()
-            .chain(terminals.clone().iter())
+            .chain(terminals.clone().iter().filter(|&&c| c != "$"))
             .copied()
             .collect();
 
@@ -81,6 +81,7 @@ impl Tabler {
                 }
             }
         }
+        table.insert("S", Set::from(["$"]));
         table
     }
 
@@ -92,7 +93,6 @@ impl Tabler {
 
     pub fn proc_follow(&mut self) {
         self.follow = transitive(self.follow.clone(), |t| self.follow_step(&t));
-        self.follow.insert("S", Set::from(["$"]));
         // FOLLOW must be a subset of TERMINALS
         debug_assert!(self.follow.values().flatten().all(|t| self.is_terminal(t)));
     }
@@ -163,7 +163,11 @@ impl Tabler {
                             self.first[locus].clone()
                         }
                     } else {
-                        self.follow[&pos.rule].clone()
+                        if pos.point == 0 {
+                            self.follow[&pos.rule].clone()
+                        } else {
+                            pos.look.clone()
+                        }
                     };
                     for prod in &self.grammar[top] {
                         new_state.insert(Position::new(top, prod.clone(), 0, look.clone()));
@@ -181,72 +185,57 @@ impl Tabler {
     }
 
     pub fn proc_closures(&mut self, start: Position) {
-        let syms: Vec<_> = self
-            .syms
-            .iter()
-            .filter(|&&s| s != start.rule && s != "$")
-            .collect();
-        let start = self.prop_closure(State::from([start]));
-        self.closures.insert(0, start.clone());
-        start.into_iter().for_each(|c| {
-            self.pos_states.insert(c, 0);
-        });
+        self.proc_closures_first_row(start.clone());
         let mut idx = 0;
-        let mut state_idx = 0;
-        loop {
-            if self.closures.get(&idx).is_some() {
-                let closures = self.closures.get(&idx).unwrap();
-                let gotos: Vec<State> = syms
-                    .iter()
-                    .map(|s| self.goto(closures.clone(), s))
-                    .flatten()
-                    .collect();
-                for goto in gotos {
-                    if goto.len() == 1 && self.pos_states.contains_key(goto.first().unwrap()) {
-                        continue;
-                    }
-                    println!("out state {state_idx}");
-                    state_idx += 1;
-                    println!("in state {state_idx}");
-                    self.closures.insert(state_idx, goto.clone());
-                    for closure in goto {
-                        self.pos_states.insert(closure, state_idx);
-                    }
-                }
+        while idx < self.states.len() {
+            let row = self.states[idx].clone();
+            for s in &self.syms {
+                println!("\ngoto({idx}, {s})");
+                let (kernel, closures) = if let Some((k, c)) = self.goto(row.clone(), &s) {
+                    (k, c)
+                } else {
+                    continue;
+                };
+                self.kernels.insert(kernel, self.states.len());
+                self.states.push(closures);
             }
-            if &idx == self.pos_states.last_key_value().unwrap().1 {
-                println!("table builded. You did it, bro.");
-                return;
-            } else {
-                idx += 1;
-            }
+            idx += 1;
         }
     }
 
+    pub fn proc_closures_first_row(&mut self, start: Position) {
+        let start = self.prop_closure(State::from([start]));
+        self.states.push(start.clone());
+    }
+
     #[must_use]
-    pub fn goto(&self, kernels: State, sym: &Term) -> Option<State> {
+    pub fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
         println!("entries for {sym}:");
         for kernel in &kernels {
             println!("\t{kernel}");
         }
-        let kernels = kernels
+        let kernels: State = kernels
             .into_iter()
             .filter(|p| p.top() == Some(&sym))
             .filter_map(|p| p.clone_next())
             .collect();
-        println!("goto:");
-        for kernel in &kernels {
-            println!("\t{kernel}");
+        println!("goto's:");
+        for goto in &kernels {
+            println!("\t{goto}");
         }
-        let new = self.prop_closure(kernels);
-        println!("closures:");
+        if self.kernels.contains_key(&kernels) {
+            None?;
+            println!("repeated");
+        }
+        let new = self.prop_closure(kernels.clone());
+        println!("closures");
         for closure in &new {
             println!("\t{closure}");
         }
         if new.is_empty() {
             None
         } else {
-            Some(new)
+            Some((kernels, new))
         }
     }
 
@@ -260,7 +249,7 @@ impl Tabler {
                 .map(|l| {
                     (
                         l.clone(),
-                        if *l == "$" && pos.rule == start {
+                        if pos.rule == start {
                             Action::Acc
                         } else {
                             Action::Reduce(pos.clone())

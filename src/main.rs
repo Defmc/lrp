@@ -72,8 +72,8 @@ fn main() {
     let test = Position::new("S", vec!["C", "C"], 0, Set::from(["$"]));
     println!("calculating table {test}");
     parser.proc_closures(test);
-    for (state, closures) in parser.closures {
-        println!("state {state}:");
+    for (i, closures) in parser.states.iter().enumerate() {
+        println!("state {i}:");
         for closure in closures {
             println!("\t{closure}");
         }
