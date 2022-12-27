@@ -1,11 +1,14 @@
-use crate::{ActTable, Rule, Term};
+use crate::{ActTable, Position, Rule, Term};
 
-#[derive(Debug, Clone)]
-pub enum State {
+#[derive(Debug, Clone, Default)]
+pub enum Action {
     Shift(usize),
-    Reduce(usize, Term, Rule),
+    Goto(usize),
+    Reduce(Position),
     Acc,
-    Error,
+    Conflict(Box<Action>, Box<Action>),
+    #[default]
+    Unreachable,
 }
 
 #[derive(Debug, Clone)]
