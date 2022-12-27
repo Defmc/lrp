@@ -1,4 +1,6 @@
-use crate::{transitive, Grammar, Position, Rule, Set, State, Table, Term, TermSet};
+use crate::{
+    transitive, ActTable, Action, Grammar, Map, Position, Rule, Set, State, Table, Term, TermSet,
+};
 
 #[derive(Debug, Default)]
 pub struct Tabler {
@@ -6,6 +8,7 @@ pub struct Tabler {
     pub terminals: TermSet,
     pub first: Table,
     pub follow: Table,
+    pub actions: ActTable,
 }
 
 impl Tabler {
@@ -164,5 +167,17 @@ impl Tabler {
     #[must_use]
     pub fn prop_closure(&self, state: State) -> State {
         transitive(state, |s| self.closure(s))
+    }
+    #[must_use]
+    #[must_use]
+    pub fn decision(&self, pos: Position) -> Map<Term, Action> {
+        if pos.can_adv() {
+            todo!()
+        } else {
+            pos.look
+                .iter()
+                .map(|l| (l.clone(), Action::Reduce(pos.clone())))
+                .collect()
+        }
     }
 }
