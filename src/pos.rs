@@ -4,10 +4,10 @@ use crate::{Rule, Set, Term};
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Position {
-    rule: Rule,
-    seq: Vec<Term>,
-    point: usize,
-    look: Set<Term>,
+    pub rule: Rule,
+    pub seq: Vec<Term>,
+    pub point: usize,
+    pub look: Set<Term>,
 }
 
 impl Position {
@@ -71,6 +71,16 @@ impl Position {
 
     pub fn abs_idx(&self, idx: usize) -> Option<Term> {
         self.seq.get(idx).copied()
+    }
+
+    pub fn clone_next(&self) -> Option<Self> {
+        let mut next = self.clone();
+        if next.can_adv() {
+            next.adv();
+            Some(next)
+        } else {
+            None
+        }
     }
 }
 
