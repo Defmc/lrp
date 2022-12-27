@@ -1,4 +1,4 @@
-use lrp::{Action, Map, Position, Set, Tabler};
+use lrp::{Action, Dfa, Map, Position, Set, Tabler};
 
 macro_rules! rule {
     ($grammar:tt, $rule:literal -> $($($terms:literal)*)|*) => {
@@ -105,4 +105,7 @@ fn main() {
         }
     }
     println!("\n{:?}", parser.actions);
+
+    let mut dfa = Dfa::new(vec!["c", "d", "d", "$"], parser.actions);
+    dfa.start()
 }
