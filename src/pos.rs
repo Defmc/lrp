@@ -74,8 +74,8 @@ impl Position {
     }
 
     pub fn clone_next(&self) -> Option<Self> {
-        let mut next = self.clone();
-        if next.can_adv() {
+        if self.can_adv() {
+            let mut next = self.clone();
             next.adv();
             Some(next)
         } else {

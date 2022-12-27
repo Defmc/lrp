@@ -1,4 +1,4 @@
-use lrp::{transitive, Dfa, Map, Set, State, Tabler};
+use lrp::{transitive, Dfa, Map, Position, Set, State, Tabler};
 
 macro_rules! rule {
     ($grammar:tt, $rule:literal -> $($($terms:literal)*)|*) => {
@@ -45,18 +45,15 @@ fn main() {
         //     | "Term",
         // "Term" -> "(" "Add" ")" | "int" | "ident"
         "S" -> "C" "C",
-        "S'" -> "S" "$",
         "C" -> "c" "C"
             | "d"
     };
-    let terminals = Set::from([
-        "int", "ident", "(", "*", "+", ")", "$", "a", "b", "c", "d", "x",
-    ]);
+    let terminals = Set::from(["$", "c", "d"]);
 
     println!("grammar: {grammar:?}");
     println!("terminals: {terminals:?}\n");
 
-    let parser = Tabler::new(grammar, terminals.clone());
+    let mut parser = Tabler::new(grammar, terminals.clone());
 
     println!("FIRST table: {:?}", parser.first);
     println!("FOLLOW table: {:?}", parser.follow);
@@ -71,24 +68,15 @@ fn main() {
             }
         }
     }
-    println!("transitive version:");
-    for pos in transitive(
-        parser.pos("S", 0, Set::from(["$"])).collect(),
-        |s: State| {
-            let mut set = State::new();
-            for mut p in s {
-                loop {
-                    set.insert(p.clone());
-                    p.adv();
-                    if !p.can_adv() {
-                        break;
-                    }
-                }
-            }
-            parser.closure(set)
-        },
-    ) {
-        println!("\t{pos}");
+
+    let test = Position::new("S", vec!["C", "C"], 0, Set::from(["$"]));
+    println!("calculating table {test}");
+    parser.proc_closures(test);
+    for (state, closures) in parser.closures {
+        println!("state {state}:");
+        for closure in closures {
+            println!("\t{closure}");
+        }
     }
 
     // let actions = vec![
