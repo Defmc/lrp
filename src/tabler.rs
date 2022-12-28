@@ -93,6 +93,7 @@ impl Tabler {
 
     pub fn proc_follow(&mut self) {
         self.follow = transitive(self.follow.clone(), |t| self.follow_step(&t));
+        println!("{:?}", self.follow);
         // FOLLOW must be a subset of TERMINALS
         debug_assert!(self.follow.values().flatten().all(|t| self.is_terminal(t)));
     }
@@ -111,6 +112,9 @@ impl Tabler {
                     table.get_mut(name).unwrap().extend(&input[first]);
                 }
             }
+            if table[name].contains(name) {
+                table.get_mut(name).unwrap().remove(name);
+            }
         }
         table
     }
@@ -128,6 +132,9 @@ impl Tabler {
                 } else if let Some(entry) = input.get(term) {
                     table.get_mut(noterm).unwrap().extend(entry);
                 }
+            }
+            if table[noterm].contains(noterm) {
+                table.get_mut(noterm).unwrap().remove(noterm);
             }
         }
         table
@@ -285,5 +292,27 @@ impl Tabler {
                 })
                 .collect()
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{Map, Set, Tabler};
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    pub fn firsts() {
+        let grammar = crate::grammar! {
+            "S" -> "C" "C",
+            "C" -> "c" "C"
+                | "d"
+        };
+        let tabler = Tabler::new(grammar, Set::from(["c", "d", "$"]));
+        assert_eq!(
+            tabler.first,
+            Map::from([("S", Set::from(["c", "d"])), ("C", Set::from(["c", "d"]))])
+        );
+
+        let grammar = crate::grammar! {};
     }
 }
