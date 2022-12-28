@@ -1,28 +1,4 @@
-use lrp::{Action, Dfa, Map, Position, Set, Tabler};
-
-macro_rules! rule {
-    ($grammar:tt, $rule:literal -> $($($terms:literal)*)|*) => {
-        $grammar.insert($rule, vec![$(vec![$($terms),*]),*]);
-    }
-}
-
-macro_rules! grammar {
-    ($($rule:literal -> $($($terms:literal)*)|*),*) => {{
-        let mut hmp = Map::new();
-        $(rule!(hmp, $rule -> $($($terms)*)|*);)*
-        hmp
-    }}
-}
-
-/* FOLLOW table:
- * S = B
- * A = ab
- * B = Ac
- *
- * {
- * A: c,
- * }
- */
+use lrp::{Action, Dfa, Position, Set, Tabler};
 
 fn main() {
     /*
@@ -36,19 +12,13 @@ fn main() {
        Term -> int
        Term -> ident
     */
-    let grammar = grammar! {
-        // "Program" -> "Start" "$",
-        // "Start" -> "Add",
-        // "Add" -> "Add" "+" "Factor"
-        //     | "Factor",
-        // "Factor" -> "Factor" "*" "Term"
-        //     | "Term",
-        // "Term" -> "(" "Add" ")" | "int" | "ident"
-        "S" -> "C" "C",
-        "C" -> "c" "C"
-            | "d"
+    let grammar = lrp::grammar! {
+        "S" -> "N",
+        "M" -> "N" "*" "N",
+        "N" -> "n"
+            | "M"
     };
-    let terminals = Set::from(["$", "c", "d"]);
+    let terminals = Set::from(["$", "n", "*"]);
 
     println!("grammar: {grammar:?}");
     println!("terminals: {terminals:?}\n");
@@ -58,23 +28,23 @@ fn main() {
     println!("FIRST table: {:?}", parser.first);
     println!("FOLLOW table: {:?}", parser.follow);
 
-    for rule in parser.grammar.keys() {
-        for choice in parser.pos(rule, 0, Set::new()) {
-            println!("closures for {choice}:");
-            let closures = parser.closure(Set::from([choice]));
-            println!("\ttotal:");
-            for closure in closures {
-                println!("\t\t{closure}");
-            }
-        }
-    }
+    let test = Position::new("S", vec!["N"], 0, Set::from(["$"]));
 
-    let test = Position::new("S", vec!["C", "C"], 0, Set::from(["$"]));
     println!("calculating table {test}");
     parser.proc_closures(test);
-    for (i, closures) in parser.states.iter().enumerate() {
-        println!("state {i}:");
-        for closure in closures {
+    let mut states: Vec<_> = parser.kernels.iter().collect();
+    states.sort_unstable_by(|l, r| l.1.cmp(r.1));
+    println!("state 0:");
+    for closure in &parser.states[0] {
+        println!("\t{closure}");
+    }
+    for (kernel, i) in states {
+        print!("state {i}: [");
+        for k in kernel.iter() {
+            print!("{k}, ");
+        }
+        println!("]");
+        for closure in &parser.states[*i] {
             println!("\t{closure}");
         }
     }
@@ -106,6 +76,6 @@ fn main() {
     }
     println!("\n{:?}", parser.actions);
 
-    let mut dfa = Dfa::new(vec!["c", "d", "d", "$"], parser.actions);
+    let mut dfa = Dfa::new(vec!["n", "*", "n", "$"], parser.actions);
     dfa.start()
 }

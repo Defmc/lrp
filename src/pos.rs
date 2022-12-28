@@ -65,6 +65,11 @@ impl Position {
         self.point >= self.seq.len()
     }
 
+    #[must_use]
+    pub fn body_eq(&self, rhs: &Self) -> bool {
+        self.point == rhs.point && self.seq == rhs.seq && self.rule == rhs.rule
+    }
+
     pub fn adv(&mut self) {
         self.point += 1;
     }

@@ -54,3 +54,15 @@ pub mod tabler;
 pub use tabler::*;
 pub mod pos;
 pub use pos::*;
+
+#[macro_export]
+macro_rules! grammar {
+    ($($rule:literal -> $($($terms:literal)*)|*),*) => {{
+        let mut hmp = $crate::Map::new();
+        $($crate::grammar!(hmp, $rule -> $($($terms)*)|*);)*
+        hmp
+    }};
+    ($grammar:tt, $rule:literal -> $($($terms:literal)*)|*) => {
+        $grammar.insert($rule, vec![$(vec![$($terms),*]),*]);
+    }
+}
