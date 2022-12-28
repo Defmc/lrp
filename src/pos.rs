@@ -61,6 +61,15 @@ impl Position {
     }
 
     #[must_use]
+    pub fn next_and_look(&self) -> Set<Term> {
+        self.locus()
+            .iter()
+            .chain(self.look.iter())
+            .copied()
+            .collect()
+    }
+
+    #[must_use]
     pub fn finished(&self) -> bool {
         self.point >= self.seq.len()
     }
@@ -74,10 +83,12 @@ impl Position {
         self.point += 1;
     }
 
+    #[must_use]
     pub fn abs_idx(&self, idx: usize) -> Option<Term> {
         self.seq.get(idx).copied()
     }
 
+    #[must_use]
     pub fn clone_next(&self) -> Option<Self> {
         if !self.finished() {
             let mut next = self.clone();
