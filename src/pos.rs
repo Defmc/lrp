@@ -1,8 +1,8 @@
-use std::fmt::{Display, Write};
+use std::fmt::{Debug, Display, Write};
 
 use crate::{Rule, Set, Term};
 
-#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Position {
     pub rule: Rule,
     pub seq: Vec<Term>,
@@ -92,16 +92,22 @@ impl Position {
 impl Display for Position {
     #[must_use]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{} = ", self.rule))?;
+        f.write_fmt(format_args!("{} =", self.rule))?;
         for i in 0..=self.point.max(self.seq.len()) {
+            f.write_char(' ')?;
             if i == self.point {
                 f.write_str(". ")?;
             }
             if let Some(term) = self.abs_idx(i) {
                 f.write_str(term)?;
             }
-            f.write_char(' ')?;
         }
-        f.write_fmt(format_args!("{:?}", self.look))
+        f.write_fmt(format_args!(" {:?}", self.look))
+    }
+}
+
+impl Debug for Position {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{self}"))
     }
 }

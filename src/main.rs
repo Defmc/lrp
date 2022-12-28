@@ -39,11 +39,7 @@ fn main() {
         println!("\t{closure}");
     }
     for (kernel, i) in states {
-        print!("state {i}: [");
-        for k in kernel.iter() {
-            print!("{k}, ");
-        }
-        println!("]");
+        println!("state {i}: {:?}", kernel);
         for closure in &parser.states[*i] {
             println!("\t{closure}");
         }
