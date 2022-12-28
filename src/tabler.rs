@@ -188,7 +188,7 @@ impl Tabler {
 
     #[must_use]
     pub fn prop_closure(&self, state: State) -> State {
-        transitive(state, |s| self.closure(s))
+        Self::merged(transitive(state, |s| self.closure(s)))
     }
 
     pub fn proc_closures(&mut self, start: Position) {
@@ -292,6 +292,25 @@ impl Tabler {
                 })
                 .collect()
         }
+    }
+
+    #[must_use]
+    pub fn merged(states: State) -> State {
+        let mut new = State::new();
+        'outter: for state in states {
+            let keys: Vec<_> = new.iter().cloned().collect();
+            for key in keys {
+                if new.get(&key).unwrap().body_eq(&state) {
+                    let mut state = state;
+                    state.look.extend(new.get(&key).unwrap().look.clone());
+                    new.remove(&key);
+                    new.insert(state);
+                    continue 'outter;
+                }
+            }
+            new.insert(state);
+        }
+        new
     }
 }
 
