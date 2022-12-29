@@ -2,6 +2,8 @@ use crate::{
     transitive, ActTable, Action, Grammar, Map, Position, Rule, Set, State, Table, Term, TermSet,
 };
 
+pub const INTERNAL_START_RULE: &str = "LRP'START";
+
 #[derive(Debug, Default)]
 pub struct Tabler {
     pub grammar: Grammar,
@@ -16,12 +18,10 @@ pub struct Tabler {
 
 impl Tabler {
     #[must_use]
-    pub fn new(grammar: Grammar, terminals: TermSet) -> Self {
-        let syms = grammar
-            .keys()
-            .chain(terminals.clone().iter().filter(|&&c| c != "$"))
-            .copied()
-            .collect();
+    pub fn new(start: Rule, mut grammar: Grammar, mut terminals: TermSet) -> Self {
+        grammar.insert("LRP'START", vec![vec![start]]);
+        let syms = grammar.keys().chain(terminals.iter()).copied().collect();
+        terminals.insert(crate::EOF);
 
         let mut buf = Self {
             grammar,
@@ -78,7 +78,7 @@ impl Tabler {
                 }
             }
         }
-        table.insert("S", Set::from(["$"]));
+        table.insert(INTERNAL_START_RULE, Set::from([crate::EOF]));
         table
     }
 
@@ -188,8 +188,14 @@ impl Tabler {
         Self::merged(transitive(state, |s| self.closure(s)))
     }
 
-    pub fn proc_closures(&mut self, start: Position) {
-        self.proc_closures_first_row(start.clone());
+    #[must_use]
+    pub fn basis_rule(&self) -> Position {
+        let prod = self.grammar[INTERNAL_START_RULE][0].clone();
+        Position::new(INTERNAL_START_RULE, prod, 0, Set::from([crate::EOF]))
+    }
+
+    pub fn proc_closures(&mut self) {
+        self.proc_closures_first_row();
         let mut idx = 0;
         while idx < self.states.len() {
             let row = self.states[idx].clone();
@@ -207,8 +213,8 @@ impl Tabler {
         }
     }
 
-    pub fn proc_closures_first_row(&mut self, start: Position) {
-        let start = self.prop_closure(State::from([start]));
+    pub fn proc_closures_first_row(&mut self) {
+        let start = self.prop_closure(State::from([self.basis_rule()]));
         self.kernels.push((State::new(), 0));
         self.states.push(start.clone());
     }
@@ -248,7 +254,8 @@ impl Tabler {
         }
     }
 
-    pub fn proc_actions(&mut self, start: Rule) {
+    pub fn proc_actions(&mut self) {
+        let start = self.basis_rule().rule;
         for (i, row) in self.states.iter().enumerate() {
             println!("building [{i}]");
             let mut map: Map<Term, Action> = Map::new();
@@ -345,7 +352,7 @@ impl Tabler {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Dfa, Item, Map, Position, Set, StackEl, Tabler};
+    use crate::{Dfa, Item, Map, Set, StackEl, Tabler, INTERNAL_START_RULE};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -355,15 +362,19 @@ mod tests {
             "C" -> "c" "C"
                 | "d"
         };
-        let mut tabler = Tabler::new(grammar, Set::from(["c", "d", "$"]));
+        let mut tabler = Tabler::new("S", grammar, Set::from(["c", "d"]));
         assert_eq!(
             tabler.first,
-            Map::from([("S", Set::from(["c", "d"])), ("C", Set::from(["c", "d"]))])
+            Map::from([
+                ("S", Set::from(["c", "d"])),
+                ("C", Set::from(["c", "d"])),
+                (INTERNAL_START_RULE, Set::from(["c", "d"]))
+            ])
         );
-        tabler.proc_closures(Position::new("S", vec!["C", "C"], 0, Set::from(["$"])));
-        tabler.proc_actions("S");
+        tabler.proc_closures();
+        tabler.proc_actions();
 
-        let mut dfa = Dfa::new(["c", "d", "d", "$"].into_iter(), tabler.actions);
+        let mut dfa = Dfa::new(["c", "d", "d"].into_iter(), tabler.actions);
         dfa.start();
 
         assert_eq!(
@@ -371,15 +382,19 @@ mod tests {
             vec![
                 StackEl::State(0),
                 StackEl::Item(Item::Compound(
-                    "C",
+                    "S",
                     vec![
                         Item::Compound("C", vec![Item::Simple("d")]),
-                        Item::Simple("c"),
-                    ]
+                        Item::Compound(
+                            "C",
+                            vec![
+                                Item::Compound("C", vec![Item::Simple("d")]),
+                                Item::Simple("c"),
+                            ],
+                        ),
+                    ],
                 )),
-                StackEl::State(1),
-                StackEl::Item(Item::Compound("C", vec![Item::Simple("d")])),
-                StackEl::State(4),
+                StackEl::State(2),
             ]
         );
     }
@@ -394,20 +409,21 @@ mod tests {
             "B" -> "0" | "1"
         };
 
-        let mut tabler = Tabler::new(grammar, Set::from(["0", "1", "+", "*", "$"]));
+        let mut tabler = Tabler::new("S", grammar, Set::from(["0", "1", "+", "*"]));
         assert_eq!(
             tabler.first,
             Map::from([
                 ("S", Set::from(["0", "1"])),
                 ("E", Set::from(["0", "1"])),
-                ("B", Set::from(["0", "1"]))
+                ("B", Set::from(["0", "1"])),
+                (INTERNAL_START_RULE, Set::from(["0", "1"]))
             ])
         );
 
-        tabler.proc_closures(Position::new("S", vec!["E"], 0, Set::from(["$"])));
-        tabler.proc_actions("S");
+        tabler.proc_closures();
+        tabler.proc_actions();
 
-        let mut dfa = Dfa::new(["1", "+", "1", "$"].into_iter(), tabler.actions);
+        let mut dfa = Dfa::new(["1", "+", "1"].into_iter(), tabler.actions);
         dfa.start();
 
         assert_eq!(
@@ -415,14 +431,17 @@ mod tests {
             vec![
                 StackEl::State(0),
                 StackEl::Item(Item::Compound(
-                    "E",
-                    vec![
-                        Item::Compound("B", vec![Item::Simple("1")]),
-                        Item::Simple("+"),
-                        Item::Compound("E", vec![Item::Compound("B", vec![Item::Simple("1")])]),
-                    ]
+                    "S",
+                    vec![Item::Compound(
+                        "E",
+                        vec![
+                            Item::Compound("B", vec![Item::Simple("1")]),
+                            Item::Simple("+"),
+                            Item::Compound("E", vec![Item::Compound("B", vec![Item::Simple("1")])]),
+                        ],
+                    )]
                 )),
-                StackEl::State(4,),
+                StackEl::State(5),
             ]
         );
     }
@@ -445,26 +464,28 @@ mod tests {
             "A" ->	"a"
         };
 
-        let mut tabler = Tabler::new(grammar, Set::from(["a", "b", "c", "d", "e", "$"]));
+        let mut tabler = Tabler::new("S", grammar, Set::from(["a", "b", "c", "d", "e"]));
         assert_eq!(
             tabler.first,
             Map::from([
-                ("A", Set::from(["a",])),
-                ("B", Set::from(["a",])),
-                ("C", Set::from(["d", "e",])),
-                ("D", Set::from(["d", "e",])),
-                ("E", Set::from(["d", "e",])),
-                ("F", Set::from(["d", "e",])),
-                ("S", Set::from(["d", "e",])),
+                ("A", Set::from(["a"])),
+                ("B", Set::from(["a"])),
+                ("C", Set::from(["d", "e"])),
+                ("D", Set::from(["d", "e"])),
+                ("E", Set::from(["d", "e"])),
+                ("F", Set::from(["d", "e"])),
+                ("S", Set::from(["d", "e"])),
+                (INTERNAL_START_RULE, Set::from(["d", "e"]))
             ])
         );
 
-        tabler.proc_closures(Position::new("S", vec!["E"], 0, Set::from(["$"])));
-        tabler.proc_actions("S");
+        tabler.proc_closures();
+        tabler.proc_actions();
 
-        let mut dfa = Dfa::new(["e", "a", "c", "$"].into_iter(), tabler.actions);
+        let mut dfa = Dfa::new(["e", "a", "c"].into_iter(), tabler.actions);
         dfa.start();
     }
+
     #[test]
     fn serokell() {
         let grammar = crate::grammar! {

@@ -1,5 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+pub const EOF: &str = unsafe { std::str::from_utf8_unchecked(&[0x03]) };
+
 /// grammars.
 /// rule:
 ///     choice1: [term1, term2, ...],

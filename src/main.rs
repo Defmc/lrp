@@ -1,4 +1,4 @@
-use lrp::{Action, Dfa, Position, Set, Tabler};
+use lrp::{Action, Dfa, Set, Tabler};
 
 fn main() {
     /*
@@ -22,22 +22,17 @@ fn main() {
             | "B",
         "B" -> "0" | "1"
     };
-    // let terminals = Set::from(["$", "c", "d"]);
-    let terminals = Set::from(["$", "n", "*", "+", "1", "0"]);
+    let terminals = Set::from(["n", "*", "+", "1", "0"]);
 
     println!("grammar: {grammar:?}");
     println!("terminals: {terminals:?}\n");
 
-    let mut parser = Tabler::new(grammar, terminals.clone());
+    let mut parser = Tabler::new("S", grammar, terminals.clone());
 
     println!("FIRST table: {:?}", parser.first);
     println!("FOLLOW table: {:?}", parser.follow);
 
-    // let test = Position::new("S", vec!["C", "C"], 0, Set::from(["$"]));
-    let test = Position::new("S", vec!["E"], 0, Set::from(["$"]));
-
-    println!("calculating table {test}");
-    parser.proc_closures(test);
+    parser.proc_closures();
     for (kernel, i) in &parser.kernels {
         println!("state {i}: {:?}", kernel);
         for closure in &parser.states[*i] {
@@ -45,9 +40,14 @@ fn main() {
         }
     }
 
-    parser.proc_actions("S");
+    parser.proc_actions();
 
-    let terms: Vec<_> = parser.syms.iter().chain(["$"].iter()).copied().collect();
+    let terms: Vec<_> = parser
+        .syms
+        .iter()
+        .chain([lrp::EOF].iter())
+        .copied()
+        .collect();
     print!("  | ");
     for term in &terms {
         print!("{term}  ");
@@ -72,6 +72,6 @@ fn main() {
     }
     println!("\n{:?}", parser.actions);
 
-    let mut dfa = Dfa::new(["1", "+", "0", "$"].into_iter(), parser.actions);
+    let mut dfa = Dfa::new(["1", "+", "0"].into_iter(), parser.actions);
     dfa.start()
 }

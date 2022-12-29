@@ -65,7 +65,7 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
 
     pub fn start(&mut self) {
         while self.finished.is_none() {
-            let symbol = self.buffer.peek().unwrap().clone();
+            let symbol = *self.buffer.peek().unwrap_or(&crate::EOF);
             self.travel(symbol);
         }
     }
