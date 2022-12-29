@@ -1,11 +1,14 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 pub const EOF: &str = unsafe { std::str::from_utf8_unchecked(&[0x03]) };
+pub const INTERNAL_START_RULE: &str = "LRP'START";
+
+pub mod grammar;
 
 /// grammars.
 /// rule:
-///     choice1: [term1, term2, ...],
-///     choice2: [term1, term2, ...],
+///     prod1: [term1, term2, ...],
+///     prod2: [term1, term2, ...],
 ///     ...,
 /// rule2...
 ///

@@ -2,8 +2,6 @@ use crate::{
     transitive, ActTable, Action, Grammar, Map, Position, Rule, Set, State, Table, Term, TermSet,
 };
 
-pub const INTERNAL_START_RULE: &str = "LRP'START";
-
 #[derive(Debug, Default)]
 pub struct Tabler {
     pub grammar: Grammar,
@@ -78,7 +76,7 @@ impl Tabler {
                 }
             }
         }
-        table.insert(INTERNAL_START_RULE, Set::from([crate::EOF]));
+        table.insert(crate::INTERNAL_START_RULE, Set::from([crate::EOF]));
         table
     }
 
@@ -190,8 +188,8 @@ impl Tabler {
 
     #[must_use]
     pub fn basis_rule(&self) -> Position {
-        let prod = self.grammar[INTERNAL_START_RULE][0].clone();
-        Position::new(INTERNAL_START_RULE, prod, 0, Set::from([crate::EOF]))
+        let prod = self.grammar[crate::INTERNAL_START_RULE][0].clone();
+        Position::new(crate::INTERNAL_START_RULE, prod, 0, Set::from([crate::EOF]))
     }
 
     pub fn proc_closures(&mut self) {
@@ -517,8 +515,9 @@ mod tests {
 
         tabler.proc_closures();
         tabler.proc_actions();
+        tabler.print_states();
 
-        let mut dfa = Dfa::new(
+        let _dfa = Dfa::new(
             ["int", "+", "ident", "*", "ident", "+", "int"].into_iter(),
             tabler.actions,
         );
