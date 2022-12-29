@@ -363,7 +363,7 @@ mod tests {
         tabler.proc_closures(Position::new("S", vec!["C", "C"], 0, Set::from(["$"])));
         tabler.proc_actions("S");
 
-        let mut dfa = Dfa::new(vec!["c", "d", "d", "$"], tabler.actions);
+        let mut dfa = Dfa::new(["c", "d", "d", "$"].into_iter(), tabler.actions);
         dfa.start();
 
         assert_eq!(
@@ -407,7 +407,7 @@ mod tests {
         tabler.proc_closures(Position::new("S", vec!["E"], 0, Set::from(["$"])));
         tabler.proc_actions("S");
 
-        let mut dfa = Dfa::new(vec!["1", "+", "1", "$"], tabler.actions);
+        let mut dfa = Dfa::new(["1", "+", "1", "$"].into_iter(), tabler.actions);
         dfa.start();
 
         assert_eq!(
@@ -462,7 +462,7 @@ mod tests {
         tabler.proc_closures(Position::new("S", vec!["E"], 0, Set::from(["$"])));
         tabler.proc_actions("S");
 
-        let mut dfa = Dfa::new(vec!["e", "a", "c", "$"], tabler.actions);
+        let mut dfa = Dfa::new(["e", "a", "c", "$"].into_iter(), tabler.actions);
         dfa.start();
     }
 }

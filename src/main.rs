@@ -72,6 +72,6 @@ fn main() {
     }
     println!("\n{:?}", parser.actions);
 
-    let mut dfa = Dfa::new(vec!["1", "+", "0", "$"], parser.actions);
+    let mut dfa = Dfa::new(["1", "+", "0", "$"].into_iter(), parser.actions);
     dfa.start()
 }
