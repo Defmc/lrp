@@ -16,13 +16,14 @@ fn main() {
         // "S" -> "C" "C",
         // "C" -> "c" "C"
         //     | "d"
-        "S" -> "N",
-        "M" -> "N" "*" "N",
-        "N" -> "n"
-            | "M"
+        "S" -> "E",
+        "E" -> "E" "*" "B"
+            | "E" "+" "B"
+            | "B",
+        "B" -> "0" | "1"
     };
     // let terminals = Set::from(["$", "c", "d"]);
-    let terminals = Set::from(["$", "n", "*", "+"]);
+    let terminals = Set::from(["$", "n", "*", "+", "1", "0"]);
 
     println!("grammar: {grammar:?}");
     println!("terminals: {terminals:?}\n");
@@ -33,7 +34,7 @@ fn main() {
     println!("FOLLOW table: {:?}", parser.follow);
 
     // let test = Position::new("S", vec!["C", "C"], 0, Set::from(["$"]));
-    let test = Position::new("S", vec!["N"], 0, Set::from(["$"]));
+    let test = Position::new("S", vec!["E"], 0, Set::from(["$"]));
 
     println!("calculating table {test}");
     parser.proc_closures(test);
@@ -71,6 +72,6 @@ fn main() {
     }
     println!("\n{:?}", parser.actions);
 
-    let mut dfa = Dfa::new(vec!["n", "*", "n", "$"], parser.actions);
+    let mut dfa = Dfa::new(vec!["1", "+", "0", "$"], parser.actions);
     dfa.start()
 }

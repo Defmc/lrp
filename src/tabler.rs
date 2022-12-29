@@ -167,7 +167,7 @@ impl Tabler {
                 }
                 let look = if let Some(locus) = pos.locus() {
                     if self.is_terminal(locus) {
-                        pos.look.clone()
+                        Set::from([locus])
                     } else {
                         self.first_of(&pos.next_and_look()).clone()
                     }
@@ -185,17 +185,7 @@ impl Tabler {
 
     #[must_use]
     pub fn prop_closure(&self, state: State) -> State {
-        let mut new_state = State::new();
-        for mut pos in Self::merged(transitive(state, |s| self.closure(s))) {
-            pos.look = pos
-                .look
-                .iter()
-                .filter(|l| !pos.seq[pos.point..].contains(l))
-                .copied()
-                .collect();
-            new_state.insert(pos);
-        }
-        new_state
+        Self::merged(transitive(state, |s| self.closure(s)))
     }
 
     pub fn proc_closures(&mut self, start: Position) {
@@ -342,38 +332,69 @@ impl Tabler {
         }
         firsts
     }
+
+    pub fn print_states(&self) {
+        for (kernel, i) in &self.kernels {
+            println!("state {i}: {:?}", kernel);
+            for closure in &self.states[*i] {
+                println!("\t{closure}");
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{Map, Set, Tabler};
+    use crate::{Dfa, Item, Map, Position, Set, StackEl, Tabler};
     use pretty_assertions::assert_eq;
 
     #[test]
-    pub fn dragon_book_first() {
+    pub fn dragon_book() {
         let grammar = crate::grammar! {
             "S" -> "C" "C",
             "C" -> "c" "C"
                 | "d"
         };
-        let tabler = Tabler::new(grammar, Set::from(["c", "d", "$"]));
+        let mut tabler = Tabler::new(grammar, Set::from(["c", "d", "$"]));
         assert_eq!(
             tabler.first,
             Map::from([("S", Set::from(["c", "d"])), ("C", Set::from(["c", "d"]))])
         );
+        tabler.proc_closures(Position::new("S", vec!["C", "C"], 0, Set::from(["$"])));
+        tabler.proc_actions("S");
+
+        let mut dfa = Dfa::new(vec!["c", "d", "d", "$"], tabler.actions);
+        dfa.start();
+
+        assert_eq!(
+            dfa.stack,
+            vec![
+                StackEl::State(0),
+                StackEl::Item(Item::Compound(
+                    "C",
+                    vec![
+                        Item::Compound("C", vec![Item::Simple("d")]),
+                        Item::Simple("c"),
+                    ]
+                )),
+                StackEl::State(1),
+                StackEl::Item(Item::Compound("C", vec![Item::Simple("d")])),
+                StackEl::State(4),
+            ]
+        );
     }
 
     #[test]
-    fn wikipedia_first() {
+    fn wikipedia() {
         let grammar = crate::grammar! {
-            "S" -> "E" "*" "B",
+            "S" -> "E",
             "E" -> "E" "*" "B"
                 | "E" "+" "B"
                 | "B",
             "B" -> "0" | "1"
         };
 
-        let tabler = Tabler::new(grammar, Set::from(["0", "1", "+", "*", "$"]));
+        let mut tabler = Tabler::new(grammar, Set::from(["0", "1", "+", "*", "$"]));
         assert_eq!(
             tabler.first,
             Map::from([
@@ -381,6 +402,67 @@ mod tests {
                 ("E", Set::from(["0", "1"])),
                 ("B", Set::from(["0", "1"]))
             ])
-        )
+        );
+
+        tabler.proc_closures(Position::new("S", vec!["E"], 0, Set::from(["$"])));
+        tabler.proc_actions("S");
+
+        let mut dfa = Dfa::new(vec!["1", "+", "1", "$"], tabler.actions);
+        dfa.start();
+
+        assert_eq!(
+            dfa.stack,
+            vec![
+                StackEl::State(0),
+                StackEl::Item(Item::Compound(
+                    "E",
+                    vec![
+                        Item::Compound("B", vec![Item::Simple("1")]),
+                        Item::Simple("+"),
+                        Item::Compound("E", vec![Item::Compound("B", vec![Item::Simple("1")])]),
+                    ]
+                )),
+                StackEl::State(4,),
+            ]
+        );
+    }
+
+    // https://smlweb.cpsc.ucalgary.ca/
+    #[test]
+    fn ucalgary_uni_oth_lr1() {
+        let grammar = crate::grammar! {
+            "S" -> "E",
+            "E" ->	"d" "D"
+                |	"D"
+                |	"F",
+            "F" ->	"e" "C"
+                |	"C",
+            "D" ->	"d" "e" "B" "b"
+                |	"e" "A" "c",
+            "C" ->	"e" "d" "B" "c"
+                |	"d" "A" "b",
+            "B" ->	"a",
+            "A" ->	"a"
+        };
+
+        let mut tabler = Tabler::new(grammar, Set::from(["a", "b", "c", "d", "e", "$"]));
+        assert_eq!(
+            tabler.first,
+            Map::from([
+                ("A", Set::from(["a",])),
+                ("B", Set::from(["a",])),
+                ("C", Set::from(["d", "e",])),
+                ("D", Set::from(["d", "e",])),
+                ("E", Set::from(["d", "e",])),
+                ("F", Set::from(["d", "e",])),
+                ("S", Set::from(["d", "e",])),
+            ])
+        );
+
+        tabler.proc_closures(Position::new("S", vec!["E"], 0, Set::from(["$"])));
+        tabler.proc_actions("S");
+
+        let mut dfa = Dfa::new(vec!["e", "a", "c", "$"], tabler.actions);
+        dfa.start();
     }
 }

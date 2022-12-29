@@ -9,7 +9,7 @@ pub enum Action {
     Conflict(Box<Action>, Box<Action>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Item {
     Simple(Rule),
     Compound(Rule, Vec<Item>),
@@ -24,7 +24,7 @@ impl Item {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum StackEl {
     Item(Item),
     State(usize),
