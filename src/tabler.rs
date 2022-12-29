@@ -59,9 +59,6 @@ impl Tabler {
             for rule in rules {
                 for term_idx in 0..rule.len() - 1 {
                     // A = . . . A a -> {A: FIRST(A)} -> {A: A} -> {}
-                    if &rule[term_idx] == name {
-                        continue;
-                    }
                     if !self.is_terminal(rule[term_idx]) {
                         let entry = table.entry(rule[term_idx]).or_insert_with(Set::new);
                         if self.is_terminal(rule[term_idx + 1]) {
@@ -353,7 +350,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    pub fn firsts() {
+    pub fn dragon_book_first() {
         let grammar = crate::grammar! {
             "S" -> "C" "C",
             "C" -> "c" "C"
@@ -364,5 +361,26 @@ mod tests {
             tabler.first,
             Map::from([("S", Set::from(["c", "d"])), ("C", Set::from(["c", "d"]))])
         );
+    }
+
+    #[test]
+    fn wikipedia_first() {
+        let grammar = crate::grammar! {
+            "S" -> "E" "*" "B",
+            "E" -> "E" "*" "B"
+                | "E" "+" "B"
+                | "B",
+            "B" -> "0" | "1"
+        };
+
+        let tabler = Tabler::new(grammar, Set::from(["0", "1", "+", "*", "$"]));
+        assert_eq!(
+            tabler.first,
+            Map::from([
+                ("S", Set::from(["0", "1"])),
+                ("E", Set::from(["0", "1"])),
+                ("B", Set::from(["0", "1"]))
+            ])
+        )
     }
 }
