@@ -1,30 +1,23 @@
 use crate::{
-    transitive, ActTable, Action, Grammar, Map, Position, Rule, Set, State, Table, Term, TermSet,
+    grammar::Grammar, transitive, ActTable, Action, Map, Position, Rule, Set, State, Table, Term,
+    TermSet,
 };
 
 #[derive(Debug, Default)]
 pub struct Tabler {
     pub grammar: Grammar,
-    pub terminals: TermSet,
     pub first: Table,
     pub follow: Table,
     pub actions: ActTable,
-    pub syms: TermSet,
     pub states: Vec<State>,
     pub kernels: Vec<(State, usize)>,
 }
 
 impl Tabler {
     #[must_use]
-    pub fn new(start: Rule, mut grammar: Grammar, mut terminals: TermSet) -> Self {
-        grammar.insert("LRP'START", vec![vec![start]]);
-        let syms = grammar.keys().chain(terminals.iter()).copied().collect();
-        terminals.insert(crate::EOF);
-
+    pub fn new(grammar: Grammar) -> Self {
         let mut buf = Self {
             grammar,
-            terminals,
-            syms,
             ..Default::default()
         };
         buf.first = dbg!(buf.gen_first());
@@ -39,10 +32,10 @@ impl Tabler {
     #[must_use]
     pub fn gen_first(&self) -> Table {
         let mut table = Table::new();
-        for (name, rules) in &self.grammar {
-            table.insert(name, Set::new());
-            for rule in rules.iter().filter(|r| &r[0] != name) {
-                table.get_mut(name).unwrap().insert(rule[0]);
+        for rule in self.grammar.rules() {
+            table.insert(rule.name, Set::new());
+            for prod in rule.prods.iter().filter(|r| r[0] != rule.name) {
+                table.get_mut(rule.name).unwrap().insert(prod[0]);
             }
         }
         table
@@ -53,26 +46,26 @@ impl Tabler {
     #[must_use]
     pub fn gen_follow(&self) -> Table {
         let mut table = Table::new();
-        for (name, rules) in &self.grammar {
-            for rule in rules {
-                for term_idx in 0..rule.len() - 1 {
+        for rule in self.grammar.rules() {
+            for prod in rule.prods() {
+                for term_idx in 0..prod.len() - 1 {
                     // A = . . . A a -> {A: FIRST(A)} -> {A: A} -> {}
-                    if !self.is_terminal(rule[term_idx]) {
-                        let entry = table.entry(rule[term_idx]).or_insert_with(Set::new);
-                        if self.is_terminal(rule[term_idx + 1]) {
+                    if !self.grammar.is_terminal(&prod[term_idx]) {
+                        let entry = table.entry(prod[term_idx]).or_insert_with(Set::new);
+                        if self.grammar.is_terminal(&prod[term_idx + 1]) {
                             // A = . . . T a -> {T: a}
-                            entry.insert(rule[term_idx + 1]);
+                            entry.insert(prod[term_idx + 1]);
                         } else {
                             // A = . . . T B -> {T: FIRST(B)}
-                            entry.extend(self.first[rule[term_idx + 1]].clone())
+                            entry.extend(self.first[prod[term_idx + 1]].clone())
                         }
                     }
                 }
-                let last = rule.last().unwrap();
+                let last = prod.last().unwrap();
                 // A = . . . . T -> {T: FOLLOW(A)}
                 // But if A = . . . . A -> {A: FOLLOW(A)} -> {A: A} -> {}
-                if !self.is_terminal(last) && last != name {
-                    table.entry(last).or_insert_with(Set::new).insert(name);
+                if !self.grammar.is_terminal(last) && last != &rule.name {
+                    table.entry(last).or_insert_with(Set::new).insert(rule.name);
                 }
             }
         }
@@ -83,13 +76,21 @@ impl Tabler {
     pub fn proc_first(&mut self) {
         self.first = transitive(self.first.clone(), |t| self.first_step(&t));
         // FIRST must be a subset of TERMINALS
-        debug_assert!(self.first.values().flatten().all(|t| self.is_terminal(t)));
+        debug_assert!(self
+            .first
+            .values()
+            .flatten()
+            .all(|t| self.grammar.is_terminal(t)));
     }
 
     pub fn proc_follow(&mut self) {
         self.follow = transitive(self.follow.clone(), |t| self.follow_step(&t));
         // FOLLOW must be a subset of TERMINALS
-        debug_assert!(self.follow.values().flatten().all(|t| self.is_terminal(t)));
+        debug_assert!(self
+            .follow
+            .values()
+            .flatten()
+            .all(|t| self.grammar.is_terminal(t)));
     }
 
     /// # Panics
@@ -100,7 +101,7 @@ impl Tabler {
         for (name, firsts) in input {
             table.insert(name, Set::new());
             for first in firsts {
-                if self.is_terminal(first) {
+                if self.grammar.is_terminal(first) {
                     table.get_mut(name).unwrap().insert(first);
                 } else {
                     println!("{first}");
@@ -125,7 +126,7 @@ impl Tabler {
         for (noterm, terms) in input {
             table.insert(noterm, Set::new());
             for term in terms {
-                if self.is_terminal(term) {
+                if self.grammar.is_terminal(term) {
                     table.get_mut(noterm).unwrap().insert(term);
                 } else if let Some(entry) = input.get(term) {
                     table.get_mut(noterm).unwrap().extend(entry);
@@ -139,18 +140,14 @@ impl Tabler {
     }
 
     #[must_use]
-    pub fn is_terminal(&self, term: &str) -> bool {
-        self.terminals.contains(term)
-    }
-
-    #[must_use]
     pub fn pos<'a>(
         &'a self,
         rule: Rule,
         pos: usize,
         look: Set<Term>,
     ) -> impl Iterator<Item = Position> + 'a {
-        self.grammar[rule]
+        self.grammar.rules[rule]
+            .prods
             .iter()
             .map(move |s| Position::new(rule, s.clone(), pos, look.clone()))
     }
@@ -160,11 +157,11 @@ impl Tabler {
         let mut new_state = State::new();
         for pos in &state {
             if let Some(top) = pos.top() {
-                if self.is_terminal(top) {
+                if self.grammar.is_terminal(&top) {
                     continue;
                 }
                 let look = if let Some(locus) = pos.locus() {
-                    if self.is_terminal(locus) {
+                    if self.grammar.is_terminal(&locus) {
                         Set::from([locus])
                     } else {
                         self.first_of(&pos.next_and_look()).clone()
@@ -172,7 +169,7 @@ impl Tabler {
                 } else {
                     self.follow[top].clone()
                 };
-                for prod in &self.grammar[top] {
+                for prod in self.grammar.rules[top].prods() {
                     new_state.insert(Position::new(top, prod.clone(), 0, look.clone()));
                 }
             }
@@ -187,9 +184,14 @@ impl Tabler {
     }
 
     #[must_use]
-    pub fn basis_rule(&self) -> Position {
-        let prod = self.grammar[crate::INTERNAL_START_RULE][0].clone();
-        Position::new(crate::INTERNAL_START_RULE, prod, 0, Set::from([crate::EOF]))
+    pub fn basis_pos(&self) -> Position {
+        let prod = &self.grammar.rules[crate::INTERNAL_START_RULE].prods[0];
+        Position::new(
+            crate::INTERNAL_START_RULE,
+            prod.clone(),
+            0,
+            Set::from([crate::EOF]),
+        )
     }
 
     pub fn proc_closures(&mut self) {
@@ -197,7 +199,7 @@ impl Tabler {
         let mut idx = 0;
         while idx < self.states.len() {
             let row = self.states[idx].clone();
-            for s in &self.syms {
+            for s in self.grammar.symbols() {
                 println!("\ngoto({idx}, {s})");
                 let (kernel, closures) = if let Some((k, c)) = self.goto(row.clone(), &s) {
                     (k, c)
@@ -212,7 +214,7 @@ impl Tabler {
     }
 
     pub fn proc_closures_first_row(&mut self) {
-        let start = self.prop_closure(State::from([self.basis_rule()]));
+        let start = self.prop_closure(State::from([self.basis_pos()]));
         self.kernels.push((State::new(), 0));
         self.states.push(start.clone());
     }
@@ -253,7 +255,7 @@ impl Tabler {
     }
 
     pub fn proc_actions(&mut self) {
-        let start = self.basis_rule().rule;
+        let start = self.basis_pos().rule;
         for (i, row) in self.states.iter().enumerate() {
             println!("building [{i}]");
             let mut map: Map<Term, Action> = Map::new();
@@ -282,7 +284,7 @@ impl Tabler {
                 .iter()
                 .find_map(|(k, s)| if k.contains(&next) { Some(*s) } else { None })
                 .expect("`kernels` is incomplete");
-            if self.is_terminal(locus) {
+            if self.grammar.is_terminal(&locus) {
                 println!("shift({state})");
                 Map::from([(locus, Action::Shift(state))])
             } else {
@@ -350,7 +352,7 @@ impl Tabler {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Dfa, Item, Map, Set, StackEl, Tabler, INTERNAL_START_RULE};
+    use crate::{grammar::Grammar, Dfa, Item, Map, Set, StackEl, Tabler, INTERNAL_START_RULE};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -360,7 +362,8 @@ mod tests {
             "C" -> "c" "C"
                 | "d"
         };
-        let mut tabler = Tabler::new("S", grammar, Set::from(["c", "d"]));
+        let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
+        let mut tabler = Tabler::new(grammar);
         assert_eq!(
             tabler.first,
             Map::from([
@@ -407,7 +410,8 @@ mod tests {
             "B" -> "0" | "1"
         };
 
-        let mut tabler = Tabler::new("S", grammar, Set::from(["0", "1", "+", "*"]));
+        let grammar = Grammar::new("S", grammar, Set::from(["0", "1", "+", "*"]));
+        let mut tabler = Tabler::new(grammar);
         assert_eq!(
             tabler.first,
             Map::from([
@@ -462,7 +466,8 @@ mod tests {
             "A" ->	"a"
         };
 
-        let mut tabler = Tabler::new("S", grammar, Set::from(["a", "b", "c", "d", "e"]));
+        let grammar = Grammar::new("S", grammar, Set::from(["a", "b", "c", "d", "e"]));
+        let mut tabler = Tabler::new(grammar);
         assert_eq!(
             tabler.first,
             Map::from([
@@ -497,11 +502,13 @@ mod tests {
                | "ident"
         };
 
-        let mut tabler = Tabler::new(
+        let grammar = Grammar::new(
             "Start",
             grammar,
             Set::from(["int", "ident", "(", ")", "+", "*"]),
         );
+        let mut tabler = Tabler::new(grammar);
+
         assert_eq!(
             tabler.first,
             Map::from([

@@ -67,7 +67,8 @@ macro_rules! grammar {
         $($crate::grammar!(hmp, $rule -> $($($terms)*)|*);)*
         hmp
     }};
-    ($grammar:tt, $rule:literal -> $($($terms:literal)*)|*) => {
-        $grammar.insert($rule, vec![$(vec![$($terms),*]),*]);
-    }
+    ($grammar:tt, $rule:literal -> $($($terms:literal)*)|*) => {{
+        let rule = $crate::grammar::Rule::new($rule, vec![$(vec![$($terms),*]),*]);
+        $grammar.insert($rule, rule);
+    }}
 }

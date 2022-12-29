@@ -1,4 +1,4 @@
-use lrp::{Action, Dfa, Set, Tabler};
+use lrp::{grammar::Grammar, Action, Dfa, Set, Tabler};
 
 fn main() {
     /*
@@ -27,7 +27,8 @@ fn main() {
     println!("grammar: {grammar:?}");
     println!("terminals: {terminals:?}\n");
 
-    let mut parser = Tabler::new("S", grammar, terminals.clone());
+    let grammar = Grammar::new("S", grammar, terminals.clone());
+    let mut parser = Tabler::new(grammar);
 
     println!("FIRST table: {:?}", parser.first);
     println!("FOLLOW table: {:?}", parser.follow);
@@ -43,10 +44,9 @@ fn main() {
     parser.proc_actions();
 
     let terms: Vec<_> = parser
-        .syms
-        .iter()
-        .chain([lrp::EOF].iter())
-        .copied()
+        .grammar
+        .symbols()
+        .chain([lrp::EOF].iter().copied())
         .collect();
     print!("  | ");
     for term in &terms {

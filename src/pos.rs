@@ -1,18 +1,21 @@
-use std::fmt::{Debug, Display, Write};
+use std::{
+    fmt::{Debug, Display, Write},
+    rc::Rc,
+};
 
-use crate::{Rule, Set, Term};
+use crate::{grammar::Production, Rule, Set, Term};
 
 #[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Position {
     pub rule: Rule,
-    pub seq: Vec<Term>,
+    pub seq: Rc<Production>,
     pub point: usize,
     pub look: Set<Term>,
 }
 
 impl Position {
     #[must_use]
-    pub fn new(rule: Rule, seq: Vec<Term>, point: usize, look: Set<Term>) -> Self {
+    pub fn new(rule: Rule, seq: Rc<Production>, point: usize, look: Set<Term>) -> Self {
         Self {
             rule,
             seq,
@@ -28,7 +31,7 @@ impl Position {
     }
 
     #[must_use]
-    pub fn seq(mut self, seq: Vec<Term>) -> Self {
+    pub fn seq(mut self, seq: Rc<Production>) -> Self {
         self.seq = seq;
         self
     }

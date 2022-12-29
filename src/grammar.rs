@@ -41,7 +41,7 @@ pub struct Grammar {
 
 impl Grammar {
     #[must_use]
-    pub fn new(mut rules: RuleMap, mut terminals: Set<Term>, start: RuleName) -> Self {
+    pub fn new(start: RuleName, mut rules: RuleMap, mut terminals: Set<Term>) -> Self {
         let symbols = rules.keys().chain(terminals.iter()).copied().collect();
         let start = Rule::single("LRP'START", vec![start]);
         terminals.insert(crate::EOF);
@@ -69,5 +69,10 @@ impl Grammar {
     #[must_use]
     pub fn rules(&self) -> impl Iterator<Item = &Rule> {
         self.rules.values()
+    }
+
+    #[must_use]
+    pub fn symbols(&self) -> impl Iterator<Item = Term> + '_ {
+        self.symbols.iter().copied()
     }
 }
