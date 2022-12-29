@@ -110,4 +110,10 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         self.top = state;
         self.travel(rule.rule);
     }
+
+    pub fn reset(&mut self) {
+        self.finished = None;
+        self.stack.clear();
+        self.top = 0;
+    }
 }
