@@ -1,6 +1,6 @@
 use crate::{ActTable, Position, Rule, Term};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Action {
     Shift(usize),
     Goto(usize),

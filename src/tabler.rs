@@ -168,10 +168,15 @@ impl Tabler {
                 if self.is_terminal(top) {
                     continue;
                 }
-                let mut look = self.first_of(&pos.next_and_look());
-                if look.is_empty() {
-                    look = pos.look.clone();
-                }
+                let look = if let Some(locus) = pos.locus() {
+                    if self.is_terminal(locus) {
+                        pos.look.clone()
+                    } else {
+                        self.first_of(&pos.next_and_look()).clone()
+                    }
+                } else {
+                    self.follow[top].clone()
+                };
                 for prod in &self.grammar[top] {
                     new_state.insert(Position::new(top, prod.clone(), 0, look.clone()));
                 }
@@ -183,7 +188,17 @@ impl Tabler {
 
     #[must_use]
     pub fn prop_closure(&self, state: State) -> State {
-        Self::merged(transitive(state, |s| self.closure(s)))
+        let mut new_state = State::new();
+        for mut pos in Self::merged(transitive(state, |s| self.closure(s))) {
+            pos.look = pos
+                .look
+                .iter()
+                .filter(|l| !pos.seq[pos.point..].contains(l))
+                .copied()
+                .collect();
+            new_state.insert(pos);
+        }
+        new_state
     }
 
     pub fn proc_closures(&mut self, start: Position) {
@@ -248,6 +263,7 @@ impl Tabler {
 
     pub fn proc_actions(&mut self, start: Rule) {
         for (i, row) in self.states.iter().enumerate() {
+            println!("building [{i}]");
             let mut map: Map<Term, Action> = Map::new();
             for item in row {
                 for (term, act) in self.decision(start, item) {

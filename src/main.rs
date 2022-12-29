@@ -13,12 +13,16 @@ fn main() {
        Term -> ident
     */
     let grammar = lrp::grammar! {
+        // "S" -> "C" "C",
+        // "C" -> "c" "C"
+        //     | "d"
         "S" -> "N",
         "M" -> "N" "*" "N",
         "N" -> "n"
             | "M"
     };
-    let terminals = Set::from(["$", "n", "*"]);
+    // let terminals = Set::from(["$", "c", "d"]);
+    let terminals = Set::from(["$", "n", "*", "+"]);
 
     println!("grammar: {grammar:?}");
     println!("terminals: {terminals:?}\n");
@@ -28,17 +32,12 @@ fn main() {
     println!("FIRST table: {:?}", parser.first);
     println!("FOLLOW table: {:?}", parser.follow);
 
+    // let test = Position::new("S", vec!["C", "C"], 0, Set::from(["$"]));
     let test = Position::new("S", vec!["N"], 0, Set::from(["$"]));
 
     println!("calculating table {test}");
     parser.proc_closures(test);
-    let mut states: Vec<_> = parser.kernels.iter().collect();
-    states.sort_unstable_by(|l, r| l.1.cmp(r.1));
-    println!("state 0:");
-    for closure in &parser.states[0] {
-        println!("\t{closure}");
-    }
-    for (kernel, i) in states {
+    for (kernel, i) in &parser.kernels {
         println!("state {i}: {:?}", kernel);
         for closure in &parser.states[*i] {
             println!("\t{closure}");
