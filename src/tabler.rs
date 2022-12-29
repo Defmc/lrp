@@ -465,4 +465,42 @@ mod tests {
         let mut dfa = Dfa::new(["e", "a", "c", "$"].into_iter(), tabler.actions);
         dfa.start();
     }
+    #[test]
+    fn serokell() {
+        let grammar = crate::grammar! {
+           "Start" -> "Add",
+           "Add" -> "Add" "+" "Factor"
+               | "Factor",
+           "Factor" -> "Factor" "*" "Term"
+               | "Term",
+           "Term" -> "(" "Add" ")"
+               | "int"
+               | "ident"
+        };
+
+        let mut tabler = Tabler::new(
+            "Start",
+            grammar,
+            Set::from(["int", "ident", "(", ")", "+", "*"]),
+        );
+        assert_eq!(
+            tabler.first,
+            Map::from([
+                ("Add", Set::from(["(", "ident", "int"])),
+                ("Factor", Set::from(["(", "ident", "int"])),
+                ("LRP'START", Set::from(["(", "ident", "int"])),
+                ("Start", Set::from(["(", "ident", "int"])),
+                ("Term", Set::from(["(", "ident", "int"])),
+            ])
+        );
+
+        tabler.proc_closures();
+        tabler.proc_actions();
+
+        let mut dfa = Dfa::new(
+            ["int", "+", "ident", "*", "ident", "+", "int"].into_iter(),
+            tabler.actions,
+        );
+        //dfa.start();
+    }
 }
