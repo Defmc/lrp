@@ -1,7 +1,4 @@
-use crate::{
-    grammar::Grammar, transitive, ActTable, Action, Map, Position, Rule, Set, State, Table, Term,
-    TermSet,
-};
+use crate::{transitive, ActTable, Action, Grammar, Map, Position, Rule, Set, State, Table, Term};
 
 #[derive(Debug, Default)]
 pub struct Tabler {
@@ -352,7 +349,7 @@ impl Tabler {
 
 #[cfg(test)]
 mod tests {
-    use crate::{grammar::Grammar, Dfa, Item, Map, Set, StackEl, Tabler, INTERNAL_START_RULE};
+    use crate::{Grammar, Dfa, Item, Map, Set, StackEl, Tabler, INTERNAL_START_RULE};
     use pretty_assertions::assert_eq;
 
     #[test]

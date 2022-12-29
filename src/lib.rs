@@ -4,6 +4,7 @@ pub const EOF: &str = unsafe { std::str::from_utf8_unchecked(&[0x03]) };
 pub const INTERNAL_START_RULE: &str = "LRP'START";
 
 pub mod grammar;
+pub use grammar::*;
 
 /// grammars.
 /// rule:
@@ -14,8 +15,6 @@ pub mod grammar;
 ///
 pub type Map<K, V> = BTreeMap<K, V>;
 pub type Set<T> = BTreeSet<T>;
-
-pub type Grammar = Map<Rule, Vec<Vec<Term>>>;
 
 pub type ActTable = Vec<Map<Term, Action>>;
 

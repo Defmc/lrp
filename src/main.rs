@@ -1,4 +1,4 @@
-use lrp::{grammar::Grammar, Action, Dfa, Set, Tabler};
+use lrp::{Action, Dfa, Grammar, Set, Tabler};
 
 fn main() {
     /*
