@@ -1,12 +1,12 @@
-use std::iter::Peekable;
+use std::{iter::Peekable, rc::Rc};
 
-use crate::{ActTable, Position, Rule, Term};
+use crate::{ActTable, Production, Rule, RuleName, Term};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Action {
     Shift(usize),
     Goto(usize),
-    Reduce(Position),
+    Reduce(RuleName, Rc<Production>),
     Acc,
     Conflict(Box<Action>, Box<Action>),
 }
@@ -76,24 +76,28 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     }
 
     pub fn travel(&mut self, symbol: Term) {
+        println!(
+            "[{}][{symbol}]: {:?}\nstack: {:?}",
+            self.top, self.table[self.top][symbol], self.stack
+        );
         match &self.table[self.top][symbol] {
             Action::Shift(to) => self.shift(*to),
             Action::Goto(to) => self.goto(*to),
-            Action::Reduce(r) => self.reduce(r.clone()),
+            Action::Reduce(name, prod) => self.reduce(name, prod.clone()),
             Action::Acc => self.accept(),
             Action::Conflict(a, b) => panic!("conflict between {a:?} and {b:?}"),
         }
     }
 
-    pub fn reduce(&mut self, rule: Position) {
-        let mut prod = Vec::with_capacity(rule.seq.len());
-        while prod.len() != rule.seq.len() {
+    pub fn reduce(&mut self, name: RuleName, prod: Rc<Production>) {
+        let mut item = Vec::with_capacity(prod.len());
+        while item.len() != prod.len() {
             let poped = self.stack.pop().unwrap();
             if let StackEl::Item(i) = poped {
-                prod.push(i);
+                item.push(i);
             }
         }
-        let item = Item::Compound(rule.rule, prod);
+        let item = Item::Compound(name, item);
         let state = self
             .stack
             .iter()
@@ -108,7 +112,7 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
             .unwrap();
         self.stack.push(StackEl::Item(item));
         self.top = state;
-        self.travel(rule.rule);
+        self.travel(name);
     }
 
     pub fn reset(&mut self) {
@@ -116,5 +120,14 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         self.stack.clear();
         self.stack.push(StackEl::State(0));
         self.top = 0;
+    }
+
+    pub fn parse(&mut self, input: I) -> StackEl {
+        self.reset();
+        self.buffer = input.peekable();
+        self.start();
+        let res = self.stack[1].clone();
+        self.reset();
+        res
     }
 }
