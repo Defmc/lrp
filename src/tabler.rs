@@ -297,7 +297,7 @@ impl Tabler {
                         if pos.rule == start {
                             Action::Acc
                         } else {
-                            Action::Reduce(pos.clone())
+                            Action::Reduce(pos.rule, pos.seq.clone())
                         },
                     )
                 })
@@ -349,7 +349,7 @@ impl Tabler {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Grammar, Dfa, Item, Map, Set, StackEl, Tabler, INTERNAL_START_RULE};
+    use crate::{Dfa, Grammar, Item, Map, Set, StackEl, Tabler, INTERNAL_START_RULE};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -361,6 +361,7 @@ mod tests {
         };
         let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
         let mut tabler = Tabler::new(grammar);
+
         assert_eq!(
             tabler.first,
             Map::from([
@@ -369,10 +370,20 @@ mod tests {
                 (INTERNAL_START_RULE, Set::from(["c", "d"]))
             ])
         );
+
+        assert_eq!(
+            tabler.follow,
+            Map::from([
+                ("C", Set::from(["\u{3}", "c", "d"])),
+                ("LRP'START", Set::from(["\u{3}"])),
+                ("S", Set::from(["\u{3}"])),
+            ])
+        );
+
         tabler.proc_closures();
         tabler.proc_actions();
 
-        let mut dfa = Dfa::new(["c", "d", "d"].into_iter(), tabler.actions);
+        let mut dfa = Dfa::new(vec!["c", "d", "d"].into_iter(), tabler.actions);
         dfa.start();
 
         assert_eq!(
@@ -409,6 +420,7 @@ mod tests {
 
         let grammar = Grammar::new("S", grammar, Set::from(["0", "1", "+", "*"]));
         let mut tabler = Tabler::new(grammar);
+
         assert_eq!(
             tabler.first,
             Map::from([
@@ -419,10 +431,20 @@ mod tests {
             ])
         );
 
+        assert_eq!(
+            tabler.follow,
+            Map::from([
+                ("B", Set::from(["\u{3}", "*", "+"])),
+                ("E", Set::from(["\u{3}", "*", "+"])),
+                ("S", Set::from(["\u{3}"])),
+                ("LRP'START", Set::from(["\u{3}"])),
+            ])
+        );
+
         tabler.proc_closures();
         tabler.proc_actions();
 
-        let mut dfa = Dfa::new(["1", "+", "1"].into_iter(), tabler.actions);
+        let mut dfa = Dfa::new(vec!["1", "+", "1"].into_iter(), tabler.actions);
         dfa.start();
 
         assert_eq!(
@@ -479,10 +501,24 @@ mod tests {
             ])
         );
 
+        assert_eq!(
+            tabler.follow,
+            Map::from([
+                ("A", Set::from(["b", "c"])),
+                ("B", Set::from(["b", "c"])),
+                ("C", Set::from(["\u{3}"])),
+                ("D", Set::from(["\u{3}"])),
+                ("E", Set::from(["\u{3}"])),
+                ("F", Set::from(["\u{3}"])),
+                ("S", Set::from(["\u{3}"])),
+                ("LRP'START", Set::from(["\u{3}"])),
+            ])
+        );
+
         tabler.proc_closures();
         tabler.proc_actions();
 
-        let mut dfa = Dfa::new(["e", "a", "c"].into_iter(), tabler.actions);
+        let mut dfa = Dfa::new(vec!["e", "a", "c"].into_iter(), tabler.actions);
         dfa.start();
     }
 
@@ -517,14 +553,63 @@ mod tests {
             ])
         );
 
+        assert_eq!(
+            tabler.follow,
+            Map::from([
+                ("Add", Set::from(["\u{3}", ")", "+"])),
+                ("Factor", Set::from(["\u{3}", ")", "*", "+"])),
+                ("Start", Set::from(["\u{3}"])),
+                ("Term", Set::from(["\u{3}", ")", "*", "+"])),
+                ("LRP'START", Set::from(["\u{3}"])),
+            ])
+        );
+
         tabler.proc_closures();
         tabler.proc_actions();
-        tabler.print_states();
 
         let _dfa = Dfa::new(
-            ["int", "+", "ident", "*", "ident", "+", "int"].into_iter(),
+            vec!["int", "+", "ident", "*", "ident", "+", "int"].into_iter(),
             tabler.actions,
         );
         //dfa.start();
+    }
+
+    #[test]
+    fn mul_ambiguous() {
+        let grammar = crate::grammar! {
+            "S" -> "N",
+            "N" -> "n"
+                | "M",
+            "M" -> "N" "*" "N"
+        };
+
+        let grammar = Grammar::new("S", grammar, Set::from(["n", "*"]));
+        let mut tabler = Tabler::new(grammar);
+
+        assert_eq!(
+            tabler.first,
+            Map::from([
+                ("LRP'START", Set::from(["n"])),
+                ("S", Set::from(["n"])),
+                ("N", Set::from(["n"])),
+                ("M", Set::from(["n"]))
+            ])
+        );
+
+        assert_eq!(
+            tabler.follow,
+            Map::from([
+                ("LRP'START", Set::from(["\u{3}"])),
+                ("M", Set::from(["\u{3}", "*"])),
+                ("N", Set::from(["\u{3}", "*"])),
+                ("S", Set::from(["\u{3}"])),
+            ])
+        );
+
+        tabler.proc_closures();
+        tabler.proc_actions();
+
+        let mut dfa = Dfa::new(vec![].into_iter(), tabler.actions);
+        dfa.parse(vec!["n"].into_iter());
     }
 }
