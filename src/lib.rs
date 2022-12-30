@@ -40,7 +40,7 @@ pub type TermSet = Set<Term>;
 /// for a given f(x), processes `x` until f(x) = f(f(x)) -> f(f(f(f....f(x)))) = f(x)
 pub fn transitive<T>(seed: T, map: impl Fn(T) -> T) -> T
 where
-    T: Clone + PartialEq + std::fmt::Debug,
+    T: Clone + PartialEq,
 {
     let mut val = seed;
     loop {

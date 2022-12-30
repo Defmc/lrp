@@ -16,18 +16,21 @@ fn main() {
         // "S" -> "C" "C",
         // "C" -> "c" "C"
         //     | "d"
-        "S" -> "E",
-        "E" -> "E" "*" "B"
-            | "E" "+" "B"
-            | "B",
-        "B" -> "0" | "1"
+       "Start" -> "Add",
+       "Add" -> "Add" "+" "Factor"
+           | "Factor",
+       "Factor" -> "Factor" "*" "Term"
+           | "Term",
+       "Term" -> "(" "Add" ")"
+           | "int"
+           | "ident"
     };
-    let terminals = Set::from(["n", "*", "+", "1", "0"]);
+    let terminals = Set::from(["*", "+", "int", "ident", "(", ")"]);
 
     println!("grammar: {grammar:?}");
     println!("terminals: {terminals:?}\n");
 
-    let grammar = Grammar::new("S", grammar, terminals.clone());
+    let grammar = Grammar::new("Start", grammar, terminals.clone());
     let mut parser = Tabler::new(grammar);
 
     println!("FIRST table: {:?}", parser.first);
@@ -72,6 +75,6 @@ fn main() {
     }
     println!("\n{:?}", parser.actions);
 
-    let mut dfa = Dfa::new(["1", "+", "0"].into_iter(), parser.actions);
+    let mut dfa = Dfa::new(["ident", "+", "int"].into_iter(), parser.actions);
     dfa.start()
 }

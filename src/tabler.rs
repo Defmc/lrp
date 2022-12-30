@@ -17,9 +17,9 @@ impl Tabler {
             grammar,
             ..Default::default()
         };
-        buf.first = dbg!(buf.gen_first());
+        buf.first = buf.gen_first();
         buf.proc_first();
-        buf.follow = dbg!(buf.gen_follow());
+        buf.follow = buf.gen_follow();
         buf.proc_follow();
         buf
     }
@@ -98,6 +98,7 @@ impl Tabler {
         for (name, firsts) in input {
             table.insert(name, Set::new());
             for first in firsts {
+                println!("{first}");
                 if self.grammar.is_terminal(first) {
                     table.get_mut(name).unwrap().insert(first);
                 } else {
@@ -153,26 +154,24 @@ impl Tabler {
         let mut new_state = State::new();
         for pos in &state {
             if let Some(top) = pos.top() {
+                println!("getting closures for {pos}");
                 if self.grammar.is_terminal(&top) {
                     continue;
                 }
-                let look = if let Some(locus) = pos.locus() {
-                    if self.grammar.is_terminal(&locus) {
-                        let mut look = pos.look.clone();
-                        look.insert(locus);
-                        look
-                    } else {
-                        self.first_of(&pos.next_and_look()).clone()
-                    }
+                let look = if let Some(_) = pos.locus() {
+                    self.first_of(&pos.next_and_look()).clone()
                 } else {
-                    self.follow[top].clone()
+                    pos.look.clone()
+                    // Set::from([crate::EOF])
                 };
                 for prod in self.grammar.rules[top].prods() {
+                    println!("\t[{}]", Position::new(top, prod.clone(), 0, look.clone()));
                     new_state.insert(Position::new(top, prod.clone(), 0, look.clone()));
                 }
             }
         }
         new_state.extend(state);
+        println!("result: {new_state:?}\n");
         new_state
     }
 
@@ -194,6 +193,7 @@ impl Tabler {
 
     pub fn proc_closures(&mut self) {
         self.proc_closures_first_row();
+        println!("{:?}", self.states[0]);
         let mut idx = 0;
         while idx < self.states.len() {
             let row = self.states[idx].clone();
@@ -203,6 +203,7 @@ impl Tabler {
                 } else {
                     continue;
                 };
+                println!("goto({idx}, {s})");
                 self.kernels.push((kernel, self.states.len()));
                 self.states.push(closures);
             }
@@ -546,44 +547,5 @@ mod tests {
             tabler.actions,
         );
         //dfa.start();
-    }
-
-    #[test]
-    fn mul_ambiguous() {
-        let grammar = crate::grammar! {
-            "S" -> "N",
-            "N" -> "n"
-                | "M",
-            "M" -> "N" "*" "N"
-        };
-
-        let grammar = Grammar::new("S", grammar, Set::from(["n", "*"]));
-        let mut tabler = Tabler::new(grammar);
-
-        assert_eq!(
-            tabler.first,
-            Map::from([
-                ("S", Set::from(["n"])),
-                ("N", Set::from(["n"])),
-                ("M", Set::from(["n"])),
-                (INTERNAL_START_RULE, Set::from(["n"])),
-            ])
-        );
-
-        assert_eq!(
-            tabler.follow,
-            Map::from([
-                ("M", Set::from(["\u{3}", "*"])),
-                ("N", Set::from(["\u{3}", "*"])),
-                ("S", Set::from(["\u{3}"])),
-                (INTERNAL_START_RULE, Set::from(["\u{3}"])),
-            ])
-        );
-
-        tabler.proc_closures();
-        tabler.proc_actions();
-
-        let mut dfa = Dfa::new(vec![].into_iter(), tabler.actions);
-        dfa.parse(vec!["n", "*", "n"].into_iter());
     }
 }
