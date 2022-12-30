@@ -158,9 +158,9 @@ impl Tabler {
                 }
                 let look = if let Some(locus) = pos.locus() {
                     if self.grammar.is_terminal(&locus) {
-                        let mut l = Set::from([locus]);
-                        l.extend(pos.look.clone());
-                        l
+                        let mut look = pos.look.clone();
+                        look.insert(locus);
+                        look
                     } else {
                         self.first_of(&pos.next_and_look()).clone()
                     }
