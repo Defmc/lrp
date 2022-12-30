@@ -43,6 +43,7 @@ impl Tabler {
     #[must_use]
     pub fn gen_follow(&self) -> Table {
         let mut table = Table::new();
+        table.insert(crate::INTERNAL_START_RULE, Set::from([crate::EOF]));
         for rule in self.grammar.rules() {
             for prod in rule.prods() {
                 for term_idx in 0..prod.len() - 1 {
@@ -66,7 +67,6 @@ impl Tabler {
                 }
             }
         }
-        table.insert(crate::INTERNAL_START_RULE, Set::from([crate::EOF]));
         table
     }
 
@@ -101,7 +101,6 @@ impl Tabler {
                 if self.grammar.is_terminal(first) {
                     table.get_mut(name).unwrap().insert(first);
                 } else {
-                    println!("{first}");
                     table
                         .get_mut(name)
                         .unwrap() // a
@@ -159,7 +158,9 @@ impl Tabler {
                 }
                 let look = if let Some(locus) = pos.locus() {
                     if self.grammar.is_terminal(&locus) {
-                        Set::from([locus])
+                        let mut l = Set::from([locus]);
+                        l.extend(pos.look.clone());
+                        l
                     } else {
                         self.first_of(&pos.next_and_look()).clone()
                     }
@@ -197,7 +198,6 @@ impl Tabler {
         while idx < self.states.len() {
             let row = self.states[idx].clone();
             for s in self.grammar.symbols() {
-                println!("\ngoto({idx}, {s})");
                 let (kernel, closures) = if let Some((k, c)) = self.goto(row.clone(), &s) {
                     (k, c)
                 } else {
@@ -218,32 +218,20 @@ impl Tabler {
 
     #[must_use]
     pub fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
-        println!("entries for {sym}:");
-        for kernel in &kernels {
-            println!("\t{kernel}");
-        }
         let kernels: State = kernels
             .into_iter()
             .filter(|p| p.top() == Some(&sym))
             .filter_map(|p| p.clone_next())
             .collect();
-        println!("goto's:");
-        for goto in &kernels {
-            println!("\t{goto}");
-        }
-        if let Some(state) =
-            self.kernels
-                .iter()
-                .find_map(|(k, s)| if k == &kernels { Some(s) } else { None })
+        if self
+            .kernels
+            .iter()
+            .find_map(|(k, s)| if k == &kernels { Some(s) } else { None })
+            .is_some()
         {
-            println!("repeated (state {state})");
             None?;
         }
         let new = self.prop_closure(kernels.clone());
-        println!("closures");
-        for closure in &new {
-            println!("\t{closure}");
-        }
         if new.is_empty() {
             None
         } else {
@@ -253,13 +241,11 @@ impl Tabler {
 
     pub fn proc_actions(&mut self) {
         let start = self.basis_pos().rule;
-        for (i, row) in self.states.iter().enumerate() {
-            println!("building [{i}]");
+        for row in self.states.iter() {
             let mut map: Map<Term, Action> = Map::new();
             for item in row {
                 for (term, act) in self.decision(start, item) {
                     if map.contains_key(term) && map[term] != act {
-                        println!("CONFLICT [{i}:{term}]: {:?} and {act:?}", map[term]);
                         *map.get_mut(term).unwrap() =
                             Action::Conflict(Box::new(map.get(term).unwrap().clone()), act.into());
                     } else {
@@ -274,7 +260,6 @@ impl Tabler {
     #[must_use]
     pub fn decision(&self, start: Rule, pos: &Position) -> Map<Term, Action> {
         if let Some(locus) = pos.top() {
-            println!("{pos}");
             let next = pos.clone_next().unwrap();
             let state = self
                 .kernels
@@ -282,10 +267,8 @@ impl Tabler {
                 .find_map(|(k, s)| if k.contains(&next) { Some(*s) } else { None })
                 .expect("`kernels` is incomplete");
             if self.grammar.is_terminal(&locus) {
-                println!("shift({state})");
                 Map::from([(locus, Action::Shift(state))])
             } else {
-                println!("goto({state})");
                 Map::from([(locus, Action::Goto(state))])
             }
         } else {
@@ -335,15 +318,6 @@ impl Tabler {
             };
         }
         firsts
-    }
-
-    pub fn print_states(&self) {
-        for (kernel, i) in &self.kernels {
-            println!("state {i}: {:?}", kernel);
-            for closure in &self.states[*i] {
-                println!("\t{closure}");
-            }
-        }
     }
 }
 
@@ -558,8 +532,8 @@ mod tests {
             Map::from([
                 ("Add", Set::from(["\u{3}", ")", "+"])),
                 ("Factor", Set::from(["\u{3}", ")", "*", "+"])),
-                ("Start", Set::from(["\u{3}"])),
                 ("Term", Set::from(["\u{3}", ")", "*", "+"])),
+                ("Start", Set::from(["\u{3}"])),
                 (INTERNAL_START_RULE, Set::from(["\u{3}"])),
             ])
         );
@@ -610,6 +584,6 @@ mod tests {
         tabler.proc_actions();
 
         let mut dfa = Dfa::new(vec![].into_iter(), tabler.actions);
-        dfa.parse(vec!["n"].into_iter());
+        dfa.parse(vec!["n", "*", "n"].into_iter());
     }
 }
