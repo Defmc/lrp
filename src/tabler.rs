@@ -158,11 +158,10 @@ impl Tabler {
                 if self.grammar.is_terminal(&top) {
                     continue;
                 }
-                let look = if let Some(_) = pos.locus() {
-                    self.first_of(&pos.next_and_look()).clone()
+                let look = if let Some(locus) = pos.locus() {
+                    self.first_of(&Set::from([locus])).clone()
                 } else {
                     pos.look.clone()
-                    // Set::from([crate::EOF])
                 };
                 for prod in self.grammar.rules[top].prods() {
                     println!("\t[{}]", Position::new(top, prod.clone(), 0, look.clone()));
@@ -198,12 +197,12 @@ impl Tabler {
         while idx < self.states.len() {
             let row = self.states[idx].clone();
             for s in self.grammar.symbols() {
+                println!("goto({idx}, {s})");
                 let (kernel, closures) = if let Some((k, c)) = self.goto(row.clone(), &s) {
                     (k, c)
                 } else {
                     continue;
                 };
-                println!("goto({idx}, {s})");
                 self.kernels.push((kernel, self.states.len()));
                 self.states.push(closures);
             }
@@ -219,11 +218,7 @@ impl Tabler {
 
     #[must_use]
     pub fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
-        let kernels: State = kernels
-            .into_iter()
-            .filter(|p| p.top() == Some(&sym))
-            .filter_map(|p| p.clone_next())
-            .collect();
+        let kernels = Self::sym_filter(&kernels, sym);
         if self
             .kernels
             .iter()
@@ -245,7 +240,7 @@ impl Tabler {
         for row in self.states.iter() {
             let mut map: Map<Term, Action> = Map::new();
             for item in row {
-                for (term, act) in self.decision(start, item) {
+                for (term, act) in self.decision(start, item, row) {
                     if map.contains_key(term) && map[term] != act {
                         *map.get_mut(term).unwrap() =
                             Action::Conflict(Box::new(map.get(term).unwrap().clone()), act.into());
@@ -259,13 +254,13 @@ impl Tabler {
     }
 
     #[must_use]
-    pub fn decision(&self, start: Rule, pos: &Position) -> Map<Term, Action> {
+    pub fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action> {
         if let Some(locus) = pos.top() {
-            let next = pos.clone_next().unwrap();
+            let filter = Self::sym_filter(row, &locus);
             let state = self
                 .kernels
                 .iter()
-                .find_map(|(k, s)| if k.contains(&next) { Some(*s) } else { None })
+                .find_map(|(k, s)| if k == &filter { Some(*s) } else { None })
                 .expect("`kernels` is incomplete");
             if self.grammar.is_terminal(&locus) {
                 Map::from([(locus, Action::Shift(state))])
@@ -287,6 +282,15 @@ impl Tabler {
                 })
                 .collect()
         }
+    }
+
+    #[must_use]
+    pub fn sym_filter(state: &State, sym: &Term) -> State {
+        state
+            .into_iter()
+            .filter(|p| p.top() == Some(&sym))
+            .filter_map(|p| p.clone_next())
+            .collect()
     }
 
     #[must_use]
@@ -542,10 +546,7 @@ mod tests {
         tabler.proc_closures();
         tabler.proc_actions();
 
-        let _dfa = Dfa::new(
-            vec!["int", "+", "ident", "*", "ident", "+", "int"].into_iter(),
-            tabler.actions,
-        );
-        //dfa.start();
+        let mut dfa = Dfa::new(vec!["int", "*", "ident"].into_iter(), tabler.actions);
+        dfa.start();
     }
 }
