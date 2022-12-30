@@ -114,6 +114,7 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     pub fn reset(&mut self) {
         self.finished = None;
         self.stack.clear();
+        self.stack.push(StackEl::State(0));
         self.top = 0;
     }
 }
