@@ -375,8 +375,8 @@ mod tests {
             tabler.follow,
             Map::from([
                 ("C", Set::from(["\u{3}", "c", "d"])),
-                ("LRP'START", Set::from(["\u{3}"])),
                 ("S", Set::from(["\u{3}"])),
+                (INTERNAL_START_RULE, Set::from(["\u{3}"])),
             ])
         );
 
@@ -437,7 +437,7 @@ mod tests {
                 ("B", Set::from(["\u{3}", "*", "+"])),
                 ("E", Set::from(["\u{3}", "*", "+"])),
                 ("S", Set::from(["\u{3}"])),
-                ("LRP'START", Set::from(["\u{3}"])),
+                (INTERNAL_START_RULE, Set::from(["\u{3}"])),
             ])
         );
 
@@ -511,7 +511,7 @@ mod tests {
                 ("E", Set::from(["\u{3}"])),
                 ("F", Set::from(["\u{3}"])),
                 ("S", Set::from(["\u{3}"])),
-                ("LRP'START", Set::from(["\u{3}"])),
+                (INTERNAL_START_RULE, Set::from(["\u{3}"])),
             ])
         );
 
@@ -547,9 +547,9 @@ mod tests {
             Map::from([
                 ("Add", Set::from(["(", "ident", "int"])),
                 ("Factor", Set::from(["(", "ident", "int"])),
-                ("LRP'START", Set::from(["(", "ident", "int"])),
                 ("Start", Set::from(["(", "ident", "int"])),
                 ("Term", Set::from(["(", "ident", "int"])),
+                (INTERNAL_START_RULE, Set::from(["(", "ident", "int"])),
             ])
         );
 
@@ -560,7 +560,7 @@ mod tests {
                 ("Factor", Set::from(["\u{3}", ")", "*", "+"])),
                 ("Start", Set::from(["\u{3}"])),
                 ("Term", Set::from(["\u{3}", ")", "*", "+"])),
-                ("LRP'START", Set::from(["\u{3}"])),
+                (INTERNAL_START_RULE, Set::from(["\u{3}"])),
             ])
         );
 
@@ -589,20 +589,20 @@ mod tests {
         assert_eq!(
             tabler.first,
             Map::from([
-                ("LRP'START", Set::from(["n"])),
                 ("S", Set::from(["n"])),
                 ("N", Set::from(["n"])),
-                ("M", Set::from(["n"]))
+                ("M", Set::from(["n"])),
+                (INTERNAL_START_RULE, Set::from(["n"])),
             ])
         );
 
         assert_eq!(
             tabler.follow,
             Map::from([
-                ("LRP'START", Set::from(["\u{3}"])),
                 ("M", Set::from(["\u{3}", "*"])),
                 ("N", Set::from(["\u{3}", "*"])),
                 ("S", Set::from(["\u{3}"])),
+                (INTERNAL_START_RULE, Set::from(["\u{3}"])),
             ])
         );
 
