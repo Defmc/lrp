@@ -197,12 +197,7 @@ impl Tabler {
     #[must_use]
     pub fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
         let kernels = Self::sym_filter(&kernels, sym);
-        if self
-            .kernels
-            .iter()
-            .find_map(|(k, s)| if k == &kernels { Some(s) } else { None })
-            .is_some()
-        {
+        if self.kernels.contains_key(&kernels) {
             None?;
         }
         let new = self.prop_closure(kernels.clone());
@@ -210,24 +205,6 @@ impl Tabler {
             None
         } else {
             Some((kernels, new))
-        }
-    }
-
-    pub fn proc_actions(&mut self) {
-        let start = self.basis_pos().rule;
-        for row in self.states.iter() {
-            let mut map: Map<Term, Action> = Map::new();
-            for item in row {
-                for (term, act) in self.decision(start, item, row) {
-                    if map.contains_key(term) && map[term] != act {
-                        *map.get_mut(term).unwrap() =
-                            Action::Conflict(Box::new(map.get(term).unwrap().clone()), act.into());
-                    } else {
-                        map.insert(term, act);
-                    }
-                }
-            }
-            self.actions.push(map);
         }
     }
 
@@ -306,21 +283,15 @@ impl Tabler {
 
 #[cfg(test)]
 mod tests {
-    use crate::{grammar, Dfa, Grammar, Item, Map, Set, StackEl, Tabler, INTERNAL_START_RULE};
+    use crate::{grammars_tests, Map, Set, Tabler, INTERNAL_START_RULE};
     use pretty_assertions::assert_eq;
 
     #[test]
     pub fn dragon_book() {
-        let grammar = grammar! {
-            "S" -> "C" "C",
-            "C" -> "c" "C"
-                | "d"
-        };
-        let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
-        let mut tabler = Tabler::new(grammar);
+        let table = Tabler::new(grammars_tests::dragon_book());
 
         assert_eq!(
-            tabler.first,
+            table.first,
             Map::from([
                 ("S", Set::from(["c", "d"])),
                 ("C", Set::from(["c", "d"])),
@@ -329,57 +300,21 @@ mod tests {
         );
 
         assert_eq!(
-            tabler.follow,
+            table.follow,
             Map::from([
                 ("C", Set::from(["\u{3}", "c", "d"])),
                 ("S", Set::from(["\u{3}"])),
                 (INTERNAL_START_RULE, Set::from(["\u{3}"])),
             ])
         );
-
-        tabler.proc_closures();
-        tabler.proc_actions();
-
-        let mut dfa = Dfa::new(vec!["c", "d", "d"].into_iter(), tabler.actions);
-        dfa.start();
-
-        assert_eq!(
-            dfa.stack,
-            vec![
-                StackEl::State(0),
-                StackEl::Item(Item::Compound(
-                    "S",
-                    vec![
-                        Item::Compound("C", vec![Item::Simple("d")]),
-                        Item::Compound(
-                            "C",
-                            vec![
-                                Item::Compound("C", vec![Item::Simple("d")]),
-                                Item::Simple("c"),
-                            ],
-                        ),
-                    ],
-                )),
-                StackEl::State(2),
-            ]
-        );
     }
 
     #[test]
     fn wikipedia() {
-        let grammar = grammar! {
-            "S" -> "E",
-            "E" -> "E" "*" "B"
-                | "E" "+" "B"
-                | "B",
-            "B" -> "0" | "1"
-        };
-
-        let grammar = Grammar::new("S", grammar, Set::from(["0", "1", "+", "*"]));
-        let mut tabler = Tabler::new(grammar);
+        let table = Tabler::new(grammars_tests::wikipedia());
 
         assert_eq!(
-            tabler.first,
+            table.first,
             Map::from([
                 ("S", Set::from(["0", "1"])),
                 ("E", Set::from(["0", "1"])),
@@ -389,7 +324,7 @@ mod tests {
         );
 
         assert_eq!(
-            tabler.follow,
+            table.follow,
             Map::from([
                 ("B", Set::from(["\u{3}", "*", "+"])),
                 ("E", Set::from(["\u{3}", "*", "+"])),
@@ -397,55 +332,15 @@ mod tests {
                 (INTERNAL_START_RULE, Set::from(["\u{3}"])),
             ])
         );
-
-        tabler.proc_closures();
-        tabler.proc_actions();
-
-        let mut dfa = Dfa::new(vec!["1", "+", "1"].into_iter(), tabler.actions);
-        dfa.start();
-
-        assert_eq!(
-            dfa.stack,
-            vec![
-                StackEl::State(0),
-                StackEl::Item(Item::Compound(
-                    "S",
-                    vec![Item::Compound(
-                        "E",
-                        vec![
-                            Item::Compound("B", vec![Item::Simple("1")]),
-                            Item::Simple("+"),
-                            Item::Compound("E", vec![Item::Compound("B", vec![Item::Simple("1")])]),
-                        ],
-                    )]
-                )),
-                StackEl::State(5),
-            ]
-        );
     }
 
     // https://smlweb.cpsc.ucalgary.ca/
     #[test]
     fn ucalgary_uni_oth_lr1() {
-        let grammar = grammar! {
-            "S" -> "E",
-            "E" ->	"d" "D"
-                |	"D"
-                |	"F",
-            "F" ->	"e" "C"
-                |	"C",
-            "D" ->	"d" "e" "B" "b"
-                |	"e" "A" "c",
-            "C" ->	"e" "d" "B" "c"
-                |	"d" "A" "b",
-            "B" ->	"a",
-            "A" ->	"a"
-        };
+        let table = Tabler::new(grammars_tests::ucalgary_uni_oth_lr1());
 
-        let grammar = Grammar::new("S", grammar, Set::from(["a", "b", "c", "d", "e"]));
-        let mut tabler = Tabler::new(grammar);
         assert_eq!(
-            tabler.first,
+            table.first,
             Map::from([
                 ("A", Set::from(["a"])),
                 ("B", Set::from(["a"])),
@@ -459,7 +354,7 @@ mod tests {
         );
 
         assert_eq!(
-            tabler.follow,
+            table.follow,
             Map::from([
                 ("A", Set::from(["b", "c"])),
                 ("B", Set::from(["b", "c"])),
@@ -471,36 +366,14 @@ mod tests {
                 (INTERNAL_START_RULE, Set::from(["\u{3}"])),
             ])
         );
-
-        tabler.proc_closures();
-        tabler.proc_actions();
-
-        let mut dfa = Dfa::new(vec!["e", "a", "c"].into_iter(), tabler.actions);
-        dfa.start();
     }
 
     #[test]
     fn serokell() {
-        let grammar = grammar! {
-           "Start" -> "Add",
-           "Add" -> "Add" "+" "Factor"
-               | "Factor",
-           "Factor" -> "Factor" "*" "Term"
-               | "Term",
-           "Term" -> "(" "Add" ")"
-               | "int"
-               | "ident"
-        };
-
-        let grammar = Grammar::new(
-            "Start",
-            grammar,
-            Set::from(["int", "ident", "(", ")", "+", "*"]),
-        );
-        let mut tabler = Tabler::new(grammar);
+        let table = Tabler::new(grammars_tests::serokell());
 
         assert_eq!(
-            tabler.first,
+            table.first,
             Map::from([
                 ("Add", Set::from(["(", "ident", "int"])),
                 ("Factor", Set::from(["(", "ident", "int"])),
@@ -511,7 +384,7 @@ mod tests {
         );
 
         assert_eq!(
-            tabler.follow,
+            table.follow,
             Map::from([
                 ("Add", Set::from(["\u{3}", ")", "+"])),
                 ("Factor", Set::from(["\u{3}", ")", "*", "+"])),
@@ -520,14 +393,26 @@ mod tests {
                 (INTERNAL_START_RULE, Set::from(["\u{3}"])),
             ])
         );
+    }
 
-        tabler.proc_closures();
-        tabler.proc_actions();
+    #[test]
+    pub fn puncs() {
+        let table = Tabler::new(grammars_tests::puncs());
 
-        let mut dfa = Dfa::new(vec!["int"].into_iter(), tabler.actions);
-        dfa.start();
-        dfa.parse(vec!["int", "*", "ident"].into_iter());
-        dfa.parse(vec!["int", "*", "(", "ident", "+", "ident", ")"].into_iter());
-        dfa.parse(vec!["(", "int", ")"].into_iter());
+        assert_eq!(
+            table.first,
+            Map::from([
+                ("LRP'START", Set::from(["(", "[", "{",])),
+                ("S", Set::from(["(", "[", "{",])),
+            ])
+        );
+
+        assert_eq!(
+            table.follow,
+            Map::from([
+                ("LRP'START", Set::from(["\u{3}",])),
+                ("S", Set::from(["\u{3}", ")", "]", "}",])),
+            ])
+        );
     }
 }

@@ -175,4 +175,25 @@ pub mod grammars_tests {
 
         Grammar::new("S", grammar, Set::from(["0", "1", "+", "*"]))
     }
+
+    pub fn puncs() -> Grammar {
+        /*
+            S -> ( ).
+            S -> ( S ).
+            S -> [ ].
+            S -> [ S ].
+            S -> { }.
+            S -> { S }.
+        */
+        let grammar = grammar! {
+            "S" -> "(" ")"
+                | "(" "S" ")"
+                | "[" "]"
+                | "[" "S" "]"
+                | "{" "}"
+                | "{" "S" "}"
+        };
+
+        Grammar::new("S", grammar, Set::from(["(", ")", "[", "]", "{", "}"]))
+    }
 }
