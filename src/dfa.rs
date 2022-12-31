@@ -76,10 +76,6 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     }
 
     pub fn travel(&mut self, symbol: Term) {
-        println!(
-            "[{}][{symbol}]: {:?}\nstack: {:?}",
-            self.top, self.table[self.top][symbol], self.stack
-        );
         match &self.table[self.top][symbol] {
             Action::Shift(to) => self.shift(*to),
             Action::Goto(to) => self.goto(*to),

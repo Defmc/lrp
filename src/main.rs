@@ -75,6 +75,6 @@ fn main() {
     }
     println!("\n{:?}", parser.actions);
 
-    let mut dfa = Dfa::new(["ident", "+", "int"].into_iter(), parser.actions);
+    let mut dfa = Dfa::new(["ident", "*","(", "int", "+", "ident", ")"].into_iter(), parser.actions);
     dfa.start()
 }
