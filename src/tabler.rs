@@ -10,7 +10,7 @@ pub struct Tabler {
     pub follow: Table,
     pub actions: ActTable,
     pub states: Vec<State>,
-    pub kernels: Vec<(State, usize)>,
+    pub kernels: Map<State, usize>,
 }
 
 impl Tabler {
@@ -197,7 +197,7 @@ impl Tabler {
                 } else {
                     continue;
                 };
-                self.kernels.push((kernel, self.states.len()));
+                self.kernels.insert(kernel, self.states.len());
                 self.states.push(closures);
             }
             idx += 1;
@@ -206,7 +206,7 @@ impl Tabler {
 
     pub fn proc_closures_first_row(&mut self) {
         let start = self.prop_closure(State::from([self.basis_pos()]));
-        self.kernels.push((State::new(), 0));
+        self.kernels.insert(State::new(), 0);
         self.states.push(start.clone());
     }
 
