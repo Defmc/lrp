@@ -106,10 +106,7 @@ impl Tabler {
                 if self.grammar.is_terminal(first) {
                     table.get_mut(name).unwrap().insert(first);
                 } else {
-                    table
-                        .get_mut(name)
-                        .unwrap() // a
-                        .extend(&input[first]);
+                    table.get_mut(name).unwrap().extend(&input[first]);
                 }
             }
             if table[name].contains(name) {
@@ -138,19 +135,6 @@ impl Tabler {
             }
         }
         table
-    }
-
-    #[must_use]
-    pub fn pos<'a>(
-        &'a self,
-        rule: Rule,
-        pos: usize,
-        look: Set<Term>,
-    ) -> impl Iterator<Item = Position> + 'a {
-        self.grammar.rules[rule]
-            .prods
-            .iter()
-            .map(move |s| Position::new(rule, s.clone(), pos, look.clone()))
     }
 
     #[must_use]
