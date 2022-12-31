@@ -1,4 +1,7 @@
-use crate::{transitive, ActTable, Action, Grammar, Map, Position, Rule, Set, State, Table, Term};
+use crate::{
+    transitive, ActTable, Action, Grammar, Map, Position, Rule, Set, State, Table, Term, EOF,
+    INTERNAL_START_RULE,
+};
 
 #[derive(Debug, Default)]
 pub struct Tabler {
@@ -24,6 +27,7 @@ impl Tabler {
         buf
     }
 
+    /// Generates the first FIRST set iteration for the given grammar.
     /// # Panics
     /// Never.
     #[must_use]
@@ -38,12 +42,13 @@ impl Tabler {
         table
     }
 
+    /// Generates the first FOLLOW set iteration for the given grammar.
     /// # Panics
     /// Never.
     #[must_use]
     pub fn gen_follow(&self) -> Table {
         let mut table = Table::new();
-        table.insert(crate::INTERNAL_START_RULE, Set::from([crate::EOF]));
+        table.insert(INTERNAL_START_RULE, Set::from([EOF]));
         for rule in self.grammar.rules() {
             for prod in rule.prods() {
                 for term_idx in 0..prod.len() - 1 {
@@ -98,7 +103,6 @@ impl Tabler {
         for (name, firsts) in input {
             table.insert(name, Set::new());
             for first in firsts {
-                println!("{first}");
                 if self.grammar.is_terminal(first) {
                     table.get_mut(name).unwrap().insert(first);
                 } else {
@@ -154,7 +158,6 @@ impl Tabler {
         let mut new_state = State::new();
         for pos in &state {
             if let Some(top) = pos.top() {
-                println!("getting closures for {pos}");
                 if self.grammar.is_terminal(&top) {
                     continue;
                 }
@@ -164,13 +167,11 @@ impl Tabler {
                     pos.look.clone()
                 };
                 for prod in self.grammar.rules[top].prods() {
-                    println!("\t[{}]", Position::new(top, prod.clone(), 0, look.clone()));
                     new_state.insert(Position::new(top, prod.clone(), 0, look.clone()));
                 }
             }
         }
         new_state.extend(state);
-        println!("result: {new_state:?}\n");
         new_state
     }
 
@@ -181,23 +182,16 @@ impl Tabler {
 
     #[must_use]
     pub fn basis_pos(&self) -> Position {
-        let prod = &self.grammar.rules[crate::INTERNAL_START_RULE].prods[0];
-        Position::new(
-            crate::INTERNAL_START_RULE,
-            prod.clone(),
-            0,
-            Set::from([crate::EOF]),
-        )
+        let prod = &self.grammar.rules[INTERNAL_START_RULE].prods[0];
+        Position::new(INTERNAL_START_RULE, prod.clone(), 0, Set::from([EOF]))
     }
 
     pub fn proc_closures(&mut self) {
         self.proc_closures_first_row();
-        println!("{:?}", self.states[0]);
         let mut idx = 0;
         while idx < self.states.len() {
             let row = self.states[idx].clone();
             for s in self.grammar.symbols() {
-                println!("goto({idx}, {s})");
                 let (kernel, closures) = if let Some((k, c)) = self.goto(row.clone(), &s) {
                     (k, c)
                 } else {
@@ -328,12 +322,12 @@ impl Tabler {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Dfa, Grammar, Item, Map, Set, StackEl, Tabler, INTERNAL_START_RULE};
+    use crate::{grammar, Dfa, Grammar, Item, Map, Set, StackEl, Tabler, INTERNAL_START_RULE};
     use pretty_assertions::assert_eq;
 
     #[test]
     pub fn dragon_book() {
-        let grammar = crate::grammar! {
+        let grammar = grammar! {
             "S" -> "C" "C",
             "C" -> "c" "C"
                 | "d"
@@ -389,7 +383,7 @@ mod tests {
 
     #[test]
     fn wikipedia() {
-        let grammar = crate::grammar! {
+        let grammar = grammar! {
             "S" -> "E",
             "E" -> "E" "*" "B"
                 | "E" "+" "B"
@@ -449,7 +443,7 @@ mod tests {
     // https://smlweb.cpsc.ucalgary.ca/
     #[test]
     fn ucalgary_uni_oth_lr1() {
-        let grammar = crate::grammar! {
+        let grammar = grammar! {
             "S" -> "E",
             "E" ->	"d" "D"
                 |	"D"
@@ -503,7 +497,7 @@ mod tests {
 
     #[test]
     fn serokell() {
-        let grammar = crate::grammar! {
+        let grammar = grammar! {
            "Start" -> "Add",
            "Add" -> "Add" "+" "Factor"
                | "Factor",
@@ -546,7 +540,10 @@ mod tests {
         tabler.proc_closures();
         tabler.proc_actions();
 
-        let mut dfa = Dfa::new(vec!["int", "*", "ident"].into_iter(), tabler.actions);
+        let mut dfa = Dfa::new(vec!["int"].into_iter(), tabler.actions);
         dfa.start();
+        dfa.parse(vec!["int", "*", "ident"].into_iter());
+        dfa.parse(vec!["int", "*", "(", "ident", "+", "ident", ")"].into_iter());
+        dfa.parse(vec!["(", "int", ")"].into_iter());
     }
 }
