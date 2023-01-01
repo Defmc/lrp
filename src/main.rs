@@ -11,13 +11,13 @@ fn main() {
     let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
     let inputs: &[&[&str]] = &[&["c", "d", "d"], &["d", "d"]];
     let mut parser = Clr::new(grammar);
-    print_tokens_table(parser.tables());
 
-    parser.proc_closures();
-    parser.proc_actions();
+    let tables = parser.tables();
 
-    print_states_table(parser.tables());
-    print_actions_table(parser.tables());
+    print_tokens_table(tables);
+
+    print_states_table(tables);
+    print_actions_table(tables);
 
     for input in inputs.into_iter().copied() {
         println!(
@@ -54,31 +54,20 @@ fn print_states_table(table: &Tabler) {
 
     out.add_row(row!["", format!("{internal:?}"), "0", format!("{start:?}")]);
 
-    let mut idx = 0;
-    let mut virt_len = 0;
-    let mut history = Map::new();
-    while idx < table.states.len() {
-        let row = table.states[idx].clone();
-        for s in &syms {
-            let kernel = Tabler::sym_filter(&row, &s);
+    for (i, state) in table.states.iter().enumerate() {
+        for sym in &syms {
+            let kernel = Tabler::sym_filter(state, &sym);
             if kernel.is_empty() {
                 continue;
             }
-            let state_idx = if !history.contains_key(&kernel) {
-                history.insert(kernel.clone(), virt_len + 1);
-                virt_len += 1;
-                virt_len
-            } else {
-                history[&kernel]
-            };
+            let state_id = table.kernels[&kernel];
             out.add_row(row![
-                format!("goto({idx}, {s})"),
+                format!("goto({i}, {sym})"),
                 format!("{kernel:?}"),
-                format!("{state_idx}"),
-                format!("{:?}", table.states[table.kernels[&kernel]])
+                format!("{state_id}"),
+                format!("{:?}", table.states[state_id])
             ]);
         }
-        idx += 1;
     }
 
     out.printstd();
@@ -104,7 +93,13 @@ fn print_actions_table(table: &Tabler) {
         .iter()
         .chain(["State"].iter())
         .chain(nonterminals.iter())
-        .map(|t| Cell::new(t))
+        .map(|t| {
+            if t == &lrp::EOF {
+                Cell::new("EOF (\\0x03)")
+            } else {
+                Cell::new(t)
+            }
+        })
         .collect();
 
     out.set_titles(Row::new(rows));
