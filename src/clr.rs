@@ -74,7 +74,11 @@ impl Parser for Clr {
                 } else {
                     continue;
                 };
-                self.table.kernels.insert(kernel, self.table.states.len());
+                debug_assert!(self
+                    .table
+                    .kernels
+                    .insert(kernel, self.table.states.len())
+                    .is_none());
                 self.table.states.push(closures);
             }
             idx += 1;
@@ -102,13 +106,12 @@ impl Parser for Clr {
             let state = self
                 .table
                 .kernels
-                .iter()
-                .find_map(|(k, s)| if k == &filter { Some(*s) } else { None })
+                .get(&filter)
                 .expect("`kernels` is incomplete");
             if self.table.grammar.is_terminal(&locus) {
-                Map::from([(locus, Action::Shift(state))])
+                Map::from([(locus, Action::Shift(*state))])
             } else {
-                Map::from([(locus, Action::Goto(state))])
+                Map::from([(locus, Action::Goto(*state))])
             }
         } else {
             pos.look
