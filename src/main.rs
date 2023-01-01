@@ -3,7 +3,9 @@ use prettytable::{row, Cell, Row, Table};
 
 fn main() {
     let grammar = lrp::grammar! {
-        "S" -> "d"
+        "S" -> "C" "C",
+        "C" -> "c" "C"
+            | "d"
     };
 
     let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
@@ -44,6 +46,11 @@ fn print_states_table(table: &Tabler) {
 
     let internal = table.basis_pos();
     let start = &table.states[0];
+    let syms: Vec<_> = table
+        .grammar
+        .symbols()
+        .chain(["LRP'START", lrp::EOF].into_iter())
+        .collect();
 
     out.add_row(row!["", format!("{internal:?}"), "0", format!("{start:?}")]);
 
@@ -52,7 +59,7 @@ fn print_states_table(table: &Tabler) {
     let mut history = Map::new();
     while idx < table.states.len() {
         let row = table.states[idx].clone();
-        for s in table.grammar.symbols() {
+        for s in &syms {
             let kernel = Tabler::sym_filter(&row, &s);
             if kernel.is_empty() {
                 continue;
@@ -83,7 +90,7 @@ fn print_actions_table(table: &Tabler) {
     let (terminals, nonterminals) = table
         .grammar
         .symbols()
-        .chain(["LRP'START"].into_iter())
+        .chain(["LRP'START", lrp::EOF].into_iter())
         .fold((Set::new(), Set::new()), |(mut ts, mut nts), s| {
             if table.grammar.is_terminal(&s) {
                 ts.insert(s);
