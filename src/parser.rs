@@ -27,7 +27,7 @@ pub trait Parser {
 
     #[must_use]
     fn validate<I: IntoIterator<Item = Term>>(&self, buffer: I) -> bool {
-        let _ = self.parse(buffer);
+        let a = self.parse(buffer);
         // TODO: Error handling
         true
     }

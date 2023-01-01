@@ -7,6 +7,7 @@ fn main() {
     };
 
     let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
+    let inputs: &[&[&str]] = &[&["c", "d", "d"], &["d", "d"]];
     let mut parser = Clr::new(grammar);
     print_tokens_table(parser.tables());
 
@@ -15,6 +16,13 @@ fn main() {
 
     print_states_table(parser.tables());
     print_actions_table(parser.tables());
+
+    for input in inputs.into_iter().copied() {
+        println!(
+            "input: {input:?}\noutput: {:?}",
+            parser.parse(input.into_iter().copied())
+        )
+    }
 }
 
 fn print_tokens_table(table: &Tabler) {
