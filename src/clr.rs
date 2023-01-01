@@ -1,4 +1,4 @@
-use crate::{ActTable, Action, Grammar, Map, Parser, Position, Rule, Set, State, Tabler, Term};
+use crate::{Action, Grammar, Map, Parser, Position, Rule, Set, State, Tabler, Term};
 
 pub struct Clr {
     pub table: Tabler,
@@ -13,11 +13,14 @@ impl Parser for Clr {
         parser
     }
 
-    fn gotos(&self) -> &ActTable {
-        &self.table.actions
+    #[must_use]
+    fn tables(&self) -> &Tabler {
+        &self.table
     }
-    fn actions(&self) -> &ActTable {
-        &self.table.actions
+
+    #[must_use]
+    fn tables_mut(&mut self) -> &mut Tabler {
+        &mut self.table
     }
 
     fn proc_actions(&mut self) {
@@ -78,15 +81,9 @@ impl Parser for Clr {
         }
     }
 
-    fn proc_closures_first_row(&mut self) {
-        let start = self.prop_closure(State::from([self.table.basis_pos()]));
-        self.table.kernels.insert(State::new(), 0);
-        self.table.states.push(start.clone());
-    }
-
     #[must_use]
     fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
-        let kernels = Self::sym_filter(&kernels, sym);
+        let kernels = Tabler::sym_filter(&kernels, sym);
         if self.table.kernels.contains_key(&kernels) {
             None?;
         }
@@ -101,7 +98,7 @@ impl Parser for Clr {
     #[must_use]
     fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action> {
         if let Some(locus) = pos.top() {
-            let filter = Self::sym_filter(row, &locus);
+            let filter = Tabler::sym_filter(row, &locus);
             let state = self
                 .table
                 .kernels
@@ -147,6 +144,14 @@ impl Parser for Clr {
             new.insert(state);
         }
         new
+    }
+}
+
+impl Clr {
+    pub fn proc_closures_first_row(&mut self) {
+        let start = self.prop_closure(State::from([self.table.basis_pos()]));
+        self.table.kernels.insert(State::new(), 0);
+        self.table.states.push(start.clone());
     }
 }
 
