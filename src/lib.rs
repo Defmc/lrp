@@ -5,10 +5,15 @@ pub const INTERNAL_START_RULE: &str = "LRP'START";
 
 pub mod grammar;
 pub use grammar::*;
+
 pub mod parser;
 pub use parser::*;
+
 pub mod clr;
 pub use clr::Clr;
+
+pub mod lalr;
+pub use lalr::Lalr;
 
 /// grammars.
 /// rule:

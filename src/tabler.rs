@@ -154,6 +154,15 @@ impl Tabler {
         }
         firsts
     }
+
+    #[must_use]
+    pub fn sym_filter(state: &State, sym: &Term) -> State {
+        state
+            .into_iter()
+            .filter(|p| p.top() == Some(&sym))
+            .filter_map(|p| p.clone_next())
+            .collect()
+    }
 }
 
 #[cfg(test)]

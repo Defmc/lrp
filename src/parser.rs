@@ -1,5 +1,5 @@
 use crate::{
-    transitive, ActTable, Action, Dfa, Grammar, Item, Map, Position, Rule, StackEl, State, Term,
+    transitive, Action, Dfa, Grammar, Item, Map, Position, Rule, StackEl, State, Tabler, Term,
 };
 
 pub trait Parser {
@@ -10,7 +10,7 @@ pub trait Parser {
 
     #[must_use]
     fn dfa<I: Iterator<Item = Term>>(&self, buffer: I) -> Dfa<I> {
-        Dfa::new(buffer, self.actions().clone())
+        Dfa::new(buffer, self.tables().actions.clone())
     }
 
     #[must_use]
@@ -31,12 +31,6 @@ pub trait Parser {
         // TODO: Error handling
         true
     }
-
-    #[must_use]
-    fn gotos(&self) -> &ActTable;
-
-    #[must_use]
-    fn actions(&self) -> &ActTable;
 
     #[must_use]
     fn closure(&self, state: State) -> State;
@@ -65,22 +59,17 @@ pub trait Parser {
         new
     }
 
-    fn proc_closures_first_row(&mut self);
-
     fn proc_closures(&mut self);
 
     #[must_use]
     fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)>;
 
     #[must_use]
-    fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action>;
+    fn tables(&self) -> &Tabler;
 
     #[must_use]
-    fn sym_filter(state: &State, sym: &Term) -> State {
-        state
-            .into_iter()
-            .filter(|p| p.top() == Some(&sym))
-            .filter_map(|p| p.clone_next())
-            .collect()
-    }
+    fn tables_mut(&mut self) -> &mut Tabler;
+
+    #[must_use]
+    fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action>;
 }
