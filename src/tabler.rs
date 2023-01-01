@@ -1,6 +1,5 @@
 use crate::{
-    transitive, ActTable, Action, Grammar, Map, Position, Rule, Set, State, Table, Term, EOF,
-    INTERNAL_START_RULE,
+    transitive, ActTable, Grammar, Map, Position, Set, State, Table, Term, EOF, INTERNAL_START_RULE,
 };
 
 #[derive(Debug, Default)]
@@ -138,133 +137,9 @@ impl Tabler {
     }
 
     #[must_use]
-    pub fn closure(&self, state: State) -> State {
-        let mut new_state = State::new();
-        for pos in &state {
-            if let Some(top) = pos.top() {
-                if self.grammar.is_terminal(&top) {
-                    continue;
-                }
-                let look = if let Some(locus) = pos.locus() {
-                    self.first_of(&Set::from([locus])).clone()
-                } else {
-                    pos.look.clone()
-                };
-                for prod in self.grammar.rules[top].prods() {
-                    new_state.insert(Position::new(top, prod.clone(), 0, look.clone()));
-                }
-            }
-        }
-        new_state.extend(state);
-        new_state
-    }
-
-    #[must_use]
-    pub fn prop_closure(&self, state: State) -> State {
-        Self::merged(transitive(state, |s| self.closure(s)))
-    }
-
-    #[must_use]
     pub fn basis_pos(&self) -> Position {
         let prod = &self.grammar.rules[INTERNAL_START_RULE].prods[0];
         Position::new(INTERNAL_START_RULE, prod.clone(), 0, Set::from([EOF]))
-    }
-
-    pub fn proc_closures(&mut self) {
-        self.proc_closures_first_row();
-        let mut idx = 0;
-        while idx < self.states.len() {
-            let row = self.states[idx].clone();
-            for s in self.grammar.symbols() {
-                let (kernel, closures) = if let Some((k, c)) = self.goto(row.clone(), &s) {
-                    (k, c)
-                } else {
-                    continue;
-                };
-                self.kernels.insert(kernel, self.states.len());
-                self.states.push(closures);
-            }
-            idx += 1;
-        }
-    }
-
-    pub fn proc_closures_first_row(&mut self) {
-        let start = self.prop_closure(State::from([self.basis_pos()]));
-        self.kernels.insert(State::new(), 0);
-        self.states.push(start.clone());
-    }
-
-    #[must_use]
-    pub fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
-        let kernels = Self::sym_filter(&kernels, sym);
-        if self.kernels.contains_key(&kernels) {
-            None?;
-        }
-        let new = self.prop_closure(kernels.clone());
-        if new.is_empty() {
-            None
-        } else {
-            Some((kernels, new))
-        }
-    }
-
-    #[must_use]
-    pub fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action> {
-        if let Some(locus) = pos.top() {
-            let filter = Self::sym_filter(row, &locus);
-            let state = self
-                .kernels
-                .iter()
-                .find_map(|(k, s)| if k == &filter { Some(*s) } else { None })
-                .expect("`kernels` is incomplete");
-            if self.grammar.is_terminal(&locus) {
-                Map::from([(locus, Action::Shift(state))])
-            } else {
-                Map::from([(locus, Action::Goto(state))])
-            }
-        } else {
-            pos.look
-                .iter()
-                .map(|l| {
-                    (
-                        l.clone(),
-                        if pos.rule == start {
-                            Action::Acc
-                        } else {
-                            Action::Reduce(pos.rule, pos.seq.clone())
-                        },
-                    )
-                })
-                .collect()
-        }
-    }
-
-    #[must_use]
-    pub fn sym_filter(state: &State, sym: &Term) -> State {
-        state
-            .into_iter()
-            .filter(|p| p.top() == Some(&sym))
-            .filter_map(|p| p.clone_next())
-            .collect()
-    }
-
-    #[must_use]
-    pub fn merged(states: State) -> State {
-        let mut new = State::new();
-        'outter: for state in states {
-            let keys: Vec<_> = new.iter().cloned().collect();
-            for key in keys {
-                if new.get(&key).unwrap().body_eq(&state) {
-                    let mut state = state;
-                    state.look.extend(new.get(&key).unwrap().look.clone());
-                    new.remove(&key);
-                    new.insert(state);
-                    continue 'outter;
-                }
-            }
-            new.insert(state);
-        }
-        new
     }
 
     #[must_use]
