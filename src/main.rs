@@ -21,7 +21,7 @@ fn main() {
     print_states_table(tables);
     print_actions_table(tables);
 
-    let mut dfa = parser.dfa([].iter().copied());
+    let mut dfa = parser.dfa([lrp::EOF, lrp::EOF].iter().copied());
     for input in inputs.iter() {
         dfa.reset();
         dfa.buffer = input.iter().copied().peekable();
@@ -98,7 +98,7 @@ fn print_actions_table(table: &Tabler) {
 
     let rows: Vec<_> = terminals
         .iter()
-        .chain(["state"].iter())
+        .chain(std::iter::once(&"state"))
         .chain(nonterminals.iter())
         .map(|t| Cell::new(&format!("{t:?}")))
         .collect();
@@ -109,21 +109,17 @@ fn print_actions_table(table: &Tabler) {
     for (state_idx, state) in table.actions.iter().enumerate() {
         row_buf.clear();
         for t in &terminals {
-            let item = if let Some(act) = state.get(t) {
-                format!("{act:?}")
-            } else {
-                String::new()
-            };
+            let item = state
+                .get(t)
+                .map_or_else(String::new, |act| format!("{act:?}"));
             row_buf.push(Cell::new(&item));
         }
         row_buf.push(Cell::new(&format!("{state_idx}")));
 
         for nt in &nonterminals {
-            let item = if let Some(act) = state.get(nt) {
-                format!("{act:?}")
-            } else {
-                String::new()
-            };
+            let item = state
+                .get(nt)
+                .map_or_else(String::new, |act| format!("{act:?}"));
             row_buf.push(Cell::new(&item));
         }
 
@@ -148,7 +144,7 @@ where
             state
                 .buffer
                 .clone()
-                .chain([lrp::EOF].into_iter())
+                .chain(std::iter::once(lrp::EOF))
                 .collect::<Vec<_>>()
         );
         let symbol = state.buffer.peek().unwrap_or(&lrp::EOF);
