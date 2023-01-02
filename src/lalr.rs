@@ -134,6 +134,7 @@ mod tests {
     #[test]
     pub fn dragon_book() {
         let lalr = Lalr::new(grammars_tests::dragon_book());
+        assert_eq!(0, lalr.tables().conflicts().count());
 
         assert!(lalr.validate(["d", "d"]));
         assert!(lalr.validate(["d", "c", "d"]));
@@ -170,6 +171,7 @@ mod tests {
     #[test]
     fn wikipedia() {
         let lalr = Lalr::new(grammars_tests::wikipedia());
+        assert_eq!(0, lalr.tables().conflicts().count());
 
         assert!(lalr.validate(["0"]));
         assert!(lalr.validate(["1"]));
@@ -208,11 +210,21 @@ mod tests {
     fn ucalgary_uni_oth_lr1() {
         let lalr = Lalr::new(grammars_tests::ucalgary_uni_oth_lr1());
         assert_eq!(2, lalr.tables().conflicts().count());
+
+        assert!(lalr.validate(["e", "a", "c"]));
+        assert!(lalr.validate(["d", "a", "b"]));
+        assert!(!lalr.validate(["d", "e", "a", "c"]));
+        assert!(!lalr.validate(["d", "e", "a", "b"]));
+        assert!(!lalr.validate(["e", "d", "a", "b"]));
+        assert!(!lalr.validate(["e", "d", "a", "c"]));
+        assert!(lalr.validate(["d", "d", "e", "a", "b"]));
+        assert!(lalr.validate(["e", "e", "d", "a", "c"]));
     }
 
     #[test]
     fn serokell() {
         let lalr = Lalr::new(grammars_tests::serokell());
+        assert_eq!(0, lalr.tables().conflicts().count());
 
         assert!(lalr.validate(["int"]));
         assert!(lalr.validate(["int", "*", "int"]));
@@ -239,6 +251,7 @@ mod tests {
     #[test]
     pub fn puncs() {
         let lalr = Lalr::new(grammars_tests::puncs());
+        assert_eq!(0, lalr.tables().conflicts().count());
 
         assert!(lalr.validate(["(", ")"]));
         assert!(lalr.validate(["[", "]"]));
