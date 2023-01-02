@@ -44,7 +44,7 @@ fn print_tokens_table(table: &Tabler) {
 
 fn print_states_table(table: &Tabler) {
     let mut out = Table::new();
-    out.set_titles(row!["goto(Idx, Term)", "kernel", "state", "closure"]);
+    out.set_titles(row!["goto(idx, term)", "kernel", "state", "closure"]);
 
     let internal = table.basis_pos();
     let start = &table.states[0];
@@ -100,13 +100,7 @@ fn print_actions_table(table: &Tabler) {
         .iter()
         .chain(["state"].iter())
         .chain(nonterminals.iter())
-        .map(|t| {
-            if t == &lrp::EOF {
-                Cell::new("EOF (\\0x03)")
-            } else {
-                Cell::new(t)
-            }
-        })
+        .map(|t| Cell::new(&format!("{t:?}")))
         .collect();
 
     out.set_titles(Row::new(rows));
@@ -154,7 +148,7 @@ where
             state
                 .buffer
                 .clone()
-                .chain(["EOF"].into_iter())
+                .chain([lrp::EOF].into_iter())
                 .collect::<Vec<_>>()
         );
         let symbol = state.buffer.peek().unwrap_or(&lrp::EOF);
