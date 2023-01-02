@@ -2,6 +2,7 @@ use crate::{dfa::Result, Dfa};
 use crate::{transitive, Action, Grammar, Item, Map, Position, Rule, StackEl, State, Tabler, Term};
 
 pub trait Parser {
+    #[allow(clippy::inline_always)]
     #[inline(always)]
     #[must_use]
     fn new(grammar: Grammar) -> Self
