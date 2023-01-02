@@ -100,7 +100,7 @@ pub struct Dfa<I: Iterator<Item = Term>> {
     pub stack: Vec<StackEl>,
     pub table: ActTable,
     pub top: usize,
-    pub finished: Option<bool>,
+    pub finished: bool,
 }
 
 impl<I: Iterator<Item = Term>> Dfa<I> {
@@ -111,7 +111,7 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
             buffer: buffer.peekable(),
             top: 0,
             table,
-            finished: None,
+            finished: false,
         }
     }
 
@@ -123,8 +123,13 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         Ok(())
     }
 
-    pub fn accept(&mut self) {
-        self.finished = Some(self.buffer.peek() == Some(&"$"));
+    pub fn accept(&mut self) -> Result<()> {
+        self.finished = true;
+        if self.buffer.peek() == Some(&crate::EOF) {
+            Ok(())
+        } else {
+            Err(Error::IncompleteExec)
+        }
     }
 
     pub fn start(&mut self) -> Result<()> {
@@ -132,7 +137,7 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     }
 
     pub fn trace(&mut self, mut f: impl FnMut(&mut Self)) -> Result<()> {
-        while self.finished.is_none() {
+        while !self.finished {
             f(self);
             let symbol = *self.buffer.peek().unwrap_or(&crate::EOF);
             self.travel(symbol)?;
@@ -146,12 +151,17 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     }
 
     pub fn travel(&mut self, symbol: Term) -> Result<()> {
-        match &self.table[self.top][symbol] {
+        let state = self.table.get(self.top).ok_or(Error::StateNotSpecified)?;
+        let action = state.get(symbol).ok_or_else(|| {
+            let expecteds = state.keys().copied().collect();
+            Error::UnexpectedToken(symbol, expecteds)
+        })?;
+        match action {
             Action::Shift(to) => self.shift(*to)?,
             Action::Goto(to) => self.goto(*to),
             Action::Reduce(name, prod) => self.reduce(name, &prod.clone())?,
-            Action::Acc => self.accept(),
-            Action::Conflict(a, b) => panic!("conflict between {a:?} and {b:?}"),
+            Action::Acc => self.accept()?,
+            Action::Conflict(a, b) => Err(Error::Conflict(*a.clone(), *b.clone()))?,
         }
         Ok(())
     }
@@ -183,7 +193,7 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     }
 
     pub fn reset(&mut self) {
-        self.finished = None;
+        self.finished = false;
         self.stack.clear();
         self.stack.push(StackEl::State(0));
         self.top = 0;
