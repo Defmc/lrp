@@ -57,6 +57,20 @@ impl fmt::Display for StackEl {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Error {
+    /// Found a unexpected token. Contains a vector with correct tokens after it
+    UnexpectedToken(Vec<Term>),
+    /// Unexpected buffer end. When receive `lrp::EOF` before finish it
+    UnexepectedEof,
+    /// Unsolved conflict. When the current state contains a conflicting action
+    Conflict(Action, Action),
+    /// Missing state. When reduce actions don't contains a previous state
+    MissingPreviousState,
+}
+
+pub type Result<T> = std::result::Result<T, Error>;
+
 #[derive(Debug, Clone)]
 pub struct Dfa<I: Iterator<Item = Term>> {
     pub buffer: Peekable<I>,
@@ -78,29 +92,29 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         }
     }
 
-    /// # Panics
-    /// When buffer is empty
-    pub fn shift(&mut self, to: usize) {
-        let item = Item::Simple(self.buffer.next().unwrap());
+    pub fn shift(&mut self, to: usize) -> Result<()> {
+        let item = Item::Simple(self.buffer.next().ok_or(Error::UnexepectedEof)?);
         self.stack.push(StackEl::Item(item));
         self.top = to;
         self.stack.push(StackEl::State(self.top));
+        Ok(())
     }
 
     pub fn accept(&mut self) {
         self.finished = Some(self.buffer.peek() == Some(&"$"));
     }
 
-    pub fn start(&mut self) {
-        self.trace(|_| {});
+    pub fn start(&mut self) -> Result<()> {
+        self.trace(|_| {})
     }
 
-    pub fn trace(&mut self, mut f: impl FnMut(&mut Self)) {
+    pub fn trace(&mut self, mut f: impl FnMut(&mut Self)) -> Result<()> {
         while self.finished.is_none() {
             f(self);
             let symbol = *self.buffer.peek().unwrap_or(&crate::EOF);
-            self.travel(symbol);
+            self.travel(symbol)?;
         }
+        Ok(())
     }
 
     pub fn goto(&mut self, to: usize) {
@@ -108,24 +122,21 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         self.top = to;
     }
 
-    /// # Panics
-    /// When trying to execute a conflicting action
-    pub fn travel(&mut self, symbol: Term) {
+    pub fn travel(&mut self, symbol: Term) -> Result<()> {
         match &self.table[self.top][symbol] {
-            Action::Shift(to) => self.shift(*to),
+            Action::Shift(to) => self.shift(*to)?,
             Action::Goto(to) => self.goto(*to),
-            Action::Reduce(name, prod) => self.reduce(name, &prod.clone()),
+            Action::Reduce(name, prod) => self.reduce(name, &prod.clone())?,
             Action::Acc => self.accept(),
             Action::Conflict(a, b) => panic!("conflict between {a:?} and {b:?}"),
         }
+        Ok(())
     }
 
-    /// # Panics
-    /// When missing state shifts
-    pub fn reduce(&mut self, name: RuleName, prod: &Rc<Production>) {
+    pub fn reduce(&mut self, name: RuleName, prod: &Rc<Production>) -> Result<()> {
         let mut item = Vec::with_capacity(prod.len());
         while item.len() != prod.len() {
-            let poped = self.stack.pop().unwrap();
+            let poped = self.stack.pop().ok_or(Error::UnexepectedEof)?;
             if let StackEl::Item(i) = poped {
                 item.push(i);
             }
@@ -142,10 +153,10 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
                     None
                 }
             })
-            .unwrap();
+            .ok_or(Error::MissingPreviousState)?;
         self.stack.push(StackEl::Item(item));
         self.top = state;
-        self.travel(name);
+        self.travel(name)
     }
 
     pub fn reset(&mut self) {
@@ -156,13 +167,13 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     }
 
     #[must_use]
-    pub fn parse(&mut self, input: I) -> StackEl {
+    pub fn parse(&mut self, input: I) -> Result<StackEl> {
         self.reset();
         self.buffer = input.peekable();
-        self.start();
+        self.start()?;
         let res = self.stack[1].clone();
         self.reset();
-        res
+        Ok(res)
     }
 
     #[must_use]
