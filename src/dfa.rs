@@ -64,7 +64,12 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     }
 
     pub fn start(&mut self) {
+        self.trace(|_| {});
+    }
+
+    pub fn trace(&mut self, mut f: impl FnMut(&mut Self)) {
         while self.finished.is_none() {
+            f(self);
             let symbol = *self.buffer.peek().unwrap_or(&crate::EOF);
             self.travel(symbol);
         }

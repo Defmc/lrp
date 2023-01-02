@@ -1,4 +1,6 @@
-use lrp::{Clr, Grammar, Map, Parser, Set, Tabler};
+use std::iter::Peekable;
+
+use lrp::{Clr, Dfa, Grammar, Parser, Set, Tabler, Term};
 use prettytable::{row, Cell, Row, Table};
 
 fn main() {
@@ -10,7 +12,7 @@ fn main() {
 
     let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
     let inputs: &[&[&str]] = &[&["c", "d", "d"], &["d", "d"]];
-    let mut parser = Clr::new(grammar);
+    let parser = Clr::new(grammar);
 
     let tables = parser.tables();
 
@@ -19,11 +21,11 @@ fn main() {
     print_states_table(tables);
     print_actions_table(tables);
 
+    let mut dfa = parser.dfa((&[]).into_iter().copied());
     for input in inputs.into_iter().copied() {
-        println!(
-            "input: {input:?}\noutput: {:?}",
-            parser.parse(input.into_iter().copied())
-        )
+        dfa.reset();
+        dfa.buffer = input.into_iter().copied().peekable();
+        print_proc_dfa(&mut dfa);
     }
 }
 
@@ -128,6 +130,27 @@ fn print_actions_table(table: &Tabler) {
 
         out.add_row(Row::new(row_buf.clone()));
     }
+
+    out.printstd();
+}
+
+fn print_proc_dfa<I: Iterator<Item = Term>>(dfa: &mut Dfa<I>)
+where
+    Peekable<I>: Clone,
+{
+    let mut out = Table::new();
+    out.set_titles(row!["Step", "Stack", "Buffer", "Action Address", "Action"]);
+
+    dfa.trace(|state| {
+        let step = out.len();
+        let stack = format!("{:?}", state.stack);
+        let buffer = format!("{:?}", state.buffer.clone().collect::<Vec<_>>());
+        let symbol = state.buffer.peek().unwrap_or(&lrp::EOF);
+        let action = format!("{:?}", state.table[state.top][symbol]);
+        let action_adr = format!("{}:{:?}", state.top, symbol);
+
+        out.add_row(row![step, stack, buffer, action_adr, action]);
+    });
 
     out.printstd();
 }
