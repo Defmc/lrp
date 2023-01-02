@@ -165,6 +165,7 @@ mod tests {
     #[test]
     pub fn dragon_book() {
         let clr = Clr::new(grammars_tests::dragon_book());
+        assert_eq!(0, clr.tables().conflicts().count());
 
         assert!(clr.validate(["d", "d"]));
         assert!(clr.validate(["d", "c", "d"]));
@@ -201,6 +202,7 @@ mod tests {
     #[test]
     fn wikipedia() {
         let clr = Clr::new(grammars_tests::wikipedia());
+        assert_eq!(0, clr.tables().conflicts().count());
 
         assert!(clr.validate(["0"]));
         assert!(clr.validate(["1"]));
@@ -238,6 +240,7 @@ mod tests {
     #[test]
     fn ucalgary_uni_oth_lr1() {
         let clr = Clr::new(grammars_tests::ucalgary_uni_oth_lr1());
+        assert_eq!(0, clr.tables().conflicts().count());
 
         assert!(clr.validate(["e", "a", "c"]));
         assert!(clr.validate(["d", "a", "b"]));
@@ -252,6 +255,7 @@ mod tests {
     #[test]
     fn serokell() {
         let clr = Clr::new(grammars_tests::serokell());
+        assert_eq!(0, clr.tables().conflicts().count());
 
         assert!(clr.validate(["int"]));
         assert!(clr.validate(["int", "*", "int"]));
@@ -278,6 +282,7 @@ mod tests {
     #[test]
     pub fn puncs() {
         let clr = Clr::new(grammars_tests::puncs());
+        assert_eq!(0, clr.tables().conflicts().count());
 
         assert!(clr.validate(["(", ")"]));
         assert!(clr.validate(["[", "]"]));
