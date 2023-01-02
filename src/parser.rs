@@ -2,8 +2,17 @@ use crate::{dfa::Result, Dfa};
 use crate::{transitive, Action, Grammar, Item, Map, Position, Rule, StackEl, State, Tabler, Term};
 
 pub trait Parser {
+    #[inline(always)]
     #[must_use]
-    fn new(grammar: Grammar) -> Self;
+    fn new(grammar: Grammar) -> Self
+    where
+        Self: Sized,
+    {
+        Self::with_table(Tabler::new(grammar))
+    }
+
+    #[must_use]
+    fn with_table(table: Tabler) -> Self;
 
     fn proc_actions(&mut self);
 

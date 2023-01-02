@@ -1,4 +1,4 @@
-use crate::{Action, Grammar, Map, Parser, Position, Rule, Set, State, Tabler, Term};
+use crate::{Action, Map, Parser, Position, Rule, Set, State, Tabler, Term};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Lalr {
@@ -6,10 +6,8 @@ pub struct Lalr {
 }
 
 impl Parser for Lalr {
-    fn new(grammar: Grammar) -> Self {
-        let mut parser = Self {
-            table: Tabler::new(grammar),
-        };
+    fn with_table(table: Tabler) -> Self {
+        let mut parser = Self { table };
         parser.proc_actions();
         parser
     }

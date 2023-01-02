@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 
-use lrp::{Dfa, Grammar, Lalr, Parser, Set, Tabler, Term};
+use lrp::{Clr, Dfa, Grammar, Parser, Set, Tabler, Term};
 use prettytable::{row, Cell, Row, Table};
 
 fn main() {
@@ -9,10 +9,16 @@ fn main() {
         "C" -> "c" "C"
             | "d"
     };
-
     let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
+
+    let start = std::time::Instant::now();
+    for _ in 0..1000 {
+        let parser = Clr::new(grammar.clone());
+    }
+    println!("elapsed: {:?}", start.elapsed());
+
     let inputs: &[&[&str]] = &[&["c", "d", "d"], &["d", "d"]];
-    let parser = Lalr::new(grammar);
+    let parser = Clr::new(grammar);
 
     let tables = parser.tables();
 
