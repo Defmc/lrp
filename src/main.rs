@@ -144,7 +144,14 @@ where
     dfa.trace(|state| {
         let step = out.len();
         let stack = format!("{:?}", state.stack);
-        let buffer = format!("{:?}", state.buffer.clone().collect::<Vec<_>>());
+        let buffer = format!(
+            "{:?}",
+            state
+                .buffer
+                .clone()
+                .chain(["EOF"].into_iter())
+                .collect::<Vec<_>>()
+        );
         let symbol = state.buffer.peek().unwrap_or(&lrp::EOF);
         let action = format!("{:?}", state.table[state.top][symbol]);
         let action_adr = format!("{}:{:?}", state.top, symbol);
