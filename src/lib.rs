@@ -15,13 +15,6 @@ pub use clr::Clr;
 pub mod lalr;
 pub use lalr::Lalr;
 
-/// grammars.
-/// rule:
-///     prod1: [term1, term2, ...],
-///     prod2: [term1, term2, ...],
-///     ...,
-/// rule2...
-///
 pub type Map<K, V> = BTreeMap<K, V>;
 pub type Set<T> = BTreeSet<T>;
 
@@ -43,10 +36,10 @@ pub type State = Set<Position>;
 /// A = . . . . T -> {T: FOLLOW(A)}
 pub type Table = Map<Rule, TermSet>;
 
-/// terminal sets
+/// Terminal symbols sets
 pub type TermSet = Set<Term>;
 
-/// for a given f(x), processes `x` until f(x) = f(f(x)) -> f(f(f(f....f(x)))) = f(x)
+/// For a given f(x), processes `x` until f(x) = f(f(x)) -> f(f(f(f....f(x)))) = f(x)
 pub fn transitive<T>(seed: T, map: impl Fn(T) -> T) -> T
 where
     T: Clone + PartialEq,

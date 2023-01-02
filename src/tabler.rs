@@ -3,7 +3,7 @@ use crate::{
     INTERNAL_START_RULE,
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Tabler {
     pub grammar: Grammar,
     pub first: Table,

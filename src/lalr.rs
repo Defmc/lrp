@@ -1,5 +1,6 @@
 use crate::{Action, Grammar, Map, Parser, Position, Rule, Set, State, Tabler, Term};
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Lalr {
     pub table: Tabler,
 }
