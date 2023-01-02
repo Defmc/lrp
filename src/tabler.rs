@@ -1,5 +1,6 @@
 use crate::{
-    transitive, ActTable, Grammar, Map, Position, Set, State, Table, Term, EOF, INTERNAL_START_RULE,
+    transitive, ActTable, Action, Grammar, Map, Position, Set, State, Table, Term, EOF,
+    INTERNAL_START_RULE,
 };
 
 #[derive(Debug, Default)]
@@ -158,17 +159,23 @@ impl Tabler {
     #[must_use]
     pub fn sym_filter(state: &State, sym: &Term) -> State {
         state
-            .into_iter()
-            .filter(|p| p.top() == Some(&sym))
+            .iter()
+            .filter(|p| p.top() == Some(sym))
             .filter_map(|p| p.clone_next())
             .collect()
+    }
+
+    pub fn conflicts(&self) -> impl Iterator<Item = &Action> + '_ {
+        self.actions
+            .iter()
+            .flat_map(|row| row.values())
+            .filter(|a| matches!(a, Action::Conflict(..)))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{grammars_tests, Map, Set, Tabler, INTERNAL_START_RULE};
-    use pretty_assertions::assert_eq;
 
     #[test]
     pub fn dragon_book() {

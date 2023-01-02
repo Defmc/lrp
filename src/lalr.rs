@@ -73,7 +73,7 @@ impl Parser for Lalr {
                 .iter()
                 .map(|l| {
                     (
-                        l.clone(),
+                        <&str>::clone(l),
                         if pos.rule == start {
                             Action::Acc
                         } else {
@@ -122,7 +122,7 @@ impl Lalr {
     pub fn proc_closures_first_row(&mut self) {
         let start = self.prop_closure(State::from([self.table.basis_pos()]));
         self.table.kernels.insert(State::new(), 0);
-        self.table.states.push(start.clone());
+        self.table.states.push(start);
     }
 }
 
@@ -206,15 +206,7 @@ mod tests {
     #[test]
     fn ucalgary_uni_oth_lr1() {
         let lalr = Lalr::new(grammars_tests::ucalgary_uni_oth_lr1());
-
-        assert!(lalr.validate(["e", "a", "c"]));
-        assert!(lalr.validate(["d", "a", "b"]));
-        assert!(lalr.validate(["d", "e", "a", "c"]));
-        assert!(lalr.validate(["d", "e", "a", "b"]));
-        assert!(lalr.validate(["e", "d", "a", "b"]));
-        assert!(lalr.validate(["e", "d", "a", "c"]));
-        assert!(lalr.validate(["d", "d", "e", "a", "b"]));
-        assert!(lalr.validate(["e", "e", "d", "a", "c"]));
+        assert_eq!(2, lalr.tables().conflicts().count());
     }
 
     #[test]

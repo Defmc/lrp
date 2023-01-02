@@ -17,7 +17,7 @@ impl Rule {
     pub fn new(name: RuleName, prods: Vec<Production>) -> Self {
         Self {
             name,
-            prods: prods.into_iter().map(|p| Rc::new(p)).collect(),
+            prods: prods.into_iter().map(Rc::new).collect(),
         }
     }
 
@@ -26,7 +26,6 @@ impl Rule {
         Self::new(name, vec![prod])
     }
 
-    #[must_use]
     pub fn prods(&self) -> impl Iterator<Item = Rc<Production>> + '_ {
         self.prods.iter().cloned()
     }
@@ -66,12 +65,10 @@ impl Grammar {
         self.terminals.contains(term)
     }
 
-    #[must_use]
     pub fn rules(&self) -> impl Iterator<Item = &Rule> {
         self.rules.values()
     }
 
-    #[must_use]
     pub fn symbols(&self) -> impl Iterator<Item = Term> + '_ {
         self.symbols.iter().copied()
     }

@@ -21,10 +21,10 @@ fn main() {
     print_states_table(tables);
     print_actions_table(tables);
 
-    let mut dfa = parser.dfa((&[]).into_iter().copied());
-    for input in inputs.into_iter().copied() {
+    let mut dfa = parser.dfa([].iter().copied());
+    for input in inputs.iter() {
         dfa.reset();
-        dfa.buffer = input.into_iter().copied().peekable();
+        dfa.buffer = input.iter().copied().peekable();
         print_proc_dfa(&mut dfa);
     }
 }
@@ -33,7 +33,7 @@ fn print_tokens_table(table: &Tabler) {
     let mut out = Table::new();
     out.set_titles(row!["non terminal", "first tokens", "follow tokens"]);
 
-    let iter = table.first.iter().zip(table.follow.iter().map(|(_, f)| f));
+    let iter = table.first.iter().zip(table.follow.values());
 
     for ((k, first), follow) in iter {
         out.add_row(row![k, format!("{first:?}"), format!("{follow:?}")]);
@@ -63,7 +63,7 @@ fn print_states_table(table: &Tabler) {
 
     for (i, state) in table.states.iter().enumerate() {
         for sym in &syms {
-            let kernel = Tabler::sym_filter(state, &sym);
+            let kernel = Tabler::sym_filter(state, sym);
             if kernel.is_empty() {
                 continue;
             }

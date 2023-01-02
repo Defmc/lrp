@@ -118,7 +118,7 @@ impl Parser for Clr {
                 .iter()
                 .map(|l| {
                     (
-                        l.clone(),
+                        <&str>::clone(l),
                         if pos.rule == start {
                             Action::Acc
                         } else {
@@ -154,7 +154,7 @@ impl Clr {
     pub fn proc_closures_first_row(&mut self) {
         let start = self.prop_closure(State::from([self.table.basis_pos()]));
         self.table.kernels.insert(State::new(), 0);
-        self.table.states.push(start.clone());
+        self.table.states.push(start);
     }
 }
 
