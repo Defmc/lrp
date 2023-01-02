@@ -12,7 +12,8 @@ pub trait Parser {
         Dfa::new(buffer, self.tables().actions.clone())
     }
 
-    #[must_use]
+    /// # Errors
+    /// The same of `dfa::travel`
     fn parse<I: IntoIterator<Item = Term>>(&self, buffer: I) -> Result<Item> {
         let mut dfa = self.dfa(buffer.into_iter());
         dfa.start()?;
@@ -24,6 +25,7 @@ pub trait Parser {
         }
     }
 
+    /// Runs `Parser::parse` and checks by errors
     #[must_use]
     fn validate<I: IntoIterator<Item = Term>>(&self, buffer: I) -> bool {
         self.parse(buffer).is_ok()

@@ -115,6 +115,8 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         }
     }
 
+    /// # Errors
+    /// When there is no more data in buffer, raises an `Error::UnexepectedEof`
     pub fn shift(&mut self, to: usize) -> Result<()> {
         let item = Item::Simple(self.buffer.next().ok_or(Error::UnexepectedEof)?);
         self.stack.push(StackEl::Item(item));
@@ -123,6 +125,8 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         Ok(())
     }
 
+    /// # Errors
+    /// When finished parse without consume entire buffer, raises an `Error::IncompleteExec`
     pub fn accept(&mut self) -> Result<()> {
         self.finished = true;
         if self.buffer.peek().is_none() {
@@ -132,10 +136,14 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         }
     }
 
+    /// # Errors
+    /// The same of `dfa::travel`
     pub fn start(&mut self) -> Result<()> {
         self.trace(|_| {})
     }
 
+    /// # Errors
+    /// The same of `dfa::travel`
     pub fn trace(&mut self, mut f: impl FnMut(&mut Self)) -> Result<()> {
         while !self.finished {
             f(self);
@@ -150,6 +158,10 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         self.top = to;
     }
 
+    /// # Errors
+    /// If the current state don't exists in actions table, raises an `Error::StateNotSpecified`
+    /// If there isn't an action in current state for `symbol`, raises an `Error::UnexpectedToken`
+    /// Returns the action result
     pub fn travel(&mut self, symbol: Term) -> Result<()> {
         let state = self.table.get(self.top).ok_or(Error::StateNotSpecified)?;
         let action = state.get(symbol).ok_or_else(|| {
@@ -166,6 +178,9 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         Ok(())
     }
 
+    /// # Errors
+    /// If stack doesn't contains the necessary terms amount, raises an `Error::UnexepectedEof`
+    /// If there isn't a previous state, raises an `Error::MissingPreviousState`
     pub fn reduce(&mut self, name: RuleName, prod: &Rc<Production>) -> Result<()> {
         let mut item = Vec::with_capacity(prod.len());
         while item.len() != prod.len() {
@@ -199,7 +214,8 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         self.top = 0;
     }
 
-    #[must_use]
+    /// # Errors
+    /// The same of `dfa::travel`
     pub fn parse(&mut self, input: I) -> Result<StackEl> {
         self.reset();
         self.buffer = input.peekable();
