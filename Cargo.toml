@@ -3,8 +3,5 @@ name = "lrp"
 version = "0.1.0"
 edition = "2021"
 
-[dev-dependencies]
-pretty_assertions = "1.3.0"
-
 [dependencies]
 prettytable-rs = "0.10.0"
