@@ -60,13 +60,36 @@ impl fmt::Display for StackEl {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
     /// Found a unexpected token. Contains a vector with correct tokens after it
-    UnexpectedToken(Vec<Term>),
+    UnexpectedToken(Term, Vec<Term>),
     /// Unexpected buffer end. When receive `lrp::EOF` before finish it
     UnexepectedEof,
     /// Unsolved conflict. When the current state contains a conflicting action
     Conflict(Action, Action),
     /// Missing state. When reduce actions don't contains a previous state
     MissingPreviousState,
+    /// State not specified in actions table. Must not occur in a run without an external interference
+    StateNotSpecified,
+    /// Incomplete execution. Finished the parsing without consume entire buffer
+    IncompleteExec,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::UnexpectedToken(found, expected) => f.write_fmt(format_args!(
+                "unexpected token {found}. expected {expected:?}"
+            )),
+            Self::UnexepectedEof => f.write_str("unexpected eof"),
+            Self::Conflict(a, b) => f.write_fmt(format_args!("conflicting action {a:?} and {b:?}")),
+            Self::MissingPreviousState => {
+                f.write_str("missing previous state. impossible to continue dfa execution")
+            }
+            Self::StateNotSpecified => f.write_str("state not specified in actions table"),
+            Self::IncompleteExec => {
+                f.write_str("finished the parsing without consume entire buffer")
+            }
+        }
+    }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
