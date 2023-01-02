@@ -1,6 +1,5 @@
-use crate::{
-    transitive, Action, Dfa, Grammar, Item, Map, Position, Rule, StackEl, State, Tabler, Term,
-};
+use crate::{dfa::Result, Dfa};
+use crate::{transitive, Action, Grammar, Item, Map, Position, Rule, StackEl, State, Tabler, Term};
 
 pub trait Parser {
     #[must_use]
@@ -14,22 +13,20 @@ pub trait Parser {
     }
 
     #[must_use]
-    fn parse<I: IntoIterator<Item = Term>>(&self, buffer: I) -> Item {
+    fn parse<I: IntoIterator<Item = Term>>(&self, buffer: I) -> Result<Item> {
         let mut dfa = self.dfa(buffer.into_iter());
-        dfa.start();
+        dfa.start()?;
         let secnd = dfa.stack.swap_remove(1);
         if let StackEl::Item(item) = secnd {
-            item
+            Ok(item)
         } else {
-            panic!("unexpected state")
+            Err(crate::dfa::Error::MissingPreviousState)
         }
     }
 
     #[must_use]
     fn validate<I: IntoIterator<Item = Term>>(&self, buffer: I) -> bool {
-        let _a = self.parse(buffer);
-        true
-        // TODO: Error handling
+        self.parse(buffer).is_ok()
     }
 
     #[must_use]

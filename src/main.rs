@@ -136,7 +136,7 @@ where
     let mut out = Table::new();
     out.set_titles(row!["step", "stack", "buffer", "action address", "action"]);
 
-    dfa.trace(|state| {
+    let res = dfa.trace(|state| {
         let step = out.len();
         let stack = state.stack_fmt();
         let buffer = format!(
@@ -153,6 +153,7 @@ where
 
         out.add_row(row![step, stack, buffer, action_adr, action]);
     });
+    out.add_row(row!["state", format!("{res:?}")]);
 
     out.printstd();
 }
