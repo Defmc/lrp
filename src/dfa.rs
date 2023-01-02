@@ -125,7 +125,7 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
 
     pub fn accept(&mut self) -> Result<()> {
         self.finished = true;
-        if self.buffer.peek() == Some(&crate::EOF) {
+        if self.buffer.peek().is_none() {
             Ok(())
         } else {
             Err(Error::IncompleteExec)
