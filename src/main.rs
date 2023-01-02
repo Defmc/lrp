@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 
-use lrp::{Clr, Dfa, Grammar, Parser, Set, Tabler, Term};
+use lrp::{Dfa, Grammar, Lalr, Parser, Set, Tabler, Term};
 use prettytable::{row, Cell, Row, Table};
 
 fn main() {
@@ -12,7 +12,7 @@ fn main() {
 
     let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
     let inputs: &[&[&str]] = &[&["c", "d", "d"], &["d", "d"]];
-    let parser = Clr::new(grammar);
+    let parser = Lalr::new(grammar);
 
     let tables = parser.tables();
 
@@ -31,7 +31,7 @@ fn main() {
 
 fn print_tokens_table(table: &Tabler) {
     let mut out = Table::new();
-    out.set_titles(row!["Non terminal", "First tokens", "Follow tokens"]);
+    out.set_titles(row!["non terminal", "first tokens", "follow tokens"]);
 
     let iter = table.first.iter().zip(table.follow.iter().map(|(_, f)| f));
 
@@ -44,7 +44,7 @@ fn print_tokens_table(table: &Tabler) {
 
 fn print_states_table(table: &Tabler) {
     let mut out = Table::new();
-    out.set_titles(row!["Goto(Idx, Term)", "Kernel", "State", "Closure"]);
+    out.set_titles(row!["goto(Idx, Term)", "kernel", "state", "closure"]);
 
     let internal = table.basis_pos();
     let start = &table.states[0];
@@ -54,7 +54,12 @@ fn print_states_table(table: &Tabler) {
         .chain(["LRP'START", lrp::EOF].into_iter())
         .collect();
 
-    out.add_row(row!["", format!("{internal:?}"), "0", format!("{start:?}")]);
+    out.add_row(row![
+        format!("last state: {}", table.states.len() - 1),
+        format!("{internal:?}"),
+        "0",
+        format!("{start:?}")
+    ]);
 
     for (i, state) in table.states.iter().enumerate() {
         for sym in &syms {
@@ -93,7 +98,7 @@ fn print_actions_table(table: &Tabler) {
 
     let rows: Vec<_> = terminals
         .iter()
-        .chain(["State"].iter())
+        .chain(["state"].iter())
         .chain(nonterminals.iter())
         .map(|t| {
             if t == &lrp::EOF {
@@ -139,7 +144,7 @@ where
     Peekable<I>: Clone,
 {
     let mut out = Table::new();
-    out.set_titles(row!["Step", "Stack", "Buffer", "Action Address", "Action"]);
+    out.set_titles(row!["step", "stack", "buffer", "action address", "action"]);
 
     dfa.trace(|state| {
         let step = out.len();

@@ -125,3 +125,157 @@ impl Lalr {
         self.table.states.push(start.clone());
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{grammars_tests, Lalr, Parser};
+
+    #[test]
+    pub fn dragon_book() {
+        let lalr = Lalr::new(grammars_tests::dragon_book());
+
+        assert!(lalr.validate(["d", "d"]));
+        assert!(lalr.validate(["d", "c", "d"]));
+        assert!(lalr.validate(["c", "d", "d"]));
+        assert!(lalr.validate(["d", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "d", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "d", "d"]));
+        assert!(lalr.validate(["d", "c", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "d", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "d", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "c", "d", "d"]));
+        assert!(lalr.validate(["d", "c", "c", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "d", "c", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "d", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "c", "d", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "c", "c", "d", "d"]));
+        assert!(lalr.validate(["d", "c", "c", "c", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "d", "c", "c", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "d", "c", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "c", "d", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "c", "c", "d", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "c", "c", "c", "d", "d"]));
+        assert!(lalr.validate(["d", "c", "c", "c", "c", "c", "c", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "d", "c", "c", "c", "c", "c", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "d", "c", "c", "c", "c", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "c", "d", "c", "c", "c", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "c", "c", "c", "c", "d", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "c", "c", "c", "c", "c", "d", "c", "d"]));
+        assert!(lalr.validate(["c", "c", "c", "c", "c", "c", "c", "c", "d", "d"]));
+        assert!(lalr.validate(["d", "c", "c", "c", "c", "c", "c", "c", "d"]));
+        assert!(lalr.validate(["c", "d", "c", "c", "c", "c", "c", "c", "d"]));
+    }
+
+    #[test]
+    fn wikipedia() {
+        let lalr = Lalr::new(grammars_tests::wikipedia());
+
+        assert!(lalr.validate(["0"]));
+        assert!(lalr.validate(["1"]));
+        assert!(lalr.validate(["0", "*", "0"]));
+        assert!(lalr.validate(["0", "*", "1"]));
+        assert!(lalr.validate(["1", "*", "0"]));
+        assert!(lalr.validate(["1", "*", "1"]));
+        assert!(lalr.validate(["0", "+", "0"]));
+        assert!(lalr.validate(["0", "+", "1"]));
+        assert!(lalr.validate(["1", "+", "0"]));
+        assert!(lalr.validate(["1", "+", "1"]));
+        assert!(lalr.validate(["0", "*", "0", "*", "0"]));
+        assert!(lalr.validate(["0", "*", "0", "*", "1"]));
+        assert!(lalr.validate(["0", "*", "1", "*", "0"]));
+        assert!(lalr.validate(["0", "*", "1", "*", "1"]));
+        assert!(lalr.validate(["1", "*", "0", "*", "0"]));
+        assert!(lalr.validate(["1", "*", "0", "*", "1"]));
+        assert!(lalr.validate(["1", "*", "1", "*", "0"]));
+        assert!(lalr.validate(["1", "*", "1", "*", "1"]));
+        assert!(lalr.validate(["0", "+", "0", "*", "0"]));
+        assert!(lalr.validate(["0", "+", "0", "*", "1"]));
+        assert!(lalr.validate(["0", "+", "1", "*", "0"]));
+        assert!(lalr.validate(["0", "+", "1", "*", "1"]));
+        assert!(lalr.validate(["1", "+", "0", "*", "0"]));
+        assert!(lalr.validate(["1", "+", "0", "*", "1"]));
+        assert!(lalr.validate(["1", "+", "1", "*", "0"]));
+        assert!(lalr.validate(["1", "+", "1", "*", "1"]));
+        assert!(lalr.validate(["0", "*", "0", "+", "0"]));
+        assert!(lalr.validate(["0", "*", "0", "+", "1"]));
+        assert!(lalr.validate(["0", "*", "1", "+", "0"]));
+        assert!(lalr.validate(["0", "*", "1", "+", "1"]));
+    }
+
+    // https://smlweb.cpsc.ucalgary.ca/
+    #[test]
+    fn ucalgary_uni_oth_lr1() {
+        let lalr = Lalr::new(grammars_tests::ucalgary_uni_oth_lr1());
+
+        assert!(lalr.validate(["e", "a", "c"]));
+        assert!(lalr.validate(["d", "a", "b"]));
+        assert!(lalr.validate(["d", "e", "a", "c"]));
+        assert!(lalr.validate(["d", "e", "a", "b"]));
+        assert!(lalr.validate(["e", "d", "a", "b"]));
+        assert!(lalr.validate(["e", "d", "a", "c"]));
+        assert!(lalr.validate(["d", "d", "e", "a", "b"]));
+        assert!(lalr.validate(["e", "e", "d", "a", "c"]));
+    }
+
+    #[test]
+    fn serokell() {
+        let lalr = Lalr::new(grammars_tests::serokell());
+
+        assert!(lalr.validate(["int"]));
+        assert!(lalr.validate(["int", "*", "int"]));
+        assert!(lalr.validate(["ident", "*", "int"]));
+        assert!(lalr.validate(["(", "int", ")"]));
+        assert!(lalr.validate(["int", "+", "int"]));
+        assert!(lalr.validate(["ident", "+", "int"]));
+        assert!(lalr.validate(["int", "*", "int", "*", "int"]));
+        assert!(lalr.validate(["int", "*", "ident", "*", "int"]));
+        assert!(lalr.validate(["ident", "*", "int", "*", "int"]));
+        assert!(lalr.validate(["ident", "*", "ident", "*", "int"]));
+        assert!(lalr.validate(["int", "*", "(", "int", ")"]));
+        assert!(lalr.validate(["ident", "*", "(", "int", ")"]));
+        assert!(lalr.validate(["int", "*", "int", "+", "int"]));
+        assert!(lalr.validate(["int", "*", "(", "ident", "+", "int", ")"]));
+        assert!(lalr.validate(["ident", "*", "int", "+", "int"]));
+        assert!(lalr.validate([
+            "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(",
+            "(", "(", "(", "(", "(", "int", ")", ")", ")", ")", ")", ")", ")", ")", ")", ")", ")",
+            ")", ")", ")", ")", ")", ")", ")", ")", ")", ")", ")",
+        ]));
+    }
+
+    #[test]
+    pub fn puncs() {
+        let lalr = Lalr::new(grammars_tests::puncs());
+
+        assert!(lalr.validate(["(", ")"]));
+        assert!(lalr.validate(["[", "]"]));
+        assert!(lalr.validate(["{", "}"]));
+        assert!(lalr.validate(["(", "(", ")", ")"]));
+        assert!(lalr.validate(["(", "[", "]", ")"]));
+        assert!(lalr.validate(["(", "{", "}", ")"]));
+        assert!(lalr.validate(["[", "(", ")", "]"]));
+        assert!(lalr.validate(["[", "[", "]", "]"]));
+        assert!(lalr.validate(["[", "{", "}", "]"]));
+        assert!(lalr.validate(["{", "(", ")", "}"]));
+        assert!(lalr.validate(["{", "[", "]", "}"]));
+        assert!(lalr.validate(["{", "{", "}", "}"]));
+        assert!(lalr.validate(["(", "(", "(", ")", ")", ")"]));
+        assert!(lalr.validate(["(", "(", "[", "]", ")", ")"]));
+        assert!(lalr.validate(["(", "(", "{", "}", ")", ")"]));
+        assert!(lalr.validate(["(", "[", "(", ")", "]", ")"]));
+        assert!(lalr.validate(["(", "[", "[", "]", "]", ")"]));
+        assert!(lalr.validate(["(", "[", "{", "}", "]", ")"]));
+        assert!(lalr.validate(["(", "{", "(", ")", "}", ")"]));
+        assert!(lalr.validate(["(", "{", "[", "]", "}", ")"]));
+        assert!(lalr.validate(["(", "{", "{", "}", "}", ")"]));
+        assert!(lalr.validate(["[", "(", "(", ")", ")", "]"]));
+        assert!(lalr.validate(["[", "(", "[", "]", ")", "]"]));
+        assert!(lalr.validate(["[", "(", "{", "}", ")", "]"]));
+        assert!(lalr.validate(["[", "[", "(", ")", "]", "]"]));
+        assert!(lalr.validate(["[", "[", "[", "]", "]", "]"]));
+        assert!(lalr.validate(["[", "[", "{", "}", "]", "]"]));
+        assert!(lalr.validate(["[", "{", "(", ")", "}", "]"]));
+        assert!(lalr.validate(["[", "{", "[", "]", "}", "]"]));
+        assert!(lalr.validate(["[", "{", "{", "}", "}", "]"]));
+    }
+}
