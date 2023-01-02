@@ -11,12 +11,6 @@ fn main() {
     };
     let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
 
-    let start = std::time::Instant::now();
-    for _ in 0..1000 {
-        let parser = Clr::new(grammar.clone());
-    }
-    println!("elapsed: {:?}", start.elapsed());
-
     let inputs: &[&[&str]] = &[&["c", "d", "d"], &["d", "d"]];
     let parser = Clr::new(grammar);
 
