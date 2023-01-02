@@ -43,9 +43,7 @@ impl Parser for Lalr {
         while idx < self.table.states.len() {
             let row = self.table.states[idx].clone();
             for s in self.table.grammar.symbols() {
-                let (kernel, closures) = if let Some((k, c)) = self.goto(row.clone(), &s) {
-                    (k, c)
-                } else {
+                let Some((kernel, closures)) = self.goto(row.clone(), &s) else {
                     continue;
                 };
                 self.table.kernels.insert(kernel, self.table.states.len());
@@ -56,33 +54,36 @@ impl Parser for Lalr {
     }
 
     fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action> {
-        if let Some(locus) = pos.top() {
-            let filter = Tabler::sym_filter(row, &locus);
-            let state = self
-                .table
-                .kernels
-                .get(&filter)
-                .expect("`kernels` is incomplete");
-            if self.table.grammar.is_terminal(&locus) {
-                Map::from([(locus, Action::Shift(*state))])
-            } else {
-                Map::from([(locus, Action::Goto(*state))])
-            }
-        } else {
-            self.table.follow[pos.rule]
-                .iter()
-                .map(|l| {
-                    (
-                        <&str>::clone(l),
-                        if pos.rule == start {
-                            Action::Acc
-                        } else {
-                            Action::Reduce(pos.rule, pos.seq.clone())
-                        },
-                    )
-                })
-                .collect()
-        }
+        pos.top().map_or_else(
+            || {
+                self.table.follow[pos.rule]
+                    .iter()
+                    .map(|l| {
+                        (
+                            <&str>::clone(l),
+                            if pos.rule == start {
+                                Action::Acc
+                            } else {
+                                Action::Reduce(pos.rule, pos.seq.clone())
+                            },
+                        )
+                    })
+                    .collect()
+            },
+            |locus| {
+                let filter = Tabler::sym_filter(row, &locus);
+                let state = self
+                    .table
+                    .kernels
+                    .get(&filter)
+                    .expect("`kernels` is incomplete");
+                if self.table.grammar.is_terminal(&locus) {
+                    Map::from([(locus, Action::Shift(*state))])
+                } else {
+                    Map::from([(locus, Action::Goto(*state))])
+                }
+            },
+        )
     }
 
     fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
@@ -101,7 +102,7 @@ impl Parser for Lalr {
     fn proc_actions(&mut self) {
         self.proc_closures();
         let start = self.table.basis_pos().rule;
-        for row in self.table.states.iter() {
+        for row in &self.table.states {
             let mut map: Map<Term, Action> = Map::new();
             for item in row {
                 for (term, act) in self.decision(start, item, row) {

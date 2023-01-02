@@ -6,7 +6,7 @@ pub struct Clr {
 
 impl Parser for Clr {
     fn new(grammar: Grammar) -> Self {
-        let mut parser = Clr {
+        let mut parser = Self {
             table: Tabler::new(grammar),
         };
         parser.proc_actions();
@@ -26,7 +26,7 @@ impl Parser for Clr {
     fn proc_actions(&mut self) {
         self.proc_closures();
         let start = self.table.basis_pos().rule;
-        for row in self.table.states.iter() {
+        for row in &self.table.states {
             let mut map: Map<Term, Action> = Map::new();
             for item in row {
                 for (term, act) in self.decision(start, item, row) {
@@ -49,11 +49,10 @@ impl Parser for Clr {
                 if self.table.grammar.is_terminal(&top) {
                     continue;
                 }
-                let look = if let Some(locus) = pos.locus() {
-                    self.table.first_of(&Set::from([locus])).clone()
-                } else {
-                    pos.look.clone()
-                };
+                let look = pos.locus().map_or_else(
+                    || pos.look.clone(),
+                    |locus| self.table.first_of(&Set::from([locus])),
+                );
                 for prod in self.table.grammar.rules[top].prods() {
                     new_state.insert(Position::new(top, prod.clone(), 0, look.clone()));
                 }
@@ -69,9 +68,7 @@ impl Parser for Clr {
         while idx < self.table.states.len() {
             let row = self.table.states[idx].clone();
             for s in self.table.grammar.symbols() {
-                let (kernel, closures) = if let Some((k, c)) = self.goto(row.clone(), &s) {
-                    (k, c)
-                } else {
+                let Some((kernel, closures)) = self.goto(row.clone(), &s) else {
                     continue;
                 };
                 debug_assert!(self
@@ -101,33 +98,36 @@ impl Parser for Clr {
 
     #[must_use]
     fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action> {
-        if let Some(locus) = pos.top() {
-            let filter = Tabler::sym_filter(row, &locus);
-            let state = self
-                .table
-                .kernels
-                .get(&filter)
-                .expect("`kernels` is incomplete");
-            if self.table.grammar.is_terminal(&locus) {
-                Map::from([(locus, Action::Shift(*state))])
-            } else {
-                Map::from([(locus, Action::Goto(*state))])
-            }
-        } else {
-            pos.look
-                .iter()
-                .map(|l| {
-                    (
-                        <&str>::clone(l),
-                        if pos.rule == start {
-                            Action::Acc
-                        } else {
-                            Action::Reduce(pos.rule, pos.seq.clone())
-                        },
-                    )
-                })
-                .collect()
-        }
+        pos.top().map_or_else(
+            || {
+                pos.look
+                    .iter()
+                    .map(|l| {
+                        (
+                            <&str>::clone(l),
+                            if pos.rule == start {
+                                Action::Acc
+                            } else {
+                                Action::Reduce(pos.rule, pos.seq.clone())
+                            },
+                        )
+                    })
+                    .collect()
+            },
+            |locus| {
+                let filter = Tabler::sym_filter(row, &locus);
+                let state = self
+                    .table
+                    .kernels
+                    .get(&filter)
+                    .expect("`kernels` is incomplete");
+                if self.table.grammar.is_terminal(&locus) {
+                    Map::from([(locus, Action::Shift(*state))])
+                } else {
+                    Map::from([(locus, Action::Goto(*state))])
+                }
+            },
+        )
     }
 
     #[must_use]

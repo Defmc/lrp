@@ -44,10 +44,8 @@ impl Grammar {
         let symbols = rules.keys().chain(terminals.iter()).copied().collect();
         let start = Rule::single("LRP'START", vec![start]);
         terminals.insert(crate::EOF);
-        assert!(
-            rules.insert(crate::INTERNAL_START_RULE, start).is_none(),
-            "`LRP'START` already declared"
-        );
+        let lrp_start_old = rules.insert(crate::INTERNAL_START_RULE, start);
+        debug_assert!(lrp_start_old.is_none(), "`LRP'START` already declared");
         Self {
             rules,
             terminals,

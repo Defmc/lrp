@@ -18,10 +18,10 @@ pub enum Item {
 }
 
 impl Item {
-    pub fn name(&self) -> Rule {
+    #[must_use]
+    pub const fn name(&self) -> Rule {
         match self {
-            Self::Simple(n) => n,
-            Self::Compound(n, ..) => n,
+            Self::Simple(n) | Self::Compound(n, ..) => n,
         }
     }
 }
@@ -29,7 +29,7 @@ impl Item {
 impl fmt::Display for Item {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.name())?;
-        if let Item::Compound(_, elms) = self {
+        if let Self::Compound(_, elms) = self {
             f.write_fmt(format_args!(
                 " -> ({})",
                 elms.iter()
@@ -51,8 +51,8 @@ pub enum StackEl {
 impl fmt::Display for StackEl {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            StackEl::Item(it) => f.write_fmt(format_args!("{it}")),
-            StackEl::State(n) => f.write_fmt(format_args!("{n}")),
+            Self::Item(it) => f.write_fmt(format_args!("{it}")),
+            Self::State(n) => f.write_fmt(format_args!("{n}")),
         }
     }
 }
@@ -78,6 +78,8 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         }
     }
 
+    /// # Panics
+    /// When buffer is empty
     pub fn shift(&mut self, to: usize) {
         let item = Item::Simple(self.buffer.next().unwrap());
         self.stack.push(StackEl::Item(item));
@@ -106,17 +108,21 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         self.top = to;
     }
 
+    /// # Panics
+    /// When trying to execute a conflicting action
     pub fn travel(&mut self, symbol: Term) {
         match &self.table[self.top][symbol] {
             Action::Shift(to) => self.shift(*to),
             Action::Goto(to) => self.goto(*to),
-            Action::Reduce(name, prod) => self.reduce(name, prod.clone()),
+            Action::Reduce(name, prod) => self.reduce(name, &prod.clone()),
             Action::Acc => self.accept(),
             Action::Conflict(a, b) => panic!("conflict between {a:?} and {b:?}"),
         }
     }
 
-    pub fn reduce(&mut self, name: RuleName, prod: Rc<Production>) {
+    /// # Panics
+    /// When missing state shifts
+    pub fn reduce(&mut self, name: RuleName, prod: &Rc<Production>) {
         let mut item = Vec::with_capacity(prod.len());
         while item.len() != prod.len() {
             let poped = self.stack.pop().unwrap();

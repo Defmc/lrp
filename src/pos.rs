@@ -25,30 +25,6 @@ impl Position {
     }
 
     #[must_use]
-    pub fn rule(mut self, rule: Rule) -> Self {
-        self.rule = rule;
-        self
-    }
-
-    #[must_use]
-    pub fn seq(mut self, seq: Rc<Production>) -> Self {
-        self.seq = seq;
-        self
-    }
-
-    #[must_use]
-    pub fn point(mut self, point: usize) -> Self {
-        self.point = point;
-        self
-    }
-
-    #[must_use]
-    pub fn look(mut self, look: Set<Term>) -> Self {
-        self.look = look;
-        self
-    }
-
-    #[must_use]
     pub fn locus(&self) -> Option<Term> {
         self.peek(1)
     }
@@ -93,12 +69,12 @@ impl Position {
 
     #[must_use]
     pub fn clone_next(&self) -> Option<Self> {
-        if !self.finished() {
+        if self.finished() {
+            None
+        } else {
             let mut next = self.clone();
             next.adv();
             Some(next)
-        } else {
-            None
         }
     }
 }

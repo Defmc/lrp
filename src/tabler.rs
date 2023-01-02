@@ -60,7 +60,7 @@ impl Tabler {
                             entry.insert(prod[term_idx + 1]);
                         } else {
                             // A = . . . T B -> {T: FIRST(B)}
-                            entry.extend(self.first[prod[term_idx + 1]].clone())
+                            entry.extend(self.first[prod[term_idx + 1]].clone());
                         }
                     }
                 }
@@ -161,14 +161,14 @@ impl Tabler {
         state
             .iter()
             .filter(|p| p.top() == Some(sym))
-            .filter_map(|p| p.clone_next())
+            .filter_map(Position::clone_next)
             .collect()
     }
 
     pub fn conflicts(&self) -> impl Iterator<Item = &Action> + '_ {
         self.actions
             .iter()
-            .flat_map(|row| row.values())
+            .flat_map(Map::values)
             .filter(|a| matches!(a, Action::Conflict(..)))
     }
 }
