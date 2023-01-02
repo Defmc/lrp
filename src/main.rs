@@ -143,7 +143,7 @@ where
 
     dfa.trace(|state| {
         let step = out.len();
-        let stack = format!("{:?}", state.stack);
+        let stack = state.stack_fmt();
         let buffer = format!(
             "{:?}",
             state

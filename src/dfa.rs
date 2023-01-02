@@ -1,4 +1,4 @@
-use std::{iter::Peekable, rc::Rc};
+use std::{fmt, iter::Peekable, rc::Rc};
 
 use crate::{ActTable, Production, Rule, RuleName, Term};
 
@@ -26,10 +26,35 @@ impl Item {
     }
 }
 
+impl fmt::Display for Item {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.name())?;
+        if let Item::Compound(_, elms) = self {
+            f.write_fmt(format_args!(
+                " -> ({})",
+                elms.iter()
+                    .map(|f| format!("{f}"))
+                    .collect::<Vec<String>>()
+                    .join(" ")
+            ))?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum StackEl {
     Item(Item),
     State(usize),
+}
+
+impl fmt::Display for StackEl {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            StackEl::Item(it) => f.write_fmt(format_args!("{it}")),
+            StackEl::State(n) => f.write_fmt(format_args!("{n}")),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -42,6 +67,7 @@ pub struct Dfa<I: Iterator<Item = Term>> {
 }
 
 impl<I: Iterator<Item = Term>> Dfa<I> {
+    #[must_use]
     pub fn new(buffer: I, table: ActTable) -> Self {
         Self {
             stack: vec![StackEl::State(0)],
@@ -123,6 +149,7 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         self.top = 0;
     }
 
+    #[must_use]
     pub fn parse(&mut self, input: I) -> StackEl {
         self.reset();
         self.buffer = input.peekable();
@@ -130,5 +157,14 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
         let res = self.stack[1].clone();
         self.reset();
         res
+    }
+
+    #[must_use]
+    pub fn stack_fmt(&self) -> String {
+        self.stack
+            .iter()
+            .map(|f| format!("{f}"))
+            .collect::<Vec<String>>()
+            .join(" ")
     }
 }
