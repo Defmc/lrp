@@ -1,7 +1,7 @@
 use std::time::Duration;
 
-use hermes_bench::{BenchSize, Bencher, IterBench};
-use lrp::{Clr, Lalr, Parser};
+use hermes_bench::{BenchSize, Bencher};
+use lrp::{Clr, Lalr, Parser, Tabler};
 
 mod grammars;
 
@@ -32,4 +32,5 @@ macro_rules! with_grammars {
 fn main() {
     with_grammars!(bench_grammar_prod, Lalr);
     with_grammars!(bench_grammar_prod, Clr);
+    with_grammars!(bench_grammar_prod, Tabler);
 }
