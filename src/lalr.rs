@@ -45,7 +45,9 @@ impl Parser for Lalr {
                 let Some((kernel, closures)) = self.goto(row.clone(), &s) else {
                     continue;
                 };
-                self.table.kernels.insert(kernel, self.table.states.len());
+
+                let old_val = self.table.kernels.insert(kernel, self.table.states.len());
+                debug_assert!(old_val.is_none());
                 self.table.states.push(closures);
             }
             idx += 1;
