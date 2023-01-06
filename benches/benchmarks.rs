@@ -1,20 +1,35 @@
-pub mod grammars;
-pub mod parsers;
+use std::time::Duration;
 
-#[macro_export]
-macro_rules! gen_bench_table_construction {
-    ($parser:tt, $($grammar:tt),+) => {
-        $(pub fn $grammar(b: &mut bencher::Bencher) {
-            let parsed = $parser::new($crate::grammars::$grammar());
-            let table = lrp::Tabler::new($crate::grammars::$grammar());
-            b.bench_n(10, |b| b.iter(|| {
-                assert_eq!(
-                    parsed,
-                    $parser::with_table(std::hint::black_box(table.clone()))
-                );
-            }));
-        })+
-    };
+use hermes_bench::{BenchSize, Bencher, IterBench};
+use lrp::{Clr, Lalr, Parser};
+
+mod grammars;
+
+const BENCH_SIZE: BenchSize = BenchSize::Time(Duration::from_secs(1));
+
+macro_rules! bench_grammar_prod {
+    ($parser:tt, $($grammar:tt),*) => {{
+        println!("{}:", stringify!($parser).to_uppercase());
+        $(
+            let parser = $parser::new(grammars::$grammar());
+            let assert_prod = &|new_parser| assert_eq!(new_parser, parser);
+            let mut bench = hermes_bench::ClassicBench::new(&grammars::$grammar, &|g| $parser::new(g))
+                .with_size(BENCH_SIZE)
+                .with_post(&assert_prod)
+                .with_name(concat!(stringify!($grammar), " grammar production"));
+            bench.run();
+            println!("\t{bench}");
+        )*
+    }};
 }
 
-bencher::benchmark_main!(parsers::table_gens);
+macro_rules! with_grammars {
+    ($macro:tt, $($args:tt),*) => {
+        $macro!($($args),*, dragon_book, serokell, ucalgary_uni_oth_lr1, wikipedia, puncs);
+    }
+}
+
+fn main() {
+    with_grammars!(bench_grammar_prod, Lalr);
+    with_grammars!(bench_grammar_prod, Clr);
+}
