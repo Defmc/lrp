@@ -11,4 +11,4 @@ name = "benchmarks"
 harness = false
 
 [dev-dependencies]
-bencher = "0.1.5"
+hermes_bench = "0.1.0"
