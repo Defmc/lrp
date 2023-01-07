@@ -59,17 +59,20 @@ impl fmt::Display for StackEl {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
-    /// Found a unexpected token. Contains a vector with correct tokens after it
+    /// Found a unexpected token. Contains a vector with correct tokens after it. Indicates a bad
+    /// input.
     UnexpectedToken(Term, Vec<Term>),
-    /// Unexpected buffer end. When receive `lrp::EOF` before finish it
-    UnexepectedEof,
-    /// Unsolved conflict. When the current state contains a conflicting action
+    /// Specialized version of `Error::UnexpectedToken` for buffer end in a Shifting Action. Indicates a bad input.
+    UnexpectedEof,
+    /// Unsolved conflict. When the current state contains a conflicting action. It's the unique
+    /// natural possible error.
     Conflict(Action, Action),
-    /// Missing state. When reduce actions don't contains a previous state
+    /// Missing state. When reduce actions don't contains a previous state. Mustn't occur in a run without an external interference
     MissingPreviousState,
-    /// State not specified in actions table. Must not occur in a run without an external interference
+    /// State not specified in actions table. Mustn't occur in a run without an external interference
     StateNotSpecified,
-    /// Incomplete execution. Finished the parsing without consume entire buffer
+    /// Incomplete execution. Finished the parsing without consume entire buffer. Indicates a bad
+    /// input.
     IncompleteExec,
 }
 
@@ -79,7 +82,7 @@ impl fmt::Display for Error {
             Self::UnexpectedToken(found, expected) => f.write_fmt(format_args!(
                 "unexpected token {found}. expected {expected:?}"
             )),
-            Self::UnexepectedEof => f.write_str("unexpected eof"),
+            Self::UnexpectedEof => f.write_str("unexpected eof"),
             Self::Conflict(a, b) => f.write_fmt(format_args!("conflicting action {a:?} and {b:?}")),
             Self::MissingPreviousState => {
                 f.write_str("missing previous state. impossible to continue dfa execution")
@@ -118,7 +121,7 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     /// # Errors
     /// When there is no more data in buffer, raises an `Error::UnexepectedEof`
     pub fn shift(&mut self, to: usize) -> Result<()> {
-        let item = Item::Simple(self.buffer.next().ok_or(Error::UnexepectedEof)?);
+        let item = Item::Simple(self.buffer.next().ok_or(Error::UnexpectedEof)?);
         self.stack.push(StackEl::Item(item));
         self.top = to;
         self.stack.push(StackEl::State(self.top));
@@ -184,7 +187,7 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     pub fn reduce(&mut self, name: RuleName, prod: &Rc<Production>) -> Result<()> {
         let mut item = Vec::with_capacity(prod.len());
         while item.len() != prod.len() {
-            let poped = self.stack.pop().ok_or(Error::UnexepectedEof)?;
+            let poped = self.stack.pop().ok_or(Error::UnexpectedEof)?;
             if let StackEl::Item(i) = poped {
                 item.push(i);
             }
