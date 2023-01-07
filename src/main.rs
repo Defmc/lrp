@@ -8,11 +8,14 @@ use prettytable::{row, Cell, Row, Table};
 
 fn main() {
     let grammar = lrp::grammar! {
-        "S" -> "C" "C",
-        "C" -> "c" "C"
-            | "d"
+        "S" -> "(" ")"
+            | "(" "S" ")"
+            | "[" "]"
+            | "[" "S" "]"
+            | "{" "}"
+            | "{" "S" "}"
     };
-    let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
+    let grammar = Grammar::new("S", grammar, Set::from(["[", "]", "(", ")", "{", "}"]));
 
     let parser = Clr::new(grammar);
 
@@ -171,7 +174,10 @@ where
 
         out.add_row(row![step, stack, buffer, action_adr, action]);
     });
-    out.add_row(row!["state", format!("{res:?}")]);
+    out.add_row(row![
+        "state",
+        res.map_or_else(|e| format!("{e}"), |_| "ok".to_string())
+    ]);
 
     out.printstd();
 }
