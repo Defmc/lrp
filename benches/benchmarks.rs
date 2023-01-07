@@ -1,36 +1,52 @@
-use std::time::Duration;
+use std::{fmt, time::Duration};
 
-use hermes_bench::{BenchSize, Bencher};
-use lrp::{Clr, Lalr, Parser, Tabler};
+use hermes_bench::{BenchSize, Bencher, ClassicBench};
+use lrp::{Clr, Grammar, Lalr, Parser, Tabler};
 
 mod grammars;
 
 const BENCH_SIZE: BenchSize = BenchSize::Time(Duration::from_secs(1));
 
-macro_rules! bench_grammar_prod {
-    ($parser:tt, $($grammar:tt),*) => {{
-        println!("{}:", stringify!($parser).to_uppercase());
-        $(
-            let parser = $parser::new(grammars::$grammar());
-            let assert_prod = &|new_parser| assert_eq!(new_parser, parser);
-            let mut bench = hermes_bench::ClassicBench::new(&grammars::$grammar, &|g| $parser::new(g))
-                .with_size(BENCH_SIZE)
-                .with_post(&assert_prod)
-                .with_name(concat!(stringify!($grammar), " grammar production"));
-            bench.run();
-            println!("\t{bench}");
-        )*
-    }};
+const GRAMMARS: &[(fn() -> Grammar, &'static str)] = &[
+    (grammars::dragon_book, "dragon's book"),
+    (grammars::serokell, "serokell"),
+    (grammars::ucalgary_uni_oth_lr1, "ucalgary_uni_oth_lr1"),
+    (grammars::wikipedia, "wikipedia"),
+    (grammars::puncs, "punctuations"),
+];
+
+fn test_table_parser_prod<P: Parser + PartialEq + fmt::Debug>(name: &str) {
+    println!("\n{name} productions:");
+    for (grammar, grammar_name) in GRAMMARS {
+        let parser = P::new(grammar());
+        let assert = |p| assert_eq!(p, parser);
+        let table_copy = || Tabler::new(grammar());
+        let mut bench = ClassicBench::new(&table_copy, &|t| P::with_table(t))
+            .with_name(format!("{grammar_name} table production"))
+            .with_post(&assert)
+            .with_size(BENCH_SIZE);
+        bench.run();
+        println!("\t{bench}");
+    }
 }
 
-macro_rules! with_grammars {
-    ($macro:tt, $($args:tt),*) => {
-        $macro!($($args),*, dragon_book, serokell, ucalgary_uni_oth_lr1, wikipedia, puncs);
+fn test_table_gen() {
+    println!("\nTabler setup:");
+    for (grammar, grammar_name) in GRAMMARS {
+        let table = Tabler::new(grammar());
+        let assert = |p| assert_eq!(p, table);
+        let grammar_copy = || grammar();
+        let mut bench = ClassicBench::new(&grammar_copy, &|g| Tabler::new(g))
+            .with_name(format!("{grammar_name} setup"))
+            .with_post(&assert)
+            .with_size(BENCH_SIZE);
+        bench.run();
+        println!("\t{bench}");
     }
 }
 
 fn main() {
-    with_grammars!(bench_grammar_prod, Lalr);
-    with_grammars!(bench_grammar_prod, Clr);
-    with_grammars!(bench_grammar_prod, Tabler);
+    test_table_gen();
+    test_table_parser_prod::<Clr>("Canonical LR");
+    test_table_parser_prod::<Lalr>("LALR(1)");
 }
