@@ -1,5 +1,5 @@
 use std::{
-    io::{self, Read, Write},
+    io::{self, Write},
     iter::Peekable,
 };
 
@@ -158,7 +158,15 @@ where
                 .collect::<Vec<_>>()
         );
         let symbol = state.buffer.peek().unwrap_or(&lrp::EOF);
-        let action = format!("{:?}", state.table.get(state.top).map(|t| t.get(symbol)).flatten());
+        let action = format!(
+            "{}",
+            state
+                .table
+                .get(state.top)
+                .map(|t| t.get(symbol))
+                .flatten()
+                .map_or_else(|| "n/a".to_string(), |a| format!("{a:?}"))
+        );
         let action_adr = format!("{}:{:?}", state.top, symbol);
 
         out.add_row(row![step, stack, buffer, action_adr, action]);
