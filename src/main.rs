@@ -1,4 +1,7 @@
-use std::iter::Peekable;
+use std::{
+    io::{self, Read, Write},
+    iter::Peekable,
+};
 
 use lrp::{Clr, Dfa, Grammar, Parser, Set, Tabler, Term};
 use prettytable::{row, Cell, Row, Table};
@@ -11,7 +14,6 @@ fn main() {
     };
     let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
 
-    let inputs: &[&[&str]] = &[&["c", "d", "d"], &["d", "d"]];
     let parser = Clr::new(grammar);
 
     let tables = parser.tables();
@@ -21,10 +23,18 @@ fn main() {
     print_states_table(tables);
     print_actions_table(tables);
 
-    let mut dfa = parser.dfa([lrp::EOF, lrp::EOF].iter().copied());
-    for input in inputs.iter() {
-        dfa.reset();
-        dfa.buffer = input.iter().copied().peekable();
+    loop {
+        print!("input: ");
+        io::stdout().flush().unwrap();
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+        let input: Vec<_> = input.trim().chars().map(|c| c.to_string()).collect();
+        let mut dfa = parser.dfa(
+            input
+                .into_iter()
+                .map(|s| Box::leak(Box::new(s)) as &'static str),
+        );
         print_proc_dfa(&mut dfa);
     }
 }
@@ -148,7 +158,7 @@ where
                 .collect::<Vec<_>>()
         );
         let symbol = state.buffer.peek().unwrap_or(&lrp::EOF);
-        let action = format!("{:?}", state.table[state.top][symbol]);
+        let action = format!("{:?}", state.table.get(state.top).map(|t| t.get(symbol)).flatten());
         let action_adr = format!("{}:{:?}", state.top, symbol);
 
         out.add_row(row![step, stack, buffer, action_adr, action]);
