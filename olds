@@ -1,0 +1,65 @@
+
+running 15 tests
+test clr::tests::dragon_book ... ignored
+test clr::tests::puncs ... ignored
+test clr::tests::serokell ... ignored
+test clr::tests::ucalgary_uni_oth_lr1 ... ignored
+test clr::tests::wikipedia ... ignored
+test lalr::tests::dragon_book ... ignored
+test lalr::tests::puncs ... ignored
+test lalr::tests::serokell ... ignored
+test lalr::tests::ucalgary_uni_oth_lr1 ... ignored
+test lalr::tests::wikipedia ... ignored
+test tabler::tests::dragon_book ... ignored
+test tabler::tests::puncs ... ignored
+test tabler::tests::serokell ... ignored
+test tabler::tests::ucalgary_uni_oth_lr1 ... ignored
+test tabler::tests::wikipedia ... ignored
+
+test result: ok. 0 passed; 0 failed; 15 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+Tabler setup:
+	dragon's book setup: 1.821875ms / 100 = ± 18.218µs/iter
+	serokell setup: 4.940645ms / 100 = ± 49.406µs/iter
+	ucalgary_uni_oth_lr1 setup: 6.292144ms / 100 = ± 62.921µs/iter
+	wikipedia setup: 2.639652ms / 100 = ± 26.396µs/iter
+	punctuations setup: 2.431452ms / 100 = ± 24.314µs/iter
+
+Canonical LR productions:
+	dragon's book table production: 15.751028ms / 100 = ± 157.51µs/iter
+	serokell table production: 88.993306ms / 100 = ± 889.933µs/iter
+	ucalgary_uni_oth_lr1 table production: 39.413118ms / 100 = ± 394.131µs/iter
+	wikipedia table production: 18.923149ms / 100 = ± 189.231µs/iter
+	punctuations table production: 86.544955ms / 100 = ± 865.449µs/iter
+
+LALR(1) productions:
+	dragon's book table production: 4.782246ms / 100 = ± 47.822µs/iter
+	serokell table production: 19.50276ms / 100 = ± 195.027µs/iter
+	ucalgary_uni_oth_lr1 table production: 26.698235ms / 100 = ± 266.982µs/iter
+	wikipedia table production: 8.951274ms / 100 = ± 89.512µs/iter
+	punctuations table production: 17.265195ms / 100 = ± 172.651µs/iter
+
+Canonical LR's DFA:
+	dragon's book parsing inputs: 516.27µs / 100 = ± 5.162µs/iter
+	serokell parsing inputs: 860.65µs / 100 = ± 8.606µs/iter
+	ucalgary_uni_oth_lr1 parsing inputs: 646.101µs / 100 = ± 6.461µs/iter
+	wikipedia parsing inputs: 528.766µs / 100 = ± 5.287µs/iter
+	punctuations parsing inputs: 808.203µs / 100 = ± 8.082µs/iter
+
+LALR(1)'s DFA:
+	dragon's book parsing inputs: 515.705µs / 100 = ± 5.157µs/iter
+	serokell parsing inputs: 743.182µs / 100 = ± 7.431µs/iter
+	ucalgary_uni_oth_lr1 parsing inputs: 614.042µs / 100 = ± 6.14µs/iter
+	wikipedia parsing inputs: 515.638µs / 100 = ± 5.156µs/iter
+	punctuations parsing inputs: 505.512µs / 100 = ± 5.055µs/iter
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
