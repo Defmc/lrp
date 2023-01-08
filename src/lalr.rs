@@ -1,5 +1,6 @@
 use crate::{Action, Map, Parser, Position, Rule, Set, State, Tabler, Term};
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Lalr {
     pub table: Tabler,
     /// Describes the "raw states" (states without lookahead symbol) in `table.states`, using it
@@ -173,12 +174,8 @@ impl Lalr {
 
     #[must_use]
     pub fn kernel_like(&self, kernel: &State) -> Option<usize> {
-        println!("searching by {kernel:?}");
         let eq = |k: &Position, s: &Position| {
-            print!("comparing {k:?} with {s:?}: ");
-            let r = k.body_eq(s) && k.look.iter().all(|ak| s.look.contains(ak));
-            println!("{r}");
-            r
+            k.body_eq(s) && k.look.iter().all(|ak| s.look.contains(ak))
         };
         let idx = self
             .table

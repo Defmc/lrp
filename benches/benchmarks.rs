@@ -1,7 +1,7 @@
-use std::{fmt, time::Duration};
+use std::fmt;
 
 use hermes_bench::{BenchSize, Bencher, ClassicBench, IterBench};
-use lrp::{dfa::Error, Clr, Dfa, Grammar, Parser, Slr, Tabler};
+use lrp::{dfa::Error, Clr, Dfa, Grammar, Lalr, Parser, Slr, Tabler};
 
 mod grammars;
 
@@ -75,7 +75,9 @@ fn test_dfa<P: Parser>(name: &str) {
 fn main() {
     test_table_gen();
     test_table_parser_prod::<Clr>("Canonical LR");
+    test_table_parser_prod::<Lalr>("LALR(1)");
     test_table_parser_prod::<Slr>("SLR");
     test_dfa::<Clr>("Canonical LR");
+    test_dfa::<Lalr>("LALR(1)");
     test_dfa::<Slr>("SLR");
 }
