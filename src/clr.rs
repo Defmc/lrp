@@ -30,6 +30,8 @@ impl Clr {
         self.table.states.push(start);
     }
 
+    /// # Panics
+    /// Never.
     pub fn proc_actions(&mut self) {
         self.proc_closures();
         let start = self.table.basis_pos().rule;
@@ -76,7 +78,7 @@ impl Clr {
         while idx < self.table.states.len() {
             let row = self.table.states[idx].clone();
             for s in self.table.grammar.symbols() {
-                let Some((kernel, closures)) = self.goto(row.clone(), &s) else {
+                let Some((kernel, closures)) = self.goto(&row, &s) else {
                     continue;
                 };
                 let old_val = self.table.kernels.insert(kernel, self.table.states.len());
@@ -88,8 +90,8 @@ impl Clr {
     }
 
     #[must_use]
-    pub fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
-        let kernels = Tabler::sym_filter(&kernels, sym);
+    pub fn goto(&self, kernels: &State, sym: &Term) -> Option<(State, State)> {
+        let kernels = Tabler::sym_filter(kernels, sym);
         if self.table.kernels.contains_key(&kernels) {
             None?;
         }

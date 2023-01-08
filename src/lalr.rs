@@ -111,7 +111,7 @@ impl Lalr {
         while idx < self.table.states.len() {
             let row = self.table.states[idx].clone();
             for s in self.table.grammar.symbols() {
-                let Some((kernel, closures)) = self.goto(row.clone(), &s) else {
+                let Some((kernel, closures)) = self.goto(&row, &s) else {
                     continue;
                 };
                 let without_look = Self::without_look(&closures);
@@ -138,8 +138,8 @@ impl Lalr {
     }
 
     #[must_use]
-    fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
-        let kernels = Tabler::sym_filter(&kernels, sym);
+    fn goto(&self, kernels: &State, sym: &Term) -> Option<(State, State)> {
+        let kernels = Tabler::sym_filter(kernels, sym);
         if self.table.kernels.contains_key(&kernels) {
             None?;
         }
