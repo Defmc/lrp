@@ -135,15 +135,11 @@ impl Parser for Lalr {
             },
             |locus| {
                 let filter = Tabler::sym_filter(row, &locus);
-                let state = self
-                    .table
-                    .kernels
-                    .get(&filter)
-                    .expect("`kernels` is incomplete");
+                let state = self.kernel_like(&filter).expect("`kernels` is incomplete");
                 if self.table.grammar.is_terminal(&locus) {
-                    Map::from([(locus, Action::Shift(*state))])
+                    Map::from([(locus, Action::Shift(state))])
                 } else {
-                    Map::from([(locus, Action::Goto(*state))])
+                    Map::from([(locus, Action::Goto(state))])
                 }
             },
         )
@@ -173,6 +169,24 @@ impl Lalr {
         let start = self.prop_closure(State::from([self.table.basis_pos()]));
         self.table.kernels.insert(State::new(), 0);
         self.table.states.push(start);
+    }
+
+    #[must_use]
+    pub fn kernel_like(&self, kernel: &State) -> Option<usize> {
+        println!("searching by {kernel:?}");
+        let eq = |k: &Position, s: &Position| {
+            print!("comparing {k:?} with {s:?}: ");
+            let r = k.body_eq(s) && k.look.iter().all(|ak| s.look.contains(ak));
+            println!("{r}");
+            r
+        };
+        let idx = self
+            .table
+            .kernels
+            .iter()
+            .find(|(st, _)| kernel.iter().all(|k| st.iter().any(|s| eq(k, s))))?
+            .1;
+        Some(*idx)
     }
 
     #[must_use]
@@ -263,7 +277,7 @@ mod tests {
     #[test]
     fn ucalgary_uni_oth_lr1() {
         let lalr = Lalr::new(grammars_tests::ucalgary_uni_oth_lr1());
-        assert_eq!(0, lalr.tables().conflicts().count());
+        assert_eq!(2, lalr.tables().conflicts().count());
 
         assert!(lalr.validate(["e", "a", "c"]));
         assert!(lalr.validate(["d", "a", "b"]));
