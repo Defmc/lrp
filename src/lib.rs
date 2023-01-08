@@ -12,8 +12,8 @@ pub use parser::*;
 pub mod clr;
 pub use clr::Clr;
 
-pub mod lalr;
-pub use lalr::Lalr;
+pub mod slr;
+pub use slr::Slr;
 
 pub type Map<K, V> = BTreeMap<K, V>;
 pub type Set<T> = BTreeSet<T>;
