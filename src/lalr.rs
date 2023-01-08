@@ -82,21 +82,15 @@ impl Parser for Lalr {
                 };
                 let without_look = Self::without_look(&closures);
                 let old = if let Some(&state) = self.raws.get(&without_look) {
-                    println!(
-                        "there already is an state for {closures:?} in {state}: {:?}",
-                        self.table.states[state]
-                    );
                     // TODO: Build a custom merging state function
                     let both = self.table.states[state]
                         .iter()
                         .chain(closures.iter())
                         .cloned()
                         .collect();
-                    println!("state in right: {state}");
                     self.table.states[state] = Self::merged(both);
                     self.table.kernels.insert(kernel, state)
                 } else {
-                    println!("state in left: {}", self.table.states.len());
                     self.raws.insert(without_look, self.table.states.len());
                     self.table.states.push(closures);
                     self.table
