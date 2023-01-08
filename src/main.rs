@@ -3,21 +3,18 @@ use std::{
     iter::Peekable,
 };
 
-use lrp::{Clr, Dfa, Grammar, Parser, Set, Tabler, Term};
+use lrp::{Dfa, Grammar, Lalr, Parser, Set, Tabler, Term};
 use prettytable::{row, Cell, Row, Table};
 
 fn main() {
     let grammar = lrp::grammar! {
-        "S" -> "(" ")"
-            | "(" "S" ")"
-            | "[" "]"
-            | "[" "S" "]"
-            | "{" "}"
-            | "{" "S" "}"
+        "S" -> "C" "C",
+        "C" -> "c" "C"
+            | "d"
     };
-    let grammar = Grammar::new("S", grammar, Set::from(["[", "]", "(", ")", "{", "}"]));
+    let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
 
-    let parser = Clr::new(grammar);
+    let parser = Lalr::new(grammar);
 
     let tables = parser.tables();
 
@@ -32,6 +29,8 @@ fn main() {
 
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
+
+        #[allow(clippy::needless_collect)]
         let input: Vec<_> = input.trim().chars().map(|c| c.to_string()).collect();
         let mut dfa = parser.dfa(
             input
@@ -81,11 +80,15 @@ fn print_states_table(table: &Tabler) {
                 continue;
             }
             let state_id = table.kernels[&kernel];
+            println!("{kernel:?}: {state_id}");
             out.add_row(row![
                 format!("goto({i}, {sym})"),
                 format!("{kernel:?}"),
                 format!("{state_id}"),
-                format!("{:?}", table.states[state_id])
+                table
+                    .states
+                    .get(state_id)
+                    .map_or_else(|| "n/a".to_string(), |s| format!("{s:?}"))
             ]);
         }
     }
@@ -161,15 +164,11 @@ where
                 .collect::<Vec<_>>()
         );
         let symbol = state.buffer.peek().unwrap_or(&lrp::EOF);
-        let action = format!(
-            "{}",
-            state
-                .table
-                .get(state.top)
-                .map(|t| t.get(symbol))
-                .flatten()
-                .map_or_else(|| "n/a".to_string(), |a| format!("{a:?}"))
-        );
+        let action = state
+            .table
+            .get(state.top)
+            .and_then(|t| t.get(symbol))
+            .map_or_else(|| "n/a".to_string(), |a| format!("{a:?}"));
         let action_adr = format!("{}:{:?}", state.top, symbol);
 
         out.add_row(row![step, stack, buffer, action_adr, action]);
