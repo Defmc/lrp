@@ -1,4 +1,4 @@
-use crate::{Action, Map, Parser, Position, Rule, Set, State, Tabler, Term};
+use crate::{transitive, Action, Map, Parser, Position, Rule, Set, State, Tabler, Term};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Clr {
@@ -21,8 +21,16 @@ impl Parser for Clr {
     fn tables_mut(&mut self) -> &mut Tabler {
         &mut self.table
     }
+}
 
-    fn proc_actions(&mut self) {
+impl Clr {
+    pub fn proc_closures_first_row(&mut self) {
+        let start = self.prop_closure(State::from([self.table.basis_pos()]));
+        self.table.kernels.insert(State::new(), 0);
+        self.table.states.push(start);
+    }
+
+    pub fn proc_actions(&mut self) {
         self.proc_closures();
         let start = self.table.basis_pos().rule;
         for row in &self.table.states {
@@ -41,7 +49,8 @@ impl Parser for Clr {
         }
     }
 
-    fn closure(&self, state: State) -> State {
+    #[must_use]
+    pub fn closure(&self, state: State) -> State {
         let mut new_state = State::new();
         for pos in &state {
             if let Some(top) = pos.top() {
@@ -61,7 +70,7 @@ impl Parser for Clr {
         new_state
     }
 
-    fn proc_closures(&mut self) {
+    pub fn proc_closures(&mut self) {
         self.proc_closures_first_row();
         let mut idx = 0;
         while idx < self.table.states.len() {
@@ -79,7 +88,7 @@ impl Parser for Clr {
     }
 
     #[must_use]
-    fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
+    pub fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
         let kernels = Tabler::sym_filter(&kernels, sym);
         if self.table.kernels.contains_key(&kernels) {
             None?;
@@ -93,7 +102,7 @@ impl Parser for Clr {
     }
 
     #[must_use]
-    fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action> {
+    pub fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action> {
         pos.top().map_or_else(
             || {
                 pos.look
@@ -127,30 +136,8 @@ impl Parser for Clr {
     }
 
     #[must_use]
-    fn merged(states: State) -> State {
-        let mut new = State::new();
-        'outter: for state in states {
-            let keys: Vec<_> = new.iter().cloned().collect();
-            for key in keys {
-                if new.get(&key).unwrap().body_eq(&state) {
-                    let mut state = state;
-                    state.look.extend(new.get(&key).unwrap().look.clone());
-                    new.remove(&key);
-                    new.insert(state);
-                    continue 'outter;
-                }
-            }
-            new.insert(state);
-        }
-        new
-    }
-}
-
-impl Clr {
-    pub fn proc_closures_first_row(&mut self) {
-        let start = self.prop_closure(State::from([self.table.basis_pos()]));
-        self.table.kernels.insert(State::new(), 0);
-        self.table.states.push(start);
+    pub fn prop_closure(&self, seed: State) -> State {
+        transitive(seed, |s| self.closure(s))
     }
 }
 
@@ -196,7 +183,7 @@ mod tests {
     }
 
     #[test]
-    fn wikipedia() {
+    pub fn wikipedia() {
         let clr = Clr::new(grammars_tests::wikipedia());
         assert_eq!(0, clr.tables().conflicts().count());
 
@@ -234,7 +221,7 @@ mod tests {
 
     // https://smlweb.cpsc.ucalgary.ca/
     #[test]
-    fn ucalgary_uni_oth_lr1() {
+    pub fn ucalgary_uni_oth_lr1() {
         let clr = Clr::new(grammars_tests::ucalgary_uni_oth_lr1());
         assert_eq!(0, clr.tables().conflicts().count());
 
@@ -249,7 +236,7 @@ mod tests {
     }
 
     #[test]
-    fn serokell() {
+    pub fn serokell() {
         let clr = Clr::new(grammars_tests::serokell());
         assert_eq!(0, clr.tables().conflicts().count());
 

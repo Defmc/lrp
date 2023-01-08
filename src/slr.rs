@@ -1,4 +1,4 @@
-use crate::{Action, Map, Parser, Position, Rule, Set, State, Tabler, Term};
+use crate::{transitive, Action, Map, Parser, Position, Rule, Set, State, Tabler, Term};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Slr {
@@ -19,8 +19,17 @@ impl Parser for Slr {
     fn tables_mut(&mut self) -> &mut Tabler {
         &mut self.table
     }
+}
 
-    fn closure(&self, state: State) -> State {
+impl Slr {
+    pub fn proc_closures_first_row(&mut self) {
+        let start = self.prop_closure(State::from([self.table.basis_pos()]));
+        self.table.kernels.insert(State::new(), 0);
+        self.table.states.push(start);
+    }
+
+    #[must_use]
+    pub fn closure(&self, state: State) -> State {
         let mut new_state = State::new();
         for pos in &state {
             if let Some(top) = pos.top() {
@@ -36,7 +45,7 @@ impl Parser for Slr {
         new_state
     }
 
-    fn proc_closures(&mut self) {
+    pub fn proc_closures(&mut self) {
         self.proc_closures_first_row();
         let mut idx = 0;
         while idx < self.table.states.len() {
@@ -54,7 +63,8 @@ impl Parser for Slr {
         }
     }
 
-    fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action> {
+    #[must_use]
+    pub fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action> {
         pos.top().map_or_else(
             || {
                 self.table.follow[pos.rule]
@@ -87,7 +97,8 @@ impl Parser for Slr {
         )
     }
 
-    fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
+    #[must_use]
+    pub fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
         let kernels = Tabler::sym_filter(&kernels, sym);
         if self.table.kernels.contains_key(&kernels) {
             None?;
@@ -100,7 +111,7 @@ impl Parser for Slr {
         }
     }
 
-    fn proc_actions(&mut self) {
+    pub fn proc_actions(&mut self) {
         self.proc_closures();
         let start = self.table.basis_pos().rule;
         for row in &self.table.states {
@@ -118,13 +129,10 @@ impl Parser for Slr {
             self.table.actions.push(map);
         }
     }
-}
 
-impl Slr {
-    pub fn proc_closures_first_row(&mut self) {
-        let start = self.prop_closure(State::from([self.table.basis_pos()]));
-        self.table.kernels.insert(State::new(), 0);
-        self.table.states.push(start);
+    #[must_use]
+    pub fn prop_closure(&self, seed: State) -> State {
+        transitive(seed, |s| self.closure(s))
     }
 }
 

@@ -11,8 +11,18 @@ fn main() {
         "S" -> "C" "C",
         "C" -> "c" "C"
             | "d"
+        // "S" -> "(" ")"
+        //     | "(" "S" ")"
+        //     | "[" "]"
+        //     | "[" "S" "]"
+        //     | "{" "}"
+        //     | "{" "S" "}"
     };
-    let grammar = Grammar::new("S", grammar, Set::from(["c", "d"]));
+    let grammar = Grammar::new(
+        "S",
+        grammar,
+        Set::from(["[", "]", "(", ")", "{", "}", "d", "c"]),
+    );
 
     let parser = Lalr::new(grammar);
 
@@ -80,15 +90,11 @@ fn print_states_table(table: &Tabler) {
                 continue;
             }
             let state_id = table.kernels[&kernel];
-            println!("{kernel:?}: {state_id}");
             out.add_row(row![
                 format!("goto({i}, {sym})"),
                 format!("{kernel:?}"),
                 format!("{state_id}"),
-                table
-                    .states
-                    .get(state_id)
-                    .map_or_else(|| "n/a".to_string(), |s| format!("{s:?}"))
+                format!("{:?}", table.states[state_id])
             ]);
         }
     }

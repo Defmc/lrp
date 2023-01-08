@@ -1,4 +1,4 @@
-use crate::{Action, Map, Parser, Position, Rule, Set, State, Tabler, Term};
+use crate::{transitive, Action, Map, Parser, Position, Rule, Set, State, Tabler, Term};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Lalr {
@@ -32,6 +32,38 @@ impl Parser for Lalr {
     fn tables_mut(&mut self) -> &mut Tabler {
         &mut self.table
     }
+}
+
+impl Lalr {
+    pub fn proc_closures_first_row(&mut self) {
+        let start = self.prop_closure(State::from([self.table.basis_pos()]));
+        self.table.kernels.insert(State::new(), 0);
+        self.table.states.push(start);
+    }
+
+    #[must_use]
+    pub fn kernel_like(&self, kernel: &State) -> Option<usize> {
+        let eq = |k: &Position, s: &Position| {
+            k.body_eq(s) && k.look.iter().all(|ak| s.look.contains(ak))
+        };
+        let idx = self
+            .table
+            .kernels
+            .iter()
+            .find(|(st, _)| kernel.iter().all(|k| st.iter().any(|s| eq(k, s))))?
+            .1;
+        Some(*idx)
+    }
+
+    #[must_use]
+    pub fn without_look(state: &State) -> State {
+        state.iter().map(Position::no_look).collect()
+    }
+
+    #[must_use]
+    pub fn prop_closure(&self, seed: State) -> State {
+        transitive(seed, |s| self.closure(s))
+    }
 
     fn proc_actions(&mut self) {
         self.proc_closures();
@@ -52,6 +84,7 @@ impl Parser for Lalr {
         }
     }
 
+    #[must_use]
     fn closure(&self, state: State) -> State {
         let mut new_state = State::new();
         for pos in &state {
@@ -104,6 +137,7 @@ impl Parser for Lalr {
         }
     }
 
+    #[must_use]
     fn goto(&self, kernels: State, sym: &Term) -> Option<(State, State)> {
         let kernels = Tabler::sym_filter(&kernels, sym);
         if self.table.kernels.contains_key(&kernels) {
@@ -117,6 +151,7 @@ impl Parser for Lalr {
         }
     }
 
+    #[must_use]
     fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action> {
         pos.top().map_or_else(
             || {
@@ -146,6 +181,7 @@ impl Parser for Lalr {
         )
     }
 
+    #[must_use]
     fn merged(states: State) -> State {
         let mut new = State::new();
         'outter: for state in states {
@@ -162,33 +198,6 @@ impl Parser for Lalr {
             new.insert(state);
         }
         new
-    }
-}
-
-impl Lalr {
-    pub fn proc_closures_first_row(&mut self) {
-        let start = self.prop_closure(State::from([self.table.basis_pos()]));
-        self.table.kernels.insert(State::new(), 0);
-        self.table.states.push(start);
-    }
-
-    #[must_use]
-    pub fn kernel_like(&self, kernel: &State) -> Option<usize> {
-        let eq = |k: &Position, s: &Position| {
-            k.body_eq(s) && k.look.iter().all(|ak| s.look.contains(ak))
-        };
-        let idx = self
-            .table
-            .kernels
-            .iter()
-            .find(|(st, _)| kernel.iter().all(|k| st.iter().any(|s| eq(k, s))))?
-            .1;
-        Some(*idx)
-    }
-
-    #[must_use]
-    pub fn without_look(state: &State) -> State {
-        state.iter().map(Position::no_look).collect()
     }
 }
 
