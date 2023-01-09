@@ -7,9 +7,13 @@ pub struct Clr {
 
 impl Parser for Clr {
     fn with_table(table: Tabler) -> Self {
-        let mut parser = Self { table };
+        let mut parser = Self::uninit(table);
         parser.proc_actions();
         parser
+    }
+
+    fn uninit(table: Tabler) -> Self {
+        Self { table }
     }
 
     #[must_use]

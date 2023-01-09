@@ -17,12 +17,16 @@ impl Parser for Lalr {
     }
 
     fn with_table(table: Tabler) -> Self {
-        let mut parser = Self {
-            table,
-            raws: Map::new(),
-        };
+        let mut parser = Self::uninit(table);
         parser.proc_actions();
         parser
+    }
+
+    fn uninit(table: Tabler) -> Self {
+        Self {
+            table,
+            raws: Map::new(),
+        }
     }
 
     fn tables(&self) -> &Tabler {

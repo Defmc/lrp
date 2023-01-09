@@ -16,6 +16,9 @@ pub trait Parser {
     fn with_table(table: Tabler) -> Self;
 
     #[must_use]
+    fn uninit(table: Tabler) -> Self;
+
+    #[must_use]
     fn dfa<I: Iterator<Item = Term>>(&self, buffer: I) -> Dfa<I> {
         Dfa::new(buffer, self.tables().actions.clone())
     }
