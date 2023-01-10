@@ -25,6 +25,12 @@ impl Position {
     }
 
     #[must_use]
+    pub fn with_look(mut self, look: Set<Term>) -> Self {
+        self.look = look;
+        self
+    }
+
+    #[must_use]
     pub fn locus(&self) -> Option<Term> {
         self.peek(1)
     }

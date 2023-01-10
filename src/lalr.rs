@@ -42,7 +42,7 @@ impl Lalr {
     pub fn proc_closures_first_row(&mut self) {
         let start = self.prop_closure(State::from([self.table.basis_pos()]));
         self.table.kernels.insert(State::new(), 0);
-        self.raws.insert(State::new(), State::new());
+        self.raws.insert(State::new(), start.clone());
         self.table.states.push(start);
     }
 
@@ -118,30 +118,17 @@ impl Lalr {
     fn proc_closures(&mut self) {
         self.proc_closures_first_row();
         let mut idx = 0;
+        let syms: Vec<_> = self.table.grammar.symbols().collect();
         while idx < self.table.states.len() {
             let row = self.table.states[idx].clone();
-            for s in self.table.grammar.symbols() {
+            for s in &syms {
                 let Some((kernel, closures)) = self.goto(&row, &s) else {
                     continue;
                 };
                 let raw_kernel = Self::without_look(&kernel);
-                let old = if let Some(main_kernel) = self.raws.get(&raw_kernel) {
-                    // let both = self.table.states[state]
-                    //     .iter()
-                    //     .chain(closures.iter())
-                    //     .cloned()
-                    //     .collect();
-                    // TODO: Build a custom merging state function
-                    let both = raw_kernel
-                        .into_iter()
-                        .chain(main_kernel.iter().cloned())
-                        .collect();
-                    let both = Self::merged(both);
-                    let state_id = self.table.kernels[&main_kernel];
-                    // self.table.states[_state] = Self::merged(both);
-                    self.table.kernels.remove(&main_kernel);
-                    self.raws.insert(kernel, both.clone());
-                    self.table.kernels.insert(both, state_id)
+                let main_kernel = self.raws.get(&raw_kernel).cloned();
+                let old = if let Some(main_kernel) = main_kernel {
+                    self.update_closures(main_kernel, kernel, closures)
                 } else {
                     self.raws.insert(raw_kernel, kernel.clone());
                     self.table.states.push(closures);
@@ -153,6 +140,53 @@ impl Lalr {
             }
             idx += 1;
         }
+    }
+
+    #[must_use]
+    pub fn update_closures(&mut self, main: State, inc: State, closures: State) -> Option<usize> {
+        let syms: Vec<_> = self.table.grammar.symbols().collect();
+        let (old, new_kernel) = self.update_state(main, inc, closures);
+
+        for s in &syms {
+            let Some((kernel, closures)) = self.goto(&new_kernel, &s) else {
+                    continue;
+                };
+            let raw_kernel = Self::without_look(&kernel);
+            let main_kernel = self.raws.get(&raw_kernel).cloned();
+            let Some(main_kernel) = main_kernel else {
+                continue;
+            };
+            let old = self.update_closures(main_kernel, kernel, closures);
+            debug_assert!(old.is_none());
+        }
+        println!("finished {new_kernel:?}");
+        old
+    }
+
+    #[must_use]
+    pub fn update_state(
+        &mut self,
+        main: State,
+        inc: State,
+        closures: State,
+    ) -> (Option<usize>, State) {
+        // TODO: Build a custom merging state function
+        let state_id = self.table.kernels[&main];
+        println!("updating {main:?}");
+        self.table.kernels.remove(&main);
+        let both_kernels = inc.clone().into_iter().chain(main.into_iter()).collect();
+        let both_closures = self.table.states[state_id]
+            .clone()
+            .into_iter()
+            .chain(closures.into_iter())
+            .collect();
+        let (new_kernel, both_closures) = (Self::merged(both_kernels), Self::merged(both_closures));
+        self.table.states[state_id] = both_closures;
+        self.raws.insert(inc.clone(), new_kernel.clone());
+        *self.raws.get_mut(&Self::without_look(&new_kernel)).unwrap() = new_kernel.clone();
+
+        let old = self.table.kernels.insert(new_kernel.clone(), state_id);
+        (old, inc)
     }
 
     #[must_use]
@@ -202,20 +236,22 @@ impl Lalr {
     #[must_use]
     fn merged(states: State) -> State {
         let mut new = State::new();
-        'outter: for state in states {
-            let keys: Vec<_> = new.iter().cloned().collect();
-            for key in keys {
-                if new.get(&key).unwrap().body_eq(&state) {
-                    let mut state = state;
-                    state.look.extend(new.get(&key).unwrap().look.clone());
-                    new.remove(&key);
-                    new.insert(state);
-                    continue 'outter;
-                }
+        let mut looks: Map<Position, Set<Term>> = Map::new();
+        for state in states {
+            let no_look = state.no_look();
+            if let Some(look) = looks.get_mut(&no_look) {
+                look.extend(state.look);
+            } else {
+                new.insert(no_look.clone());
+                looks.insert(no_look, state.look);
             }
-            new.insert(state);
         }
-        new
+        new.into_iter()
+            .map(|s| {
+                let look = looks[&s].clone();
+                s.with_look(look)
+            })
+            .collect()
     }
 }
 
