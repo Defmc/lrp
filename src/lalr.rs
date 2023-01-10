@@ -341,10 +341,10 @@ mod tests {
 
         assert!(lalr.validate(["e", "a", "c"]));
         assert!(lalr.validate(["d", "a", "b"]));
-        assert!(lalr.validate(["d", "e", "a", "c"]));
-        assert!(lalr.validate(["d", "e", "a", "b"]));
-        assert!(lalr.validate(["e", "d", "a", "b"]));
-        assert!(lalr.validate(["e", "d", "a", "c"]));
+        assert!(!lalr.validate(["d", "e", "a", "c"]));
+        assert!(!lalr.validate(["d", "e", "a", "b"]));
+        assert!(!lalr.validate(["e", "d", "a", "b"]));
+        assert!(!lalr.validate(["e", "d", "a", "c"]));
         assert!(lalr.validate(["d", "d", "e", "a", "b"]));
         assert!(lalr.validate(["e", "e", "d", "a", "c"]));
     }

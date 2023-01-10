@@ -8,15 +8,12 @@ use prettytable::{row, Cell, Row, Table};
 
 fn main() {
     let grammar = lrp::grammar! {
-        "S" -> "C" "C",
-        "C" -> "c" "C"
-            | "d"
-        // "S" -> "(" ")"
-        //     | "(" "S" ")"
-        //     | "[" "]"
-        //     | "[" "S" "]"
-        //     | "{" "}"
-        //     | "{" "S" "}"
+        "S" -> "(" ")"
+            | "(" "S" ")"
+            | "[" "]"
+            | "[" "S" "]"
+            | "{" "}"
+            | "{" "S" "}"
     };
     let grammar = Grammar::new(
         "S",
@@ -89,7 +86,9 @@ fn print_states_table(table: &Tabler, parser: &Lalr) {
             if kernel.is_empty() {
                 continue;
             }
-            let state_id = parser.kernel_like(&kernel).unwrap();
+            let kernel = Lalr::without_look(&kernel);
+            let kernel = &parser.raws[&kernel];
+            let state_id = parser.table.kernels[&kernel];
             out.add_row(row![
                 format!("goto({i}, {sym})"),
                 format!("{kernel:?}"),
