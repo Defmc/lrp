@@ -30,7 +30,7 @@ fn main() {
 
     print_tokens_table(tables);
 
-    print_states_table(tables);
+    print_states_table(tables, &parser);
     print_actions_table(tables);
 
     loop {
@@ -64,7 +64,7 @@ fn print_tokens_table(table: &Tabler) {
     out.printstd();
 }
 
-fn print_states_table(table: &Tabler) {
+fn print_states_table(table: &Tabler, parser: &Lalr) {
     let mut out = Table::new();
     out.set_titles(row!["goto(idx, term)", "kernel", "state", "closure"]);
 
@@ -89,7 +89,7 @@ fn print_states_table(table: &Tabler) {
             if kernel.is_empty() {
                 continue;
             }
-            let state_id = table.kernels[&kernel];
+            let state_id = parser.kernel_like(&kernel).unwrap();
             out.add_row(row![
                 format!("goto({i}, {sym})"),
                 format!("{kernel:?}"),

@@ -3,9 +3,9 @@ use crate::{transitive, Action, Map, Parser, Position, Rule, Set, State, Tabler,
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Lalr {
     pub table: Tabler,
-    /// Describes the "raw states" (states without lookahead symbol) in `table.states`, using it
-    /// raw closure as key and value being its index
-    pub raws: Map<State, usize>,
+    /// Describes the "raw states" (states without lookahead symbol) in `table.kernels`, using it
+    /// raw kernel as key and value being its final kernel
+    pub raws: Map<State, State>,
 }
 
 impl Parser for Lalr {
@@ -42,21 +42,17 @@ impl Lalr {
     pub fn proc_closures_first_row(&mut self) {
         let start = self.prop_closure(State::from([self.table.basis_pos()]));
         self.table.kernels.insert(State::new(), 0);
+        self.raws.insert(State::new(), State::new());
         self.table.states.push(start);
     }
 
     #[must_use]
     pub fn kernel_like(&self, kernel: &State) -> Option<usize> {
-        let eq = |k: &Position, s: &Position| {
-            k.body_eq(s) && k.look.iter().all(|ak| s.look.contains(ak))
-        };
-        let idx = self
-            .table
-            .kernels
-            .iter()
-            .find(|(st, _)| kernel.iter().all(|k| st.iter().any(|s| eq(k, s))))?
-            .1;
-        Some(*idx)
+        let raw = Self::without_look(kernel);
+        println!("searching by {raw:?}");
+        let kernel = self.raws.get(&raw)?;
+        println!("founded as {kernel:?}");
+        self.table.kernels.get(kernel).copied()
     }
 
     #[must_use]
@@ -71,6 +67,16 @@ impl Lalr {
 
     fn proc_actions(&mut self) {
         self.proc_closures();
+        let mut kers: Vec<_> = self.table.kernels.iter().collect();
+        kers.sort_by_key(|(_, i)| *i);
+        for (k, &i) in kers {
+            println!("\nstate: {i}");
+            println!("kernel: {:?}", k);
+            println!("raw kernel: {:?}", Self::without_look(k));
+            for state in &self.table.states[i] {
+                println!("\t{state:?}");
+            }
+        }
         let start = self.table.basis_pos().rule;
         for row in &self.table.states {
             let mut map: Map<Term, Action> = Map::new();
@@ -118,18 +124,26 @@ impl Lalr {
                 let Some((kernel, closures)) = self.goto(&row, &s) else {
                     continue;
                 };
-                let without_look = Self::without_look(&closures);
-                let old = if let Some(&state) = self.raws.get(&without_look) {
+                let raw_kernel = Self::without_look(&kernel);
+                let old = if let Some(main_kernel) = self.raws.get(&raw_kernel) {
+                    // let both = self.table.states[state]
+                    //     .iter()
+                    //     .chain(closures.iter())
+                    //     .cloned()
+                    //     .collect();
                     // TODO: Build a custom merging state function
-                    let both = self.table.states[state]
-                        .iter()
-                        .chain(closures.iter())
-                        .cloned()
+                    let both = raw_kernel
+                        .into_iter()
+                        .chain(main_kernel.iter().cloned())
                         .collect();
-                    self.table.states[state] = Self::merged(both);
-                    self.table.kernels.insert(kernel, state)
+                    let both = Self::merged(both);
+                    let state_id = self.table.kernels[&main_kernel];
+                    // self.table.states[_state] = Self::merged(both);
+                    self.table.kernels.remove(&main_kernel);
+                    self.raws.insert(kernel, both.clone());
+                    self.table.kernels.insert(both, state_id)
                 } else {
-                    self.raws.insert(without_look, self.table.states.len());
+                    self.raws.insert(raw_kernel, kernel.clone());
                     self.table.states.push(closures);
                     self.table
                         .kernels
