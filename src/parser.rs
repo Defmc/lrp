@@ -77,4 +77,8 @@ pub trait Parser {
 
     #[must_use]
     fn tables_mut(&mut self) -> &mut Tabler;
+
+    fn reduce_equals(&mut self) {
+        self.tables_mut().reduce_equals();
+    }
 }

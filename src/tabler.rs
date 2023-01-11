@@ -176,6 +176,50 @@ impl Tabler {
             .flat_map(Map::values)
             .filter(|a| matches!(a, Action::Conflict(..)))
     }
+
+    pub fn reduce_equals(&mut self) {
+        let (travel, new_actions) = self.reduced_actions();
+        self.actions = new_actions;
+
+        self.actions
+            .iter_mut()
+            .flat_map(Map::iter_mut)
+            .for_each(|(_, e)| *e = Self::update_entry(e, &travel));
+    }
+
+    /// Updates an action by re-indexing states from `travel`.
+    #[must_use]
+    pub fn update_entry(entry: &Action, travel: &Map<usize, usize>) -> Action {
+        match entry {
+            Action::Acc | Action::Reduce(..) => entry.clone(),
+            Action::Goto(n) => Action::Goto(travel[n]),
+            Action::Shift(n) => Action::Shift(travel[n]),
+            // TODO: Reuse old allocations from `a` and `b`
+            Action::Conflict(a, b) => Action::Conflict(
+                Self::update_entry(a, travel).into(),
+                Self::update_entry(b, travel).into(),
+            ),
+        }
+    }
+
+    /// Generates a map containing the update references (old state idx - new state idx) and a
+    /// reduced action table where equal states was merged.
+    /// Warranted to be O(n) and `actions.len() <= self.states`
+    #[must_use]
+    pub fn reduced_actions(&self) -> (Map<usize, usize>, ActTable) {
+        let mut actions_map = Map::new();
+        let mut travel_idx = Map::new();
+        let mut actions = Vec::new();
+        for (i, old_action) in self.actions.iter().enumerate() {
+            if !actions_map.contains_key(old_action) {
+                actions_map.insert(old_action.clone(), actions.len());
+                actions.push(old_action.clone());
+            }
+            travel_idx.insert(i, actions_map[old_action]);
+        }
+        debug_assert!(actions.len() <= self.states.len());
+        (travel_idx, actions)
+    }
 }
 
 #[cfg(test)]
