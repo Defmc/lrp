@@ -197,4 +197,86 @@ pub mod grammars_tests {
 
         Grammar::new("S", grammar, Set::from(["(", ")", "[", "]", "{", "}"]))
     }
+
+    pub fn scanner() -> Grammar {
+        /*
+        Phrase -> Item Space Phrase.
+        Phrase -> Item.
+
+        Item -> Word.
+        Item -> Num.
+
+        Word -> Alpha Word.
+        Word -> Alpha.
+
+        Num -> Digit Num.
+        Num -> Digit.
+
+        Alpha -> a.
+        Alpha -> b.
+        Alpha -> c.
+        Alpha -> d.
+        Alpha -> e.
+        Alpha -> f.
+        Alpha -> g.
+        Alpha -> h.
+        Alpha -> i.
+        Alpha -> j.
+        Alpha -> k.
+        Alpha -> l.
+        Alpha -> m.
+        Alpha -> n.
+        Alpha -> o.
+        Alpha -> p.
+        Alpha -> q.
+        Alpha -> r.
+        Alpha -> t.
+        Alpha -> s.
+        Alpha -> u.
+        Alpha -> v.
+        Alpha -> w.
+        Alpha -> x.
+        Alpha -> y.
+        Alpha -> z.
+
+        Digit -> 0.
+        Digit -> 1.
+        Digit -> 2.
+        Digit -> 3.
+        Digit -> 4.
+        Digit -> 5.
+        Digit -> 6.
+        Digit -> 7.
+        Digit -> 8.
+        Digit -> 9.
+
+        Space -> _.
+             */
+        let grammar = grammar! {
+            "Phrase" -> "Item" "Space" "Phrase"
+                | "Item",
+
+            "Item" -> "Word" | "Num",
+
+            "Word" -> "Alpha" "Word"
+                | "Alpha",
+
+            "Num" -> "Digit" "Num"
+                | "Digit",
+
+            "Alpha" -> "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "t" | "s" | "u" | "v" | "w" | "x" | "y" | "z",
+
+            "Digit" -> "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9",
+
+            "Space" -> "_"
+        };
+
+        let terminals = Set::from([
+            "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q",
+            "r", "t", "s", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7",
+            "8", "9", "_",
+        ]);
+
+        Grammar::new("Phrase", grammar, terminals)
+    }
 }
