@@ -43,6 +43,17 @@ pub trait Parser {
     }
 
     #[must_use]
+    fn state_from_kernel(&self, kernel: &State) -> Option<usize> {
+        let final_kernel = self.final_kernel(kernel)?;
+        self.tables().kernels.get(final_kernel).copied()
+    }
+
+    #[must_use]
+    fn final_kernel<'a>(&'a self, kernel: &'a State) -> Option<&'a State> {
+        Some(kernel)
+    }
+
+    #[must_use]
     fn merged(states: State) -> State {
         let mut new = State::new();
         'outter: for state in states {

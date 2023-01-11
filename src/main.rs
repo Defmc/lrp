@@ -61,7 +61,7 @@ fn print_tokens_table(table: &Tabler) {
     out.printstd();
 }
 
-fn print_states_table(table: &Tabler, parser: &Lalr) {
+fn print_states_table(table: &Tabler, parser: &impl Parser) {
     let mut out = Table::new();
     out.set_titles(row!["goto(idx, term)", "kernel", "state", "closure"]);
 
@@ -86,9 +86,8 @@ fn print_states_table(table: &Tabler, parser: &Lalr) {
             if kernel.is_empty() {
                 continue;
             }
-            let kernel = Lalr::without_look(&kernel);
-            let kernel = &parser.raws[&kernel];
-            let state_id = parser.table.kernels[kernel];
+            let kernel = parser.final_kernel(&kernel).unwrap();
+            let state_id = parser.state_from_kernel(kernel).unwrap();
             out.add_row(row![
                 format!("goto({i}, {sym})"),
                 format!("{kernel:?}"),

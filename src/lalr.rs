@@ -36,6 +36,11 @@ impl Parser for Lalr {
     fn tables_mut(&mut self) -> &mut Tabler {
         &mut self.table
     }
+
+    fn final_kernel<'a>(&'a self, kernel: &'a State) -> Option<&'a State> {
+        let raw = Self::without_look(kernel);
+        self.raws.get(&raw)
+    }
 }
 
 impl Lalr {
@@ -44,13 +49,6 @@ impl Lalr {
         self.table.kernels.insert(State::new(), 0);
         self.raws.insert(State::new(), start.clone());
         self.table.states.push(start);
-    }
-
-    #[must_use]
-    pub fn kernel_like(&self, kernel: &State) -> Option<usize> {
-        let raw = Self::without_look(kernel);
-        let kernel = self.raws.get(&raw)?;
-        self.table.kernels.get(kernel).copied()
     }
 
     #[must_use]
@@ -240,7 +238,9 @@ impl Lalr {
             },
             |locus| {
                 let filter = Tabler::sym_filter(row, &locus);
-                let state = self.kernel_like(&filter).expect("`kernels` is incomplete");
+                let state = self
+                    .state_from_kernel(&filter)
+                    .expect("`kernels` is incomplete");
                 if self.table.grammar.is_terminal(&locus) {
                     Map::from([(locus, Action::Shift(state))])
                 } else {
@@ -248,27 +248,6 @@ impl Lalr {
                 }
             },
         )
-    }
-
-    #[must_use]
-    fn merged(states: State) -> State {
-        let mut new = State::new();
-        let mut looks: Map<Position, Set<Term>> = Map::new();
-        for state in states {
-            let no_look = state.no_look();
-            if let Some(look) = looks.get_mut(&no_look) {
-                look.extend(state.look);
-            } else {
-                new.insert(no_look.clone());
-                looks.insert(no_look, state.look);
-            }
-        }
-        new.into_iter()
-            .map(|s| {
-                let look = looks[&s].clone();
-                s.with_look(look)
-            })
-            .collect()
     }
 }
 

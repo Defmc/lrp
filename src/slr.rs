@@ -88,14 +88,12 @@ impl Slr {
             |locus| {
                 let filter = Tabler::sym_filter(row, &locus);
                 let state = self
-                    .table
-                    .kernels
-                    .get(&filter)
+                    .state_from_kernel(&filter)
                     .expect("`kernels` is incomplete");
                 if self.table.grammar.is_terminal(&locus) {
-                    Map::from([(locus, Action::Shift(*state))])
+                    Map::from([(locus, Action::Shift(state))])
                 } else {
-                    Map::from([(locus, Action::Goto(*state))])
+                    Map::from([(locus, Action::Goto(state))])
                 }
             },
         )
