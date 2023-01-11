@@ -21,6 +21,7 @@ const GRAMMARS: &[(fn() -> Grammar, &[&[&str]], &'static str)] = &[
     ),
     (grammars::wikipedia, grammars::WIKIPEDIA_INPUTS, "wikipedia"),
     (grammars::puncs, grammars::PUNCS_INPUTS, "punctuations"),
+    (grammars::scanner, grammars::SCANNER_INPUTS, "scanner"),
 ];
 
 fn test_table_parser_prod<P: Parser + PartialEq + fmt::Debug>(name: &str) {
@@ -59,7 +60,12 @@ fn test_dfa<P: Parser>(name: &str) {
         let parser = P::new(grammar());
         let actions_copy = || parser.tables().actions.clone();
         let iter = inputs.into_iter().cycle().map(|i| (i, actions_copy()));
-        let assert = |r| assert!(matches!(r, Ok(_) | Err(Error::Conflict(_, _))));
+        let assert = |r| {
+            assert!(
+                matches!(r, Ok(_) | Err(Error::Conflict(_, _))),
+                "rased {r:?}"
+            )
+        };
         let mut bench = IterBench::new(iter, &|(input, table)| {
             let mut dfa = Dfa::new(input.into_iter().copied(), table);
             dfa.start()
