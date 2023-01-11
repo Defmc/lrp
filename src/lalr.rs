@@ -67,14 +67,6 @@ impl Lalr {
         self.proc_closures();
         let mut kers: Vec<_> = self.table.kernels.iter().collect();
         kers.sort_by_key(|(_, i)| *i);
-        for (k, &i) in kers {
-            println!("\nstate: {i}");
-            println!("kernel: {:?}", k);
-            println!("raw kernel: {:?}", Self::without_look(k));
-            for state in &self.table.states[i] {
-                println!("\t{state:?}");
-            }
-        }
         let start = self.table.basis_pos().rule;
         for row in &self.table.states {
             let mut map: Map<Term, Action> = Map::new();
@@ -119,7 +111,6 @@ impl Lalr {
         let syms: Vec<_> = self.table.grammar.symbols().collect();
         'gen: while idx < self.table.states.len() {
             let row = self.table.states[idx].clone();
-            println!("new {row:#?}");
             for s in &syms {
                 let Some((kernel, closures)) = self.goto(&row, &s) else {
                     continue;
@@ -132,7 +123,6 @@ impl Lalr {
                     };
                     let updated_state = self.table.kernels[&nk];
                     if updated_state == idx && nk != row {
-                        println!("{updated_state} == {idx}\n\t{nk:#?} != {row:#?}");
                         continue 'gen;
                     }
                     old
@@ -156,11 +146,9 @@ impl Lalr {
         inc: State,
         closures: State,
     ) -> Option<(Option<usize>, State)> {
-        print!("updating {main:#?} with {inc:#?}");
         let syms: Vec<_> = self.table.grammar.symbols().collect();
         let (old, mut new_kernel) = self.update_state(main, inc, closures)?;
         let id = self.table.kernels[&new_kernel];
-        println!(" turned into {new_kernel:#?}");
 
         'regen: loop {
             for s in &syms {
@@ -177,7 +165,6 @@ impl Lalr {
                 };
                 let updated_state = self.table.kernels[&nk];
                 if updated_state == id && nk != new_kernel {
-                    println!("{updated_state} IS EQUAL {id}\n\t{nk:#?} IS DIFF {new_kernel:#?}");
                     new_kernel = nk;
                     continue 'regen;
                 }
@@ -208,13 +195,11 @@ impl Lalr {
             .chain(closures.into_iter())
             .collect();
         let (new_kernel, new_closures) = (Self::merged(both_kernels), Self::merged(both_closures));
-        println!("before: {:?}", self.table.states[state_id]);
         if self.table.states[state_id] == new_closures {
             None?
         }
         self.table.kernels.remove(&main);
         self.table.states[state_id] = new_closures;
-        println!("after: {:?}", self.table.states[state_id]);
 
         let raw_kernel = Self::without_look(&new_kernel);
         self.raws.insert(raw_kernel, new_kernel.clone());
