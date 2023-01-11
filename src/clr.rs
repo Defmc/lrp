@@ -302,4 +302,28 @@ mod tests {
         assert!(clr.validate(["[", "{", "[", "]", "}", "]"]));
         assert!(clr.validate(["[", "{", "{", "}", "}", "]"]));
     }
+
+    #[test]
+    pub fn scanner() {
+        let clr = Clr::new(grammars_tests::scanner());
+        assert_eq!(0, clr.tables().conflicts().count());
+
+        assert!(clr.validate([
+            "l", "o", "r", "e", "m", "_", "i", "p", "s", "u", "m", "_", "d", "o", "l", "o", "r",
+            "_", "s", "i", "t", "_", "a", "m", "e", "t",
+        ]));
+        assert!(clr.validate([
+            "i", "n", "_", "v", "i", "n", "o", "_", "v", "e", "r", "i", "t", "a", "s", "_", "b",
+            "e", "f", "o", "r", "e", "_", "7", "9", "_", "a", "c",
+        ]));
+        assert!(clr.validate([
+            "1", "2", "_", "t", "i", "m", "e", "s", "_", "3", "_", "i", "s", "_", "e", "q", "u",
+            "a", "l", "_", "t", "o", "_", "4", "0", "_", "m", "i", "n", "u", "s", "_", "4",
+        ]));
+        assert!(clr.validate(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]));
+        assert!(clr.validate([
+            "f", "i", "n", "a", "l", "_", "d", "e", "_", "s", "e", "m", "a", "n", "a", "_", "e",
+            "l", "a", "_", "v", "a", "i", "_", "p", "r", "a", "_", "r", "u", "a",
+        ]));
+    }
 }

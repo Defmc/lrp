@@ -114,38 +114,31 @@ impl Lalr {
                     continue;
                 };
                 let raw_kernel = Self::without_look(&kernel);
-                let main_kernel = self.raws.get(&raw_kernel).cloned();
-                let old = if let Some(main_kernel) = main_kernel {
-                    let Some((old, nk)) = self.update_closures(main_kernel, kernel, closures) else {
+                if let Some(main_kernel) = self.raws.get(&raw_kernel).cloned() {
+                    let Some(nk) = self.update_closures(&main_kernel, kernel, closures) else {
                         continue;
                     };
-                    let updated_state = self.table.kernels[&nk];
-                    if updated_state == idx && nk != row {
+                    if self.table.kernels[&nk] == idx && nk != row {
                         continue 'gen;
                     }
-                    old
                 } else {
                     self.raws.insert(raw_kernel, kernel.clone());
                     self.table.states.push(closures);
-                    self.table
+                    let old = self
+                        .table
                         .kernels
-                        .insert(kernel, self.table.states.len() - 1)
+                        .insert(kernel, self.table.states.len() - 1);
+                    debug_assert!(old.is_none());
                 };
-                debug_assert!(old.is_none());
             }
             idx += 1;
         }
     }
 
     #[must_use]
-    pub fn update_closures(
-        &mut self,
-        main: State,
-        inc: State,
-        closures: State,
-    ) -> Option<(Option<usize>, State)> {
+    pub fn update_closures(&mut self, main: &State, inc: State, closures: State) -> Option<State> {
+        let mut new_kernel = self.update_state(main, inc, closures)?;
         let syms: Vec<_> = self.table.grammar.symbols().collect();
-        let (old, mut new_kernel) = self.update_state(main, inc, closures)?;
         let id = self.table.kernels[&new_kernel];
 
         'regen: loop {
@@ -158,7 +151,7 @@ impl Lalr {
                 let Some(main_kernel) = main_kernel else {
                 continue;
             };
-                let Some((old, nk)) = self.update_closures(main_kernel, kernel, closures) else {
+                let Some(nk) = self.update_closures(&main_kernel, kernel, closures) else {
                     continue;
                 };
                 let updated_state = self.table.kernels[&nk];
@@ -166,42 +159,41 @@ impl Lalr {
                     new_kernel = nk;
                     continue 'regen;
                 }
-                debug_assert!(old.is_none());
             }
             break;
         }
-        Some((old, new_kernel))
+        Some(new_kernel)
     }
 
     #[must_use]
-    pub fn update_state(
-        &mut self,
-        main: State,
-        inc: State,
-        closures: State,
-    ) -> Option<(Option<usize>, State)> {
-        // TODO: Build a custom merging state function
-        let state_id = self.table.kernels[&main];
+    pub fn update_state(&mut self, main: &State, inc: State, closures: State) -> Option<State> {
+        let state_id = *self.table.kernels.get(main)?;
+
+        // By definition, there will be always more closure items than kernels (because
+        // essencially, every kernel can become a reduction closure or more than one shifting).
+        // So it's better to check kernel equality first.
+        let both_kernels = inc.into_iter().chain(main.clone().into_iter()).collect();
+        let new_kernel = Self::merged(both_kernels);
+
+        if &new_kernel == main {
+            None?;
+        }
+
         let both_closures = self.table.states[state_id]
             .clone()
             .into_iter()
             .chain(closures.into_iter())
             .collect();
-        let new_closures = Self::merged(both_closures);
-        if self.table.states[state_id] == new_closures {
-            None?;
-        }
-        self.table.kernels.remove(&main);
-        self.table.states[state_id] = new_closures;
 
-        let both_kernels = inc.into_iter().chain(main.into_iter()).collect();
-        let new_kernel = Self::merged(both_kernels);
+        self.table.kernels.remove(main);
+        self.table.states[state_id] = Self::merged(both_closures);
 
-        let raw_kernel = Self::without_look(&new_kernel);
-        self.raws.insert(raw_kernel, new_kernel.clone());
+        self.raws
+            .insert(Self::without_look(&new_kernel), new_kernel.clone());
 
         let old = self.table.kernels.insert(new_kernel.clone(), state_id);
-        Some((old, new_kernel))
+        debug_assert!(old.is_none());
+        Some(new_kernel)
     }
 
     #[must_use]
@@ -407,5 +399,29 @@ mod tests {
         assert!(lalr.validate(["[", "{", "(", ")", "}", "]"]));
         assert!(lalr.validate(["[", "{", "[", "]", "}", "]"]));
         assert!(lalr.validate(["[", "{", "{", "}", "}", "]"]));
+    }
+
+    #[test]
+    pub fn scanner() {
+        let lalr = Lalr::new(grammars_tests::scanner());
+        assert_eq!(0, lalr.tables().conflicts().count());
+
+        assert!(lalr.validate([
+            "l", "o", "r", "e", "m", "_", "i", "p", "s", "u", "m", "_", "d", "o", "l", "o", "r",
+            "_", "s", "i", "t", "_", "a", "m", "e", "t",
+        ]));
+        assert!(lalr.validate([
+            "i", "n", "_", "v", "i", "n", "o", "_", "v", "e", "r", "i", "t", "a", "s", "_", "b",
+            "e", "f", "o", "r", "e", "_", "7", "9", "_", "a", "c",
+        ]));
+        assert!(lalr.validate([
+            "1", "2", "_", "t", "i", "m", "e", "s", "_", "3", "_", "i", "s", "_", "e", "q", "u",
+            "a", "l", "_", "t", "o", "_", "4", "0", "_", "m", "i", "n", "u", "s", "_", "4",
+        ]));
+        assert!(lalr.validate(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]));
+        assert!(lalr.validate([
+            "f", "i", "n", "a", "l", "_", "d", "e", "_", "s", "e", "m", "a", "n", "a", "_", "e",
+            "l", "a", "_", "v", "a", "i", "_", "p", "r", "a", "_", "r", "u", "a",
+        ]));
     }
 }

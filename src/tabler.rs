@@ -106,7 +106,12 @@ impl Tabler {
                 if self.grammar.is_terminal(first) {
                     table.get_mut(name).unwrap().insert(first);
                 } else {
-                    table.get_mut(name).unwrap().extend(&input[first]);
+                    table
+                        .get_mut(name)
+                        .unwrap()
+                        .extend(input.get(first).unwrap_or_else(|| {
+                            panic!("{name} was not listed as terminal or non-terminal")
+                        }));
                 }
             }
             if table[name].contains(name) {
@@ -303,6 +308,93 @@ mod tests {
             Map::from([
                 ("LRP'START", Set::from(["\u{3}",])),
                 ("S", Set::from(["\u{3}", ")", "]", "}",])),
+            ])
+        );
+    }
+
+    #[test]
+    pub fn scanner() {
+        let table = Tabler::new(grammars_tests::scanner());
+        assert_eq!(
+            table.first,
+            Map::from([
+                (
+                    "Alpha",
+                    Set::from([
+                        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o",
+                        "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
+                    ]),
+                ),
+                (
+                    "Digit",
+                    Set::from(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]),
+                ),
+                (
+                    "Item",
+                    Set::from([
+                        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e",
+                        "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+                        "u", "v", "w", "x", "y", "z"
+                    ]),
+                ),
+                (
+                    "LRP'START",
+                    Set::from([
+                        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e",
+                        "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+                        "u", "v", "w", "x", "y", "z"
+                    ]),
+                ),
+                (
+                    "Num",
+                    Set::from(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]),
+                ),
+                (
+                    "Phrase",
+                    Set::from([
+                        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e",
+                        "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+                        "u", "v", "w", "x", "y", "z"
+                    ]),
+                ),
+                ("Space", Set::from(["_"])),
+                (
+                    "Word",
+                    Set::from([
+                        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o",
+                        "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
+                    ])
+                )
+            ])
+        );
+
+        assert_eq!(
+            table.follow,
+            Map::from([
+                (
+                    "Alpha",
+                    Set::from([
+                        "\u{3}", "_", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
+                        "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
+                    ])
+                ),
+                (
+                    "Digit",
+                    Set::from(["\u{3}", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "_"])
+                ),
+                ("Item", Set::from(["\u{3}", "_"])),
+                ("LRP'START", Set::from(["\u{3}"])),
+                ("Num", Set::from(["\u{3}", "_"])),
+                ("Phrase", Set::from(["\u{3}"])),
+                (
+                    "Space",
+                    Set::from([
+                        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e",
+                        "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+                        "u", "v", "w", "x", "y", "z"
+                    ])
+                ),
+                ("Word", Set::from(["\u{3}", "_"]))
             ])
         );
     }
