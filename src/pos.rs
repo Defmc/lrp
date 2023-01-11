@@ -24,10 +24,10 @@ impl Position {
         }
     }
 
+    #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub fn with_look(mut self, look: Set<Term>) -> Self {
-        self.look = look;
-        self
+    pub fn with_look(self, look: Set<Term>) -> Self {
+        Self { look, ..self }
     }
 
     #[must_use]

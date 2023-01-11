@@ -112,7 +112,7 @@ impl Lalr {
         'gen: while idx < self.table.states.len() {
             let row = self.table.states[idx].clone();
             for s in &syms {
-                let Some((kernel, closures)) = self.goto(&row, &s) else {
+                let Some((kernel, closures)) = self.goto(&row, s) else {
                     continue;
                 };
                 let raw_kernel = Self::without_look(&kernel);
@@ -152,7 +152,7 @@ impl Lalr {
 
         'regen: loop {
             for s in &syms {
-                let Some((kernel, closures)) = self.goto(&new_kernel, &s) else {
+                let Some((kernel, closures)) = self.goto(&new_kernel, s) else {
                     continue;
                 };
                 let raw_kernel = Self::without_look(&kernel);
@@ -184,22 +184,20 @@ impl Lalr {
     ) -> Option<(Option<usize>, State)> {
         // TODO: Build a custom merging state function
         let state_id = self.table.kernels[&main];
-        let both_kernels = inc
-            .clone()
-            .into_iter()
-            .chain(main.clone().into_iter())
-            .collect();
         let both_closures = self.table.states[state_id]
             .clone()
             .into_iter()
             .chain(closures.into_iter())
             .collect();
-        let (new_kernel, new_closures) = (Self::merged(both_kernels), Self::merged(both_closures));
+        let new_closures = Self::merged(both_closures);
         if self.table.states[state_id] == new_closures {
-            None?
+            None?;
         }
         self.table.kernels.remove(&main);
         self.table.states[state_id] = new_closures;
+
+        let both_kernels = inc.into_iter().chain(main.into_iter()).collect();
+        let new_kernel = Self::merged(both_kernels);
 
         let raw_kernel = Self::without_look(&new_kernel);
         self.raws.insert(raw_kernel, new_kernel.clone());
@@ -265,14 +263,12 @@ impl Lalr {
                 looks.insert(no_look, state.look);
             }
         }
-        let merged = new
-            .into_iter()
+        new.into_iter()
             .map(|s| {
                 let look = looks[&s].clone();
                 s.with_look(look)
             })
-            .collect();
-        merged
+            .collect()
     }
 }
 

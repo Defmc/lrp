@@ -88,7 +88,7 @@ fn print_states_table(table: &Tabler, parser: &Lalr) {
             }
             let kernel = Lalr::without_look(&kernel);
             let kernel = &parser.raws[&kernel];
-            let state_id = parser.table.kernels[&kernel];
+            let state_id = parser.table.kernels[kernel];
             out.add_row(row![
                 format!("goto({i}, {sym})"),
                 format!("{kernel:?}"),
