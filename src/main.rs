@@ -157,7 +157,7 @@ where
     out.set_titles(row!["step", "stack", "buffer", "action address", "action"]);
 
     let res = dfa.trace(|state| {
-        let step = out.len();
+        let step = out.len() + 1;
         let stack = state.stack_fmt();
         let buffer = format!(
             "{:?}",

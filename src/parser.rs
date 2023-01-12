@@ -1,5 +1,5 @@
 use crate::{dfa::Result, Dfa};
-use crate::{Grammar, Item, StackEl, State, Tabler, Term};
+use crate::{Grammar, Item, State, Tabler, Term};
 
 pub trait Parser {
     #[allow(clippy::inline_always)]
@@ -28,12 +28,9 @@ pub trait Parser {
     fn parse<I: IntoIterator<Item = Term>>(&self, buffer: I) -> Result<Item> {
         let mut dfa = self.dfa(buffer.into_iter());
         dfa.start()?;
-        let secnd = dfa.stack.swap_remove(1);
-        if let StackEl::Item(item) = secnd {
-            Ok(item)
-        } else {
-            Err(crate::dfa::Error::MissingPreviousState)
-        }
+        dfa.items
+            .pop()
+            .ok_or(crate::dfa::Error::MissingPreviousState)
     }
 
     /// Runs `Parser::parse` and checks by errors

@@ -42,21 +42,6 @@ impl fmt::Display for Item {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum StackEl {
-    Item(Item),
-    State(usize),
-}
-
-impl fmt::Display for StackEl {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Item(it) => f.write_fmt(format_args!("{it}")),
-            Self::State(n) => f.write_fmt(format_args!("{n}")),
-        }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
     /// Found a unexpected token. Contains a vector with correct tokens after it. Indicates a bad
@@ -100,7 +85,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Clone)]
 pub struct Dfa<I: Iterator<Item = Term>> {
     pub buffer: Peekable<I>,
-    pub stack: Vec<StackEl>,
+    pub states: Vec<usize>,
+    pub items: Vec<Item>,
     pub table: ActTable,
     pub top: usize,
     pub finished: bool,
@@ -110,7 +96,8 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     #[must_use]
     pub fn new(buffer: I, table: ActTable) -> Self {
         Self {
-            stack: vec![StackEl::State(0)],
+            states: vec![0],
+            items: Vec::new(),
             buffer: buffer.peekable(),
             top: 0,
             table,
@@ -121,10 +108,10 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     /// # Errors
     /// When there is no more data in buffer, raises an `Error::UnexepectedEof`
     pub fn shift(&mut self, to: usize) -> Result<()> {
-        let item = Item::Simple(self.buffer.next().ok_or(Error::UnexpectedEof)?);
-        self.stack.push(StackEl::Item(item));
+        let item = self.buffer.next().ok_or(Error::UnexpectedEof)?;
+        self.items.push(Item::Simple(item));
         self.top = to;
-        self.stack.push(StackEl::State(self.top));
+        self.states.push(self.top);
         Ok(())
     }
 
@@ -157,7 +144,7 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     }
 
     pub fn goto(&mut self, to: usize) {
-        self.stack.push(StackEl::State(to));
+        self.states.push(to);
         self.top = to;
     }
 
@@ -185,55 +172,74 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     /// If stack doesn't contains the necessary terms amount, raises an `Error::UnexepectedEof`
     /// If there isn't a previous state, raises an `Error::MissingPreviousState`
     pub fn reduce(&mut self, name: RuleName, prod: &Rc<Production>) -> Result<()> {
-        let mut item = Vec::with_capacity(prod.len());
-        while item.len() != prod.len() {
-            let poped = self.stack.pop().ok_or(Error::UnexpectedEof)?;
-            if let StackEl::Item(i) = poped {
-                item.push(i);
-            }
-        }
-        let item = Item::Compound(name, item);
-        let state = self
-            .stack
-            .iter()
-            .rev()
-            .find_map(|i| {
-                if let StackEl::State(n) = i {
-                    Some(*n)
-                } else {
-                    None
-                }
-            })
+        // let mut item = Vec::with_capacity(prod.len());
+        // while item.len() != prod.len() {
+        //     let poped = self.stack.pop().ok_or(Error::UnexpectedEof)?;
+        //     if let StackEl::Item(i) = poped {
+        //         item.push(i);
+        //     }
+        // }
+        let len = self.items.len();
+        let items = self.items.split_off(len - prod.len());
+        self.items.push(Item::Compound(name, items));
+        // TODO: Use `set_len`, once it can't be extended:
+        // len - prod.len() <= len
+        let len = self.states.len();
+        self.top = *self
+            .states
+            .get(len - prod.len() - 1)
             .ok_or(Error::MissingPreviousState)?;
-        self.stack.push(StackEl::Item(item));
-        self.top = state;
+        self.states.truncate(len - prod.len());
+        // let item = Item::Compound(name, item);
+        // let state = self
+        //     .stack
+        //     .iter()
+        //     .rev()
+        //     .find_map(|i| {
+        //         if let StackEl::State(n) = i {
+        //             Some(*n)
+        //         } else {
+        //             None
+        //         }
+        //     })
+        //     .ok_or(Error::MissingPreviousState)?;
+        // self.stack.push(StackEl::Item(item));
         self.travel(name)
     }
 
     pub fn reset(&mut self) {
         self.finished = false;
-        self.stack.clear();
-        self.stack.push(StackEl::State(0));
+        self.states.clear();
+        self.items.clear();
         self.top = 0;
     }
 
     /// # Errors
     /// The same of `dfa::travel`
-    pub fn parse(&mut self, input: I) -> Result<StackEl> {
+    pub fn parse(&mut self, input: I) -> Result<Item> {
         self.reset();
         self.buffer = input.peekable();
         self.start()?;
-        let res = self.stack[1].clone();
+        let res = self.items.pop().ok_or(Error::MissingPreviousState)?;
         self.reset();
         Ok(res)
     }
 
     #[must_use]
     pub fn stack_fmt(&self) -> String {
-        self.stack
-            .iter()
-            .map(|f| format!("{f}"))
-            .collect::<Vec<String>>()
-            .join(" ")
+        let mut fmts = Vec::new();
+        for i in 0.. {
+            if i >= self.states.len() && i >= self.items.len() {
+                break;
+            }
+            if let Some(s) = self.states.get(i) {
+                fmts.push(format!("{s}"));
+            }
+
+            if let Some(it) = self.items.get(i) {
+                fmts.push(format!("{it}"));
+            }
+        }
+        fmts.join(" ")
     }
 }
