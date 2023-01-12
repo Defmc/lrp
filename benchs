@@ -1,0 +1,190 @@
+
+running 24 tests
+test clr::tests::dragon_book ... ignored
+test clr::tests::puncs ... ignored
+test clr::tests::scanner ... ignored
+test clr::tests::serokell ... ignored
+test clr::tests::ucalgary_uni_oth_lr1 ... ignored
+test clr::tests::wikipedia ... ignored
+test lalr::tests::dragon_book ... ignored
+test lalr::tests::puncs ... ignored
+test lalr::tests::scanner ... ignored
+test lalr::tests::serokell ... ignored
+test lalr::tests::ucalgary_uni_oth_lr1 ... ignored
+test lalr::tests::wikipedia ... ignored
+test slr::tests::dragon_book ... ignored
+test slr::tests::puncs ... ignored
+test slr::tests::scanner ... ignored
+test slr::tests::serokell ... ignored
+test slr::tests::ucalgary_uni_oth_lr1 ... ignored
+test slr::tests::wikipedia ... ignored
+test tabler::tests::dragon_book ... ignored
+test tabler::tests::puncs ... ignored
+test tabler::tests::scanner ... ignored
+test tabler::tests::serokell ... ignored
+test tabler::tests::ucalgary_uni_oth_lr1 ... ignored
+test tabler::tests::wikipedia ... ignored
+
+test result: ok. 0 passed; 0 failed; 24 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+Tabler setup:
+	dragon's book setup: 1.689186ms / 100 = ± 16.891µs/iter
+	serokell setup: 7.805607ms / 100 = ± 78.056µs/iter
+	ucalgary_uni_oth_lr1 setup: 6.120609ms / 100 = ± 61.206µs/iter
+	wikipedia setup: 2.479368ms / 100 = ± 24.793µs/iter
+	punctuations setup: 1.345345ms / 100 = ± 13.453µs/iter
+	scanner setup: 35.465972ms / 100 = ± 354.659µs/iter
+
+Canonical LR productions:
+	dragon's book table production: 6.181578ms / 100 = ± 61.815µs/iter
+	serokell table production: 95.676563ms / 100 = ± 956.765µs/iter
+	ucalgary_uni_oth_lr1 table production: 23.492375ms / 100 = ± 234.923µs/iter
+	wikipedia table production: 23.633175ms / 100 = ± 236.331µs/iter
+	punctuations table production: 54.137969ms / 100 = ± 541.379µs/iter
+	scanner table production: 446.893884ms / 100 = ± 4.468938ms/iter
+
+LALR(1) productions:
+	dragon's book table production: 8.84233ms / 100 = ± 88.423µs/iter
+	serokell table production: 89.154157ms / 100 = ± 891.541µs/iter
+	ucalgary_uni_oth_lr1 table production: 33.75415ms / 100 = ± 337.541µs/iter
+	wikipedia table production: 29.686113ms / 100 = ± 296.861µs/iter
+	punctuations table production: 88.853133ms / 100 = ± 888.531µs/iter
+	scanner table production: 498.529506ms / 100 = ± 4.985295ms/iter
+
+SLR productions:
+	dragon's book table production: 3.731685ms / 100 = ± 37.316µs/iter
+	serokell table production: 13.989418ms / 100 = ± 139.894µs/iter
+	ucalgary_uni_oth_lr1 table production: 18.631288ms / 100 = ± 186.312µs/iter
+	wikipedia table production: 6.662434ms / 100 = ± 66.624µs/iter
+	punctuations table production: 12.05063ms / 100 = ± 120.506µs/iter
+	scanner table production: 121.330664ms / 100 = ± 1.213306ms/iter
+
+Canonical LR's DFA:
+	dragon's book parsing inputs: 551.675µs / 100 = ± 5.516µs/iter
+	serokell parsing inputs: 878.32µs / 100 = ± 8.783µs/iter
+	ucalgary_uni_oth_lr1 parsing inputs: 703.365µs / 100 = ± 7.033µs/iter
+	wikipedia parsing inputs: 516.619µs / 100 = ± 5.166µs/iter
+	punctuations parsing inputs: 820.218µs / 100 = ± 8.202µs/iter
+	scanner parsing inputs: 5.261139ms / 100 = ± 52.611µs/iter
+
+LALR(1)'s DFA:
+	dragon's book parsing inputs: 517.878µs / 100 = ± 5.178µs/iter
+	serokell parsing inputs: 757.57µs / 100 = ± 7.575µs/iter
+	ucalgary_uni_oth_lr1 parsing inputs: 615.446µs / 100 = ± 6.154µs/iter
+	wikipedia parsing inputs: 512.772µs / 100 = ± 5.127µs/iter
+	punctuations parsing inputs: 499.359µs / 100 = ± 4.993µs/iter
+	scanner parsing inputs: 5.376525ms / 100 = ± 53.765µs/iter
+
+SLR's DFA:
+	dragon's book parsing inputs: 522.061µs / 100 = ± 5.22µs/iter
+	serokell parsing inputs: 764.977µs / 100 = ± 7.649µs/iter
+	ucalgary_uni_oth_lr1 parsing inputs: 620.747µs / 100 = ± 6.207µs/iter
+	wikipedia parsing inputs: 513.675µs / 100 = ± 5.136µs/iter
+	punctuations parsing inputs: 511.792µs / 100 = ± 5.117µs/iter
+	scanner parsing inputs: 5.41563ms / 100 = ± 54.156µs/iter
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 24 tests
+test clr::tests::dragon_book ... ignored
+test clr::tests::puncs ... ignored
+test clr::tests::scanner ... ignored
+test clr::tests::serokell ... ignored
+test clr::tests::ucalgary_uni_oth_lr1 ... ignored
+test clr::tests::wikipedia ... ignored
+test lalr::tests::dragon_book ... ignored
+test lalr::tests::puncs ... ignored
+test lalr::tests::scanner ... ignored
+test lalr::tests::serokell ... ignored
+test lalr::tests::ucalgary_uni_oth_lr1 ... ignored
+test lalr::tests::wikipedia ... ignored
+test slr::tests::dragon_book ... ignored
+test slr::tests::puncs ... ignored
+test slr::tests::scanner ... ignored
+test slr::tests::serokell ... ignored
+test slr::tests::ucalgary_uni_oth_lr1 ... ignored
+test slr::tests::wikipedia ... ignored
+test tabler::tests::dragon_book ... ignored
+test tabler::tests::puncs ... ignored
+test tabler::tests::scanner ... ignored
+test tabler::tests::serokell ... ignored
+test tabler::tests::ucalgary_uni_oth_lr1 ... ignored
+test tabler::tests::wikipedia ... ignored
+
+test result: ok. 0 passed; 0 failed; 24 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+Tabler setup:
+	dragon's book setup: 1.684784ms / 100 = ± 16.847µs/iter
+	serokell setup: 4.592341ms / 100 = ± 45.923µs/iter
+	ucalgary_uni_oth_lr1 setup: 6.498239ms / 100 = ± 64.982µs/iter
+	wikipedia setup: 2.452058ms / 100 = ± 24.52µs/iter
+	punctuations setup: 1.290942ms / 100 = ± 12.909µs/iter
+	scanner setup: 35.877259ms / 100 = ± 358.772µs/iter
+
+Canonical LR productions:
+	dragon's book table production: 6.195905ms / 100 = ± 61.959µs/iter
+	serokell table production: 95.559449ms / 100 = ± 955.594µs/iter
+	ucalgary_uni_oth_lr1 table production: 23.736403ms / 100 = ± 237.364µs/iter
+	wikipedia table production: 23.652864ms / 100 = ± 236.528µs/iter
+	punctuations table production: 54.959089ms / 100 = ± 549.59µs/iter
+	scanner table production: 448.517971ms / 100 = ± 4.485179ms/iter
+
+LALR(1) productions:
+	dragon's book table production: 8.95086ms / 100 = ± 89.508µs/iter
+	serokell table production: 89.179085ms / 100 = ± 891.79µs/iter
+	ucalgary_uni_oth_lr1 table production: 33.838869ms / 100 = ± 338.388µs/iter
+	wikipedia table production: 29.669069ms / 100 = ± 296.69µs/iter
+	punctuations table production: 89.592057ms / 100 = ± 895.92µs/iter
+	scanner table production: 499.875068ms / 100 = ± 4.99875ms/iter
+
+SLR productions:
+	dragon's book table production: 3.758649ms / 100 = ± 37.586µs/iter
+	serokell table production: 13.931945ms / 100 = ± 139.319µs/iter
+	ucalgary_uni_oth_lr1 table production: 18.726889ms / 100 = ± 187.268µs/iter
+	wikipedia table production: 6.76231ms / 100 = ± 67.623µs/iter
+	punctuations table production: 12.071508ms / 100 = ± 120.715µs/iter
+	scanner table production: 122.249912ms / 100 = ± 1.222499ms/iter
+
+Canonical LR's DFA:
+	dragon's book parsing inputs: 512.843µs / 100 = ± 5.128µs/iter
+	serokell parsing inputs: 863.1µs / 100 = ± 8.631µs/iter
+	ucalgary_uni_oth_lr1 parsing inputs: 661.746µs / 100 = ± 6.617µs/iter
+	wikipedia parsing inputs: 483.791µs / 100 = ± 4.837µs/iter
+	punctuations parsing inputs: 825.725µs / 100 = ± 8.257µs/iter
+	scanner parsing inputs: 5.213583ms / 100 = ± 52.135µs/iter
+
+LALR(1)'s DFA:
+	dragon's book parsing inputs: 490.701µs / 100 = ± 4.907µs/iter
+	serokell parsing inputs: 739.412µs / 100 = ± 7.394µs/iter
+	ucalgary_uni_oth_lr1 parsing inputs: 603.154µs / 100 = ± 6.031µs/iter
+	wikipedia parsing inputs: 510.753µs / 100 = ± 5.107µs/iter
+	punctuations parsing inputs: 490.632µs / 100 = ± 4.906µs/iter
+	scanner parsing inputs: 5.271057ms / 100 = ± 52.71µs/iter
+
+SLR's DFA:
+	dragon's book parsing inputs: 485.469µs / 100 = ± 4.854µs/iter
+	serokell parsing inputs: 721.397µs / 100 = ± 7.213µs/iter
+	ucalgary_uni_oth_lr1 parsing inputs: 624.944µs / 100 = ± 6.249µs/iter
+	wikipedia parsing inputs: 492.873µs / 100 = ± 4.928µs/iter
+	punctuations parsing inputs: 480.235µs / 100 = ± 4.802µs/iter
+	scanner parsing inputs: 5.343005ms / 100 = ± 53.43µs/iter
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
