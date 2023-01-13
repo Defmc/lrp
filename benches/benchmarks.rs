@@ -1,28 +1,15 @@
 use std::fmt;
 
+mod grammars_tests {
+    use lrp::{grammar, Grammar, Set};
+    include!("../grammars_tests.rs");
+}
+
+use grammars_tests::GRAMMARS;
 use hermes_bench::{BenchSize, Bencher, ClassicBench, IterBench};
 use lrp::{dfa::Error, Clr, Dfa, Grammar, Lalr, Parser, Slr, Tabler};
 
-mod grammars;
-
 const BENCH_SIZE: BenchSize = BenchSize::Iters(100);
-
-const GRAMMARS: &[(fn() -> Grammar, &[&[&str]], &'static str)] = &[
-    (
-        grammars::dragon_book,
-        grammars::DRAGON_BOOK_INPUTS,
-        "dragon's book",
-    ),
-    (grammars::serokell, grammars::SEROKELL_INPUTS, "serokell"),
-    (
-        grammars::ucalgary_uni_oth_lr1,
-        grammars::UCALGARY_UNI_OTH_LR1_INPUTS,
-        "ucalgary_uni_oth_lr1",
-    ),
-    (grammars::wikipedia, grammars::WIKIPEDIA_INPUTS, "wikipedia"),
-    (grammars::puncs, grammars::PUNCS_INPUTS, "punctuations"),
-    (grammars::scanner, grammars::SCANNER_INPUTS, "scanner"),
-];
 
 fn test_table_parser_prod<P: Parser + PartialEq + fmt::Debug>(name: &str) {
     println!("\n{name} productions:");

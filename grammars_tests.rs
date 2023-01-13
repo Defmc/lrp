@@ -1,4 +1,15 @@
-use lrp::{grammar, Grammar, Set};
+pub const GRAMMARS: &[(fn() -> Grammar, &[&[&str]], &'static str)] = &[
+    (dragon_book, DRAGON_BOOK_INPUTS, "dragon's book"),
+    (serokell, SEROKELL_INPUTS, "serokell"),
+    (
+        ucalgary_uni_oth_lr1,
+        UCALGARY_UNI_OTH_LR1_INPUTS,
+        "ucalgary_uni_oth_lr1",
+    ),
+    (wikipedia, WIKIPEDIA_INPUTS, "wikipedia"),
+    (puncs, PUNCS_INPUTS, "punctuations"),
+    (scanner, SCANNER_INPUTS, "scanner"),
+];
 
 pub const DRAGON_BOOK_INPUTS: &[&[&str]] = &[
     &["d", "d"],
