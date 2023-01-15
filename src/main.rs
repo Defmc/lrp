@@ -3,7 +3,7 @@ use std::{
     iter::Peekable,
 };
 
-use lrp::{Dfa, Grammar, Lalr, Parser, Set, Tabler, Term};
+use lrp::{Dfa, Grammar, Lalr, Parser, Set, Tabler, TermStr};
 use prettytable::{row, Cell, Row, Table};
 
 fn main() {
@@ -149,7 +149,7 @@ fn print_actions_table(table: &Tabler) {
     out.printstd();
 }
 
-fn print_proc_dfa<I: Iterator<Item = Term>>(dfa: &mut Dfa<I>)
+fn print_proc_dfa<I: Iterator<Item = TermStr>>(dfa: &mut Dfa<I>)
 where
     Peekable<I>: Clone,
 {

@@ -3,19 +3,25 @@ use std::{
     rc::Rc,
 };
 
-use crate::{grammar::Production, Rule, Set, Term};
+use crate::{grammar::Production, Set};
 
 #[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Position {
-    pub rule: Rule,
-    pub seq: Rc<Production>,
+pub struct Position<T>
+where
+    T: Clone + PartialEq + PartialOrd + Ord,
+{
+    pub rule: T,
+    pub seq: Rc<Production<T>>,
     pub point: usize,
-    pub look: Set<Term>,
+    pub look: Set<T>,
 }
 
-impl Position {
+impl<T> Position<T>
+where
+    T: Clone + PartialEq + PartialOrd + Ord,
+{
     #[must_use]
-    pub fn new(rule: Rule, seq: Rc<Production>, point: usize, look: Set<Term>) -> Self {
+    pub fn new(rule: T, seq: Rc<Production<T>>, point: usize, look: Set<T>) -> Self {
         Self {
             rule,
             seq,
@@ -26,23 +32,23 @@ impl Position {
 
     #[allow(clippy::missing_const_for_fn)]
     #[must_use]
-    pub fn with_look(self, look: Set<Term>) -> Self {
+    pub fn with_look(self, look: Set<T>) -> Self {
         Self { look, ..self }
     }
 
     #[must_use]
-    pub fn locus(&self) -> Option<Term> {
+    pub fn locus(&self) -> Option<T> {
         self.peek(1)
     }
 
     #[must_use]
-    pub fn peek(&self, qty: usize) -> Option<Term> {
-        self.seq.get(self.point + qty).copied()
+    pub fn peek(&self, qty: usize) -> Option<T> {
+        self.seq.get(self.point + qty).cloned()
     }
 
     #[must_use]
-    pub fn top(&self) -> Option<Term> {
-        self.seq.get(self.point).copied()
+    pub fn top(&self) -> Option<T> {
+        self.seq.get(self.point).cloned()
     }
 
     #[must_use]
@@ -60,8 +66,8 @@ impl Position {
     }
 
     #[must_use]
-    pub fn abs_idx(&self, idx: usize) -> Option<Term> {
-        self.seq.get(idx).copied()
+    pub fn abs_idx(&self, idx: usize) -> Option<T> {
+        self.seq.get(idx).cloned()
     }
 
     #[must_use]
@@ -81,7 +87,10 @@ impl Position {
     }
 }
 
-impl Display for Position {
+impl<T> Display for Position<T>
+where
+    T: Clone + PartialEq + PartialOrd + Ord + Display + Debug,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("{} =", self.rule))?;
         for i in 0..=self.point.max(self.seq.len()) {
@@ -90,14 +99,17 @@ impl Display for Position {
                 f.write_str(". ")?;
             }
             if let Some(term) = self.abs_idx(i) {
-                f.write_str(term)?;
+                f.write_fmt(format_args!("{term}"))?;
             }
         }
         f.write_fmt(format_args!(" {:?}", self.look))
     }
 }
 
-impl Debug for Position {
+impl<T> Debug for Position<T>
+where
+    T: Clone + PartialEq + Ord + Display + Debug,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("{self}"))
     }

@@ -1,49 +1,59 @@
-use crate::{transitive, Action, Map, Parser, Position, Rule, Set, State, Tabler, Term};
+use crate::{transitive, Action, Map, Parser, Position, Rule, Set, State, Tabler};
+use std::fmt::{Debug, Display};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Lalr {
-    pub table: Tabler,
+pub struct Lalr<T>
+where
+    T: PartialEq + Ord + Clone + Display + Debug,
+{
+    pub table: Tabler<T>,
     /// Describes the "raw states" (states without lookahead symbol) in `table.kernels`, using it
     /// raw kernel as key and value being its final kernel
-    pub raws: Map<State, State>,
+    pub raws: Map<State<T>, State<T>>,
 }
 
-impl Parser for Lalr {
-    fn new(grammar: crate::Grammar) -> Self
+impl<T> Parser<T> for Lalr<T>
+where
+    T: PartialEq + Ord + Clone + Display + Debug,
+{
+    fn new(grammar: crate::Grammar<T>) -> Self
     where
         Self: Sized,
     {
         Self::with_table(Tabler::new(grammar))
     }
 
-    fn with_table(table: Tabler) -> Self {
+    fn with_table(table: Tabler<T>) -> Self {
         let mut parser = Self::uninit(table);
         parser.proc_actions();
         parser
     }
 
-    fn uninit(table: Tabler) -> Self {
+    fn uninit(table: Tabler<T>) -> Self {
         Self {
             table,
             raws: Map::new(),
         }
     }
 
-    fn tables(&self) -> &Tabler {
+    fn tables(&self) -> &Tabler<T> {
         &self.table
     }
 
-    fn tables_mut(&mut self) -> &mut Tabler {
+    fn tables_mut(&mut self) -> &mut Tabler<T> {
         &mut self.table
     }
 
-    fn final_kernel<'a>(&'a self, kernel: &'a State) -> Option<&'a State> {
+    fn final_kernel<'a>(&'a self, kernel: &'a State<T>) -> Option<&'a State<T>> {
         let raw = Self::without_look(kernel);
         self.raws.get(&raw)
     }
 }
 
-impl Lalr {
+impl<T> Lalr<T>
+where
+    T: PartialEq + Ord + Clone + Display + Debug,
+{
     pub fn proc_closures_first_row(&mut self) {
         let start = self.prop_closure(State::from([self.table.basis_pos()]));
         self.table.kernels.insert(State::new(), 0);
@@ -52,12 +62,12 @@ impl Lalr {
     }
 
     #[must_use]
-    pub fn without_look(state: &State) -> State {
+    pub fn without_look(state: &State<T>) -> State<T> {
         state.iter().map(Position::no_look).collect()
     }
 
     #[must_use]
-    pub fn prop_closure(&self, seed: State) -> State {
+    pub fn prop_closure(&self, seed: State<T>) -> State<T> {
         transitive(seed, |s| self.closure(s))
     }
 
@@ -67,12 +77,12 @@ impl Lalr {
         kers.sort_by_key(|(_, i)| *i);
         let start = self.table.basis_pos().rule;
         for row in &self.table.states {
-            let mut map: Map<Term, Action> = Map::new();
+            let mut map: Map<T, Action<T>> = Map::new();
             for item in row {
                 for (term, act) in self.decision(start, item, row) {
-                    if map.contains_key(term) && map[term] != act {
-                        *map.get_mut(term).unwrap() =
-                            Action::Conflict(Box::new(map.get(term).unwrap().clone()), act.into());
+                    if map.contains_key(&term) && map[&term] != act {
+                        *map.get_mut(&term).unwrap() =
+                            Action::Conflict(Box::new(map.get(&term).unwrap().clone()), act.into());
                     } else {
                         map.insert(term, act);
                     }
@@ -83,7 +93,7 @@ impl Lalr {
     }
 
     #[must_use]
-    fn closure(&self, state: State) -> State {
+    fn closure(&self, state: State<T>) -> State<T> {
         let mut new_state = State::new();
         for pos in &state {
             if let Some(top) = pos.top() {
@@ -94,7 +104,7 @@ impl Lalr {
                     || pos.look.clone(),
                     |locus| self.table.first_of(&Set::from([locus])),
                 );
-                for prod in self.table.grammar.rules[top].prods() {
+                for prod in self.table.grammar.rules[&top].prods() {
                     new_state.insert(Position::new(top, prod.clone(), 0, look.clone()));
                 }
             }
@@ -136,7 +146,12 @@ impl Lalr {
     }
 
     #[must_use]
-    pub fn update_closures(&mut self, main: &State, inc: State, closures: State) -> Option<State> {
+    pub fn update_closures(
+        &mut self,
+        main: &State<T>,
+        inc: State<T>,
+        closures: State<T>,
+    ) -> Option<State<T>> {
         let mut new_kernel = self.update_state(main, inc, closures)?;
         let syms: Vec<_> = self.table.grammar.symbols().collect();
         let id = self.table.kernels[&new_kernel];
@@ -166,7 +181,12 @@ impl Lalr {
     }
 
     #[must_use]
-    pub fn update_state(&mut self, main: &State, inc: State, closures: State) -> Option<State> {
+    pub fn update_state(
+        &mut self,
+        main: &State<T>,
+        inc: State<T>,
+        closures: State<T>,
+    ) -> Option<State<T>> {
         let state_id = *self.table.kernels.get(main)?;
 
         // By definition, there will be always more closure items than kernels (because
@@ -197,7 +217,7 @@ impl Lalr {
     }
 
     #[must_use]
-    fn goto(&self, kernels: &State, sym: &Term) -> Option<(State, State)> {
+    fn goto(&self, kernels: &State<T>, sym: &T) -> Option<(State<T>, State<T>)> {
         let kernels = Tabler::sym_filter(kernels, sym);
         if self.table.kernels.contains_key(&kernels) {
             None?;
@@ -211,14 +231,14 @@ impl Lalr {
     }
 
     #[must_use]
-    fn decision(&self, start: Rule, pos: &Position, row: &State) -> Map<Term, Action> {
+    fn decision(&self, start: Rule, pos: &Position<T>, row: &State<T>) -> Map<T, Action<T>> {
         pos.top().map_or_else(
             || {
                 pos.look
                     .iter()
                     .map(|l| {
                         (
-                            <&str>::clone(l),
+                            <T>::clone(l),
                             if pos.rule == start {
                                 Action::Acc
                             } else {

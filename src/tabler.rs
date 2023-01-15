@@ -1,21 +1,28 @@
 use crate::{
-    transitive, ActTable, Action, Grammar, Map, Position, Set, State, Table, Term, EOF,
+    transitive, ActTable, Action, Grammar, Map, Position, Set, State, Table, EOF,
     INTERNAL_START_RULE,
 };
+use std::fmt::{Debug, Display};
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Tabler {
-    pub grammar: Grammar,
-    pub first: Table,
-    pub follow: Table,
-    pub actions: ActTable,
-    pub states: Vec<State>,
-    pub kernels: Map<State, usize>,
+pub struct Tabler<T>
+where
+    T: PartialEq + PartialOrd + Ord + Clone + Display + Debug,
+{
+    pub grammar: Grammar<T>,
+    pub first: Table<T>,
+    pub follow: Table<T>,
+    pub actions: ActTable<T>,
+    pub states: Vec<State<T>>,
+    pub kernels: Map<State<T>, usize>,
 }
 
-impl Tabler {
+impl<T> Tabler<T>
+where
+    T: PartialEq + PartialOrd + Ord + Clone + Display + Debug + Default,
+{
     #[must_use]
-    pub fn new(grammar: Grammar) -> Self {
+    pub fn new(grammar: Grammar<T>) -> Self {
         let mut buf = Self {
             grammar,
             ..Default::default()
@@ -31,12 +38,12 @@ impl Tabler {
     /// # Panics
     /// Never.
     #[must_use]
-    pub fn gen_first(&self) -> Table {
+    pub fn gen_first(&self) -> Table<T> {
         let mut table = Table::new();
         for rule in self.grammar.rules() {
             table.insert(rule.name, Set::new());
             for prod in rule.prods.iter().filter(|r| r[0] != rule.name) {
-                table.get_mut(rule.name).unwrap().insert(prod[0]);
+                table.get_mut(&rule.name).unwrap().insert(prod[0]);
             }
         }
         table
@@ -46,9 +53,8 @@ impl Tabler {
     /// # Panics
     /// Never.
     #[must_use]
-    pub fn gen_follow(&self) -> Table {
+    pub fn gen_follow(&self) -> Table<T> {
         let mut table = Table::new();
-        table.insert(INTERNAL_START_RULE, Set::from([EOF]));
         for rule in self.grammar.rules() {
             for prod in rule.prods() {
                 for term_idx in 0..prod.len() - 1 {
@@ -60,7 +66,7 @@ impl Tabler {
                             entry.insert(prod[term_idx + 1]);
                         } else {
                             // A = . . . T B -> {T: FIRST(B)}
-                            entry.extend(self.first[prod[term_idx + 1]].clone());
+                            entry.extend(self.first[&prod[term_idx + 1]].clone());
                         }
                     }
                 }
@@ -68,7 +74,10 @@ impl Tabler {
                 // A = . . . . T -> {T: FOLLOW(A)}
                 // But if A = . . . . A -> {A: FOLLOW(A)} -> {A: A} -> {}
                 if !self.grammar.is_terminal(last) && last != &rule.name {
-                    table.entry(last).or_insert_with(Set::new).insert(rule.name);
+                    table
+                        .entry(last.clone())
+                        .or_insert_with(Set::new)
+                        .insert(rule.name);
                 }
             }
         }
@@ -98,20 +107,22 @@ impl Tabler {
     /// # Panics
     /// Never.
     #[must_use]
-    pub fn first_step(&self, input: &Table) -> Table {
+    pub fn first_step(&self, input: &Table<T>) -> Table<T> {
         let mut table = Table::new();
         for (name, firsts) in input {
-            table.insert(name, Set::new());
+            table.insert(name.clone(), Set::new());
             for first in firsts {
                 if self.grammar.is_terminal(first) {
-                    table.get_mut(name).unwrap().insert(first);
+                    table.get_mut(name).unwrap().insert(first.clone());
                 } else {
-                    table
-                        .get_mut(name)
-                        .unwrap()
-                        .extend(input.get(first).unwrap_or_else(|| {
-                            panic!("{name} was not listed as terminal or non-terminal")
-                        }));
+                    table.get_mut(name).unwrap().extend(
+                        input
+                            .get(first)
+                            .unwrap_or_else(|| {
+                                panic!("{name} was not listed as terminal or non-terminal")
+                            })
+                            .clone(),
+                    );
                 }
             }
             if table[name].contains(name) {
@@ -124,10 +135,10 @@ impl Tabler {
     /// # Panics
     /// Never.
     #[must_use]
-    pub fn follow_step(&self, input: &Table) -> Table {
+    pub fn follow_step(&self, input: &Table<T>) -> Table<T> {
         let mut table = Table::new();
         for (noterm, terms) in input {
-            table.insert(noterm, Set::new());
+            table.insert(noterm.clone(), Set::new());
             for term in terms {
                 if self.grammar.is_terminal(term) {
                     table.get_mut(noterm).unwrap().insert(term);
@@ -143,13 +154,13 @@ impl Tabler {
     }
 
     #[must_use]
-    pub fn basis_pos(&self) -> Position {
-        let prod = &self.grammar.rules[INTERNAL_START_RULE].prods[0];
+    pub fn basis_pos(&self) -> Position<T> {
+        let basis = self.grammar.basis();
         Position::new(INTERNAL_START_RULE, prod.clone(), 0, Set::from([EOF]))
     }
 
     #[must_use]
-    pub fn first_of(&self, items: &Set<Term>) -> Set<Term> {
+    pub fn first_of(&self, items: &Set<T>) -> Set<T> {
         let mut firsts = Set::new();
         for item in items {
             if let Some(first) = self.first.get(item) {
@@ -162,7 +173,7 @@ impl Tabler {
     }
 
     #[must_use]
-    pub fn sym_filter(state: &State, sym: &Term) -> State {
+    pub fn sym_filter(state: &State<T>, sym: &T) -> State<T> {
         state
             .iter()
             .filter(|p| p.top() == Some(sym))
@@ -170,7 +181,7 @@ impl Tabler {
             .collect()
     }
 
-    pub fn conflicts(&self) -> impl Iterator<Item = &Action> + '_ {
+    pub fn conflicts(&self) -> impl Iterator<Item = &Action<T>> + '_ {
         self.actions
             .iter()
             .flat_map(Map::values)
@@ -189,7 +200,7 @@ impl Tabler {
 
     /// Updates an action by re-indexing states from `travel`.
     #[must_use]
-    pub fn update_entry(entry: &Action, travel: &Map<usize, usize>) -> Action {
+    pub fn update_entry(entry: &Action<T>, travel: &Map<usize, usize>) -> Action<T> {
         match entry {
             Action::Acc | Action::Reduce(..) => entry.clone(),
             Action::Goto(n) => Action::Goto(travel[n]),
@@ -206,7 +217,7 @@ impl Tabler {
     /// reduced action table where equal states was merged.
     /// Warranted to be O(n) and `actions.len() <= self.states`
     #[must_use]
-    pub fn reduced_actions(&self) -> (Map<usize, usize>, ActTable) {
+    pub fn reduced_actions(&self) -> (Map<usize, usize>, ActTable<T>) {
         let mut actions_map = Map::new();
         let mut travel_idx = Map::new();
         let mut actions = Vec::new();

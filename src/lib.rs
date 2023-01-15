@@ -21,11 +21,10 @@ pub use slr::Slr;
 pub type Map<K, V> = BTreeMap<K, V>;
 pub type Set<T> = BTreeSet<T>;
 
-pub type ActTable = Vec<Map<Term, Action>>;
+pub type ActTable<T> = Vec<Map<T, Action<T>>>;
 
 pub type Rule = &'static str;
-pub type Term = &'static str;
-pub type State = Set<Position>;
+pub type State<T> = Set<Position<T>>;
 
 /// Terms table,
 /// in FIRST:
@@ -37,10 +36,7 @@ pub type State = Set<Position>;
 /// A = . . . T a -> {T: a}
 /// A = . . . T B -> {T: FIRST(B)}
 /// A = . . . . T -> {T: FOLLOW(A)}
-pub type Table = Map<Rule, TermSet>;
-
-/// Terminal symbols sets
-pub type TermSet = Set<Term>;
+pub type Table<T> = Map<T, Set<T>>;
 
 /// For a given f(x), processes `x` until f(x) = f(f(x)) -> f(f(f(f....f(x)))) = f(x)
 pub fn transitive<T>(seed: T, map: impl Fn(T) -> T) -> T
@@ -59,10 +55,28 @@ where
 
 pub mod dfa;
 pub use dfa::*;
+
 pub mod tabler;
 pub use tabler::*;
+
 pub mod pos;
 pub use pos::*;
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Token<T, M> {
+    pub item: T,
+    pub ty: M,
+}
+
+impl<T, M> Token<T, M> {
+    pub fn new(item: T, ty: M) -> Self {
+        Self { item, ty }
+    }
+}
+
+pub fn to_tokens<T: Clone>(it: impl IntoIterator<Item = T>) -> impl Iterator<Item = Token<T, T>> {
+    it.into_iter().map(|i| Token::new(i.clone(), i))
+}
 
 #[macro_export]
 macro_rules! grammar {

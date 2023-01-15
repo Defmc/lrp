@@ -1,14 +1,14 @@
 use std::{fmt, iter::Peekable, rc::Rc};
 
-use crate::{ActTable, Production, Rule, RuleName, Term};
+use crate::{ActTable, Production, Rule, RuleName, Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Action {
+pub enum Action<T> {
     Shift(usize),
     Goto(usize),
-    Reduce(RuleName, Rc<Production>),
+    Reduce(RuleName, Rc<Production<T>>),
     Acc,
-    Conflict(Box<Action>, Box<Action>),
+    Conflict(Box<Action<T>>, Box<Action<T>>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -43,15 +43,15 @@ impl fmt::Display for Item {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Error {
+pub enum Error<T> {
     /// Found a unexpected token. Contains a vector with correct tokens after it. Indicates a bad
     /// input.
-    UnexpectedToken(Term, Vec<Term>),
+    UnexpectedToken(T, Vec<T>),
     /// Specialized version of `Error::UnexpectedToken` for buffer end in a Shifting Action. Indicates a bad input.
     UnexpectedEof,
     /// Unsolved conflict. When the current state contains a conflicting action. It's the unique
     /// natural possible error.
-    Conflict(Action, Action),
+    Conflict(Action<T>, Action<T>),
     /// Missing state. When reduce actions don't contains a previous state. Mustn't occur in a run without an external interference
     MissingPreviousState,
     /// State not specified in actions table. Mustn't occur in a run without an external interference
@@ -61,7 +61,7 @@ pub enum Error {
     IncompleteExec,
 }
 
-impl fmt::Display for Error {
+impl<T> fmt::Display for Error<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::UnexpectedToken(found, expected) => f.write_fmt(format_args!(
@@ -80,21 +80,21 @@ impl fmt::Display for Error {
     }
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error<T>>;
 
 #[derive(Debug, Clone)]
-pub struct Dfa<I: Iterator<Item = Term>> {
+pub struct Dfa<M, T, I: Iterator<Item = Token<M, T>>> {
     pub buffer: Peekable<I>,
     pub states: Vec<usize>,
     pub items: Vec<Item>,
-    pub table: ActTable,
+    pub table: ActTable<T>,
     pub top: usize,
     pub finished: bool,
 }
 
-impl<I: Iterator<Item = Term>> Dfa<I> {
+impl<M, T, I: Iterator<Item = Token<M, T>>> Dfa<M, T, I> {
     #[must_use]
-    pub fn new(buffer: I, table: ActTable) -> Self {
+    pub fn new(buffer: I, table: ActTable<T>) -> Self {
         Self {
             states: vec![0],
             items: Vec::new(),
@@ -152,9 +152,9 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     /// If the current state don't exists in actions table, raises an `Error::StateNotSpecified`
     /// If there isn't an action in current state for `symbol`, raises an `Error::UnexpectedToken`
     /// Returns the action result
-    pub fn travel(&mut self, symbol: Term) -> Result<()> {
+    pub fn travel(&mut self, symbol: T) -> Result<()> {
         let state = self.table.get(self.top).ok_or(Error::StateNotSpecified)?;
-        let action = state.get(symbol).ok_or_else(|| {
+        let action = state.get(&symbol).ok_or_else(|| {
             let expecteds = state.keys().copied().collect();
             Error::UnexpectedToken(symbol, expecteds)
         })?;
@@ -171,7 +171,7 @@ impl<I: Iterator<Item = Term>> Dfa<I> {
     /// # Errors
     /// If stack doesn't contains the necessary terms amount, raises an `Error::UnexepectedEof`
     /// If there isn't a previous state, raises an `Error::MissingPreviousState`
-    pub fn reduce(&mut self, name: RuleName, prod: &Rc<Production>) -> Result<()> {
+    pub fn reduce(&mut self, name: RuleName, prod: &Rc<Production<T>>) -> Result<()> {
         // let mut item = Vec::with_capacity(prod.len());
         // while item.len() != prod.len() {
         //     let poped = self.stack.pop().ok_or(Error::UnexpectedEof)?;
