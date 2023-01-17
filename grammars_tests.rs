@@ -1,4 +1,6 @@
-pub const GRAMMARS: &[(fn() -> Grammar<&'static str>, &[&[&str]], &'static str)] = &[
+pub type GrammarProd = fn() -> Grammar<&'static str>;
+
+pub const GRAMMARS: &[(GrammarProd, &[&[&str]], &str)] = &[
     (dragon_book, DRAGON_BOOK_INPUTS, "dragon's book"),
     (serokell, SEROKELL_INPUTS, "serokell"),
     (
