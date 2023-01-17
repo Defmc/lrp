@@ -1,13 +1,15 @@
 use std::{
+    fmt,
     io::{self, Write},
     iter::Peekable,
 };
 
-use lrp::{Dfa, Grammar, Lalr, Parser, Set, Tabler, TermStr};
+use lrp::{Dfa, Grammar, Lalr, Parser, Set, Tabler, Token};
 use prettytable::{row, Cell, Row, Table};
 
 fn main() {
     let grammar = lrp::grammar! {
+        "'S" -> "S",
         "S" -> "(" ")"
             | "(" "S" ")"
             | "[" "]"
@@ -15,11 +17,8 @@ fn main() {
             | "{" "}"
             | "{" "S" "}"
     };
-    let grammar = Grammar::new(
-        "S",
-        grammar,
-        Set::from(["[", "]", "(", ")", "{", "}", "d", "c"]),
-    );
+    let terminals = Set::from(["[", "]", "(", ")", "{", "}", "d", "c"]);
+    let grammar = Grammar::new("'S", grammar, terminals.clone(), "$");
 
     let parser = Lalr::new(grammar);
 
@@ -39,16 +38,20 @@ fn main() {
 
         #[allow(clippy::needless_collect)]
         let input: Vec<_> = input.trim().chars().map(|c| c.to_string()).collect();
-        let mut dfa = parser.dfa(
-            input
-                .into_iter()
-                .map(|s| Box::leak(Box::new(s)) as &'static str),
-        );
+        let mut dfa = parser.dfa(input.into_iter().map(|t| {
+            Token::new(
+                t.clone(),
+                *terminals.iter().find(|&&r| r == t.as_str()).unwrap(),
+            )
+        }));
         print_proc_dfa(&mut dfa);
     }
 }
 
-fn print_tokens_table(table: &Tabler) {
+fn print_tokens_table<T>(table: &Tabler<T>)
+where
+    T: Clone + Ord + fmt::Display + fmt::Debug,
+{
     let mut out = Table::new();
     out.set_titles(row!["non terminal", "first tokens", "follow tokens"]);
 
@@ -61,17 +64,16 @@ fn print_tokens_table(table: &Tabler) {
     out.printstd();
 }
 
-fn print_states_table(table: &Tabler, parser: &impl Parser) {
+fn print_states_table<T>(table: &Tabler<T>, parser: &impl Parser<T>)
+where
+    T: Clone + Ord + fmt::Display + fmt::Debug,
+{
     let mut out = Table::new();
     out.set_titles(row!["goto(idx, term)", "kernel", "state", "closure"]);
 
     let internal = table.basis_pos();
     let start = &table.states[0];
-    let syms: Vec<_> = table
-        .grammar
-        .symbols()
-        .chain(["LRP'START", lrp::EOF].into_iter())
-        .collect();
+    let syms: Vec<_> = table.grammar.symbols().collect();
 
     out.add_row(row![
         format!("last state: {}", table.states.len() - 1),
@@ -100,25 +102,27 @@ fn print_states_table(table: &Tabler, parser: &impl Parser) {
     out.printstd();
 }
 
-fn print_actions_table(table: &Tabler) {
+fn print_actions_table<T>(table: &Tabler<T>)
+where
+    T: Clone + Ord + fmt::Display + fmt::Debug,
+{
     let mut out = Table::new();
 
-    let (terminals, nonterminals) = table
-        .grammar
-        .symbols()
-        .chain(["LRP'START", lrp::EOF].into_iter())
-        .fold((Set::new(), Set::new()), |(mut ts, mut nts), s| {
-            if table.grammar.is_terminal(&s) {
-                ts.insert(s);
-            } else {
-                nts.insert(s);
-            }
-            (ts, nts)
-        });
+    let (terminals, nonterminals) =
+        table
+            .grammar
+            .symbols()
+            .fold((Set::new(), Set::new()), |(mut ts, mut nts), s| {
+                if table.grammar.is_terminal(&s) {
+                    ts.insert(s);
+                } else {
+                    nts.insert(s);
+                }
+                (ts, nts)
+            });
 
     let rows: Vec<_> = terminals
         .iter()
-        .chain(std::iter::once(&"state"))
         .chain(nonterminals.iter())
         .map(|t| Cell::new(&format!("{t:?}")))
         .collect();
@@ -149,12 +153,15 @@ fn print_actions_table(table: &Tabler) {
     out.printstd();
 }
 
-fn print_proc_dfa<I: Iterator<Item = TermStr>>(dfa: &mut Dfa<I>)
+fn print_proc_dfa<M, T, I: Iterator<Item = Token<M, T>>>(dfa: &mut Dfa<M, T, I>)
 where
     Peekable<I>: Clone,
+    M: Clone + fmt::Debug,
+    T: fmt::Display + fmt::Debug + Clone + Ord,
 {
     let mut out = Table::new();
     out.set_titles(row!["step", "stack", "buffer", "action address", "action"]);
+    let eof = dfa.eof.clone();
 
     let res = dfa.trace(|state| {
         let step = out.len() + 1;
@@ -164,14 +171,18 @@ where
             state
                 .buffer
                 .clone()
-                .chain(std::iter::once(lrp::EOF))
+                .map(|Token { ty, .. }| ty)
+                .chain(std::iter::once(eof.clone()))
                 .collect::<Vec<_>>()
         );
-        let symbol = state.buffer.peek().unwrap_or(&lrp::EOF);
+        let symbol = state
+            .buffer
+            .peek()
+            .map_or_else(|| eof.clone(), |t| t.ty.clone());
         let action = state
             .table
             .get(state.top)
-            .and_then(|t| t.get(symbol))
+            .and_then(|t| t.get(&symbol))
             .map_or_else(|| "n/a".to_string(), |a| format!("{a:?}"));
         let action_adr = format!("{}:{:?}", state.top, symbol);
 

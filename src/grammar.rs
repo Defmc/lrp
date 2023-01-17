@@ -1,6 +1,6 @@
-use std::rc::Rc;
+use std::{fmt::Display, rc::Rc};
 
-use crate::{Map, Set};
+use crate::{Map, Position, Set};
 
 pub type Production<T> = Vec<T>;
 pub type RuleMap<T> = Map<T, Rule<T>>;
@@ -31,33 +31,37 @@ impl<T> Rule<T> {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Grammar<T> {
+pub struct Grammar<T>
+where
+    T: Ord + Clone + Display,
+{
     pub rules: RuleMap<T>,
     pub terminals: Set<T>,
     pub symbols: Set<T>,
-    pub basis: Rc<Production<T>>,
+    pub basis: Position<T>,
 }
 
 impl<T> Grammar<T>
 where
-    T: Ord + Clone + Default,
+    T: Ord + Clone + Display,
 {
     #[must_use]
-    pub fn new(start: T, mut rules: RuleMap<T>, mut terminals: Set<T>, eof: T) -> Self {
+    pub fn new(start: T, rules: RuleMap<T>, mut terminals: Set<T>, eof: T) -> Self {
         let symbols = rules.keys().chain(terminals.iter()).cloned().collect();
-        terminals.insert(eof);
-        let prods = rules[&start].prods;
+        terminals.insert(eof.clone());
+        let prods = &rules[&start].prods;
         debug_assert_eq!(prods.len(), 1, "there's more than one possible entry");
+        let basis = Position::new(start, prods[0].clone(), 0, Set::from([eof]));
         Self {
             rules,
             terminals,
             symbols,
-            basis: prods[0].clone(),
+            basis,
         }
     }
 
     #[must_use]
-    pub fn basis(&self) -> Rc<Production<T>> {
+    pub fn basis(&self) -> Position<T> {
         self.basis.clone()
     }
 

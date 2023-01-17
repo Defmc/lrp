@@ -72,7 +72,7 @@ where
 
     #[must_use]
     pub fn no_look(&self) -> Self {
-        Self::new(self.rule, self.seq.clone(), self.point, Set::new())
+        Self::new(self.rule.clone(), self.seq.clone(), self.point, Set::new())
     }
 
     #[must_use]

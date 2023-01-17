@@ -1,5 +1,5 @@
-use crate::{dfa::Result, Dfa};
-use crate::{Grammar, Item, State, Tabler, Token};
+use crate::Dfa;
+use crate::{BaseResult, Error, Grammar, Item, State, Tabler, Token};
 use std::fmt::{Debug, Display};
 
 pub trait Parser<T>
@@ -23,13 +23,26 @@ where
     fn uninit(table: Tabler<T>) -> Self;
 
     #[must_use]
-    fn dfa<M, I: Iterator<Item = Token<M, T>>>(&self, buffer: I) -> Dfa<M, T, I> {
-        Dfa::new(buffer, self.tables().actions.clone())
+    fn dfa<M: Clone, I: Iterator<Item = Token<M, T>>>(&self, buffer: I) -> Dfa<M, T, I> {
+        Dfa::new(
+            buffer,
+            self.tables().actions.clone(),
+            self.tables()
+                .grammar
+                .basis()
+                .look
+                .iter()
+                .collect::<Vec<_>>()[0]
+                .clone(),
+        )
     }
 
     /// # Errors
     /// The same of `dfa::travel`
-    fn parse<M, I: IntoIterator<Item = Token<M, T>>>(&self, buffer: I) -> Result<Item> {
+    fn parse<M: Clone, I: IntoIterator<Item = Token<M, T>>>(
+        &self,
+        buffer: I,
+    ) -> BaseResult<Item<M, T>, Error<T>> {
         let mut dfa = self.dfa(buffer.into_iter());
         dfa.start()?;
         dfa.items
@@ -39,7 +52,7 @@ where
 
     /// Runs `Parser::parse` and checks by errors
     #[must_use]
-    fn validate<M, I: IntoIterator<Item = Token<M, T>>>(&self, buffer: I) -> bool {
+    fn validate<M: Clone, I: IntoIterator<Item = Token<M, T>>>(&self, buffer: I) -> bool {
         self.parse(buffer).is_ok()
     }
 

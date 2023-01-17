@@ -1,7 +1,4 @@
-use crate::{
-    transitive, ActTable, Action, Grammar, Map, Position, Set, State, Table, EOF,
-    INTERNAL_START_RULE,
-};
+use crate::{transitive, ActTable, Action, Grammar, Map, Position, Set, State, Table};
 use std::fmt::{Debug, Display};
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -19,13 +16,17 @@ where
 
 impl<T> Tabler<T>
 where
-    T: PartialEq + PartialOrd + Ord + Clone + Display + Debug + Default,
+    T: PartialEq + PartialOrd + Ord + Clone + Display + Debug,
 {
     #[must_use]
     pub fn new(grammar: Grammar<T>) -> Self {
         let mut buf = Self {
             grammar,
-            ..Default::default()
+            first: Table::default(),
+            follow: Table::default(),
+            actions: ActTable::default(),
+            states: Vec::default(),
+            kernels: Map::default(),
         };
         buf.first = buf.gen_first();
         buf.proc_first();
@@ -41,9 +42,9 @@ where
     pub fn gen_first(&self) -> Table<T> {
         let mut table = Table::new();
         for rule in self.grammar.rules() {
-            table.insert(rule.name, Set::new());
+            table.insert(rule.name.clone(), Set::new());
             for prod in rule.prods.iter().filter(|r| r[0] != rule.name) {
-                table.get_mut(&rule.name).unwrap().insert(prod[0]);
+                table.get_mut(&rule.name).unwrap().insert(prod[0].clone());
             }
         }
         table
@@ -60,10 +61,10 @@ where
                 for term_idx in 0..prod.len() - 1 {
                     // A = . . . A a -> {A: FIRST(A)} -> {A: A} -> {}
                     if !self.grammar.is_terminal(&prod[term_idx]) {
-                        let entry = table.entry(prod[term_idx]).or_insert_with(Set::new);
+                        let entry = table.entry(prod[term_idx].clone()).or_insert_with(Set::new);
                         if self.grammar.is_terminal(&prod[term_idx + 1]) {
                             // A = . . . T a -> {T: a}
-                            entry.insert(prod[term_idx + 1]);
+                            entry.insert(prod[term_idx + 1].clone());
                         } else {
                             // A = . . . T B -> {T: FIRST(B)}
                             entry.extend(self.first[&prod[term_idx + 1]].clone());
@@ -77,7 +78,7 @@ where
                     table
                         .entry(last.clone())
                         .or_insert_with(Set::new)
-                        .insert(rule.name);
+                        .insert(rule.name.clone());
                 }
             }
         }
@@ -141,9 +142,9 @@ where
             table.insert(noterm.clone(), Set::new());
             for term in terms {
                 if self.grammar.is_terminal(term) {
-                    table.get_mut(noterm).unwrap().insert(term);
+                    table.get_mut(noterm).unwrap().insert(term.clone());
                 } else if let Some(entry) = input.get(term) {
-                    table.get_mut(noterm).unwrap().extend(entry);
+                    table.get_mut(noterm).unwrap().extend(entry.clone());
                 }
             }
             if table[noterm].contains(noterm) {
@@ -155,8 +156,7 @@ where
 
     #[must_use]
     pub fn basis_pos(&self) -> Position<T> {
-        let basis = self.grammar.basis();
-        Position::new(INTERNAL_START_RULE, prod.clone(), 0, Set::from([EOF]))
+        self.grammar.basis()
     }
 
     #[must_use]
@@ -166,7 +166,7 @@ where
             if let Some(first) = self.first.get(item) {
                 firsts.extend(first.clone());
             } else {
-                firsts.insert(*item);
+                firsts.insert(item.clone());
             };
         }
         firsts
@@ -176,7 +176,7 @@ where
     pub fn sym_filter(state: &State<T>, sym: &T) -> State<T> {
         state
             .iter()
-            .filter(|p| p.top() == Some(sym))
+            .filter(|p| p.top().as_ref() == Some(sym))
             .filter_map(Position::clone_next)
             .collect()
     }
