@@ -178,40 +178,42 @@ where
                 .peek()
                 .map_or_else(|| &self.eof, |t| &t.ty)
                 .clone();
-            self.travel(symbol)?;
+            self.travel(&symbol)?;
         }
         Ok(())
     }
 
-    pub fn goto(&mut self, to: usize) {
+    /// # Errors
+    /// None
+    pub fn goto(&mut self, to: usize) -> BaseResult<(), Error<T>> {
         self.states.push(to);
         self.top = to;
+        Ok(())
     }
 
     /// # Errors
     /// If the current state don't exists in actions table, raises an `Error::StateNotSpecified`
     /// If there isn't an action in current state for `symbol`, raises an `Error::UnexpectedToken`
     /// Returns the action result
-    pub fn travel(&mut self, symbol: T) -> BaseResult<(), Error<T>> {
+    pub fn travel(&mut self, symbol: &T) -> BaseResult<(), Error<T>> {
         let state = self.table.get(self.top).ok_or(Error::StateNotSpecified)?;
-        let action = state.get(&symbol).ok_or_else(|| {
+        let action = state.get(symbol).ok_or_else(|| {
             let expecteds = state.keys().cloned().collect();
             Error::UnexpectedToken(symbol.clone(), expecteds)
         })?;
         match action {
-            Action::Shift(to) => self.shift(*to)?,
+            Action::Shift(to) => self.shift(*to),
             Action::Goto(to) => self.goto(*to),
-            Action::Reduce(name, prod) => self.reduce(name.clone(), prod.clone())?,
-            Action::Acc => self.accept()?,
-            Action::Conflict(a, b) => Err(Error::Conflict(*a.clone(), *b.clone()))?,
+            Action::Reduce(name, prod) => self.reduce(&name.clone(), &prod.clone()),
+            Action::Acc => self.accept(),
+            Action::Conflict(a, b) => Err(Error::Conflict(*a.clone(), *b.clone())),
         }
-        Ok(())
     }
 
     /// # Errors
     /// If stack doesn't contains the necessary terms amount, raises an `Error::UnexepectedEof`
     /// If there isn't a previous state, raises an `Error::MissingPreviousState`
-    pub fn reduce(&mut self, name: T, prod: Rc<Production<T>>) -> BaseResult<(), Error<T>> {
+    pub fn reduce(&mut self, name: &T, prod: &Production<T>) -> BaseResult<(), Error<T>> {
         // let mut item = Vec::with_capacity(prod.len());
         // while item.len() != prod.len() {
         //     let poped = self.stack.pop().ok_or(Error::UnexpectedEof)?;
@@ -234,20 +236,6 @@ where
             .get(len - prod.len() - 1)
             .ok_or(Error::MissingPreviousState)?;
         self.states.truncate(len - prod.len());
-        // let item = Item::Compound(name, item);
-        // let state = self
-        //     .stack
-        //     .iter()
-        //     .rev()
-        //     .find_map(|i| {
-        //         if let StackEl::State(n) = i {
-        //             Some(*n)
-        //         } else {
-        //             None
-        //         }
-        //     })
-        //     .ok_or(Error::MissingPreviousState)?;
-        // self.stack.push(StackEl::Item(item));
         self.travel(name)
     }
 

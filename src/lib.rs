@@ -66,7 +66,7 @@ pub struct Token<T, M> {
 }
 
 impl<T, M> Token<T, M> {
-    pub fn new(item: T, ty: M) -> Self {
+    pub const fn new(item: T, ty: M) -> Self {
         Self { item, ty }
     }
 }
