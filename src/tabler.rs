@@ -144,22 +144,17 @@ where
         let mut table = Table::new();
         for (noterm, terms) in input {
             table.insert(noterm.clone(), Set::new());
-            print!("{noterm}: ");
             for term in terms {
                 if self.grammar.is_terminal(term) {
                     table.get_mut(noterm).unwrap().insert(term.clone());
-                    print!("{term} ");
                 } else if let Some(entry) = input.get(term) {
                     table.get_mut(noterm).unwrap().extend(entry.clone());
-                    entry.iter().for_each(|e| print!("{e} "));
                 }
             }
             if table[noterm].contains(noterm) {
                 table.get_mut(noterm).unwrap().remove(noterm);
             }
-            println!("");
         }
-        println!("----------");
         table
     }
 
