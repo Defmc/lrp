@@ -7,11 +7,11 @@ mod grammars_tests {
 
 use grammars_tests::GRAMMARS;
 use hermes_bench::{BenchSize, Bencher, ClassicBench, IterBench};
-use lrp::{dfa::Error, Clr, Dfa, Grammar, Lalr, Parser, Slr, Tabler};
+use lrp::{dfa::Error, to_tokens, Clr, Dfa, Lalr, Parser, Slr, Tabler};
 
 const BENCH_SIZE: BenchSize = BenchSize::Iters(100);
 
-fn test_table_parser_prod<P: Parser + PartialEq + fmt::Debug>(name: &str) {
+fn test_table_parser_prod<P: Parser<&'static str> + PartialEq + fmt::Debug>(name: &str) {
     println!("\n{name} productions:");
     for (grammar, _, grammar_name) in GRAMMARS {
         let parser = P::new(grammar());
@@ -41,12 +41,16 @@ fn test_table_gen() {
     }
 }
 
-fn test_dfa<P: Parser>(name: &str) {
+fn test_dfa<P: Parser<&'static str>>(name: &str) {
     println!("\n{name}'s DFA:");
     for (grammar, inputs, grammar_name) in GRAMMARS {
         let parser = P::new(grammar());
         let actions_copy = || parser.tables().actions.clone();
-        let iter = inputs.into_iter().cycle().map(|i| (i, actions_copy()));
+        let iter = inputs
+            .into_iter()
+            .cycle()
+            .map(|&i| to_tokens(i.into_iter().cloned()))
+            .map(|i| (i, actions_copy()));
         let assert = |r| {
             assert!(
                 matches!(r, Ok(_) | Err(Error::Conflict(_, _))),
@@ -54,7 +58,7 @@ fn test_dfa<P: Parser>(name: &str) {
             )
         };
         let mut bench = IterBench::new(iter, &|(input, table)| {
-            let mut dfa = Dfa::new(input.into_iter().copied(), table);
+            let mut dfa = Dfa::new(input, table, "$");
             dfa.start()
         })
         .with_name(format!("{grammar_name} parsing inputs"))
@@ -67,10 +71,10 @@ fn test_dfa<P: Parser>(name: &str) {
 
 fn main() {
     test_table_gen();
-    test_table_parser_prod::<Clr>("Canonical LR");
-    test_table_parser_prod::<Lalr>("LALR(1)");
-    test_table_parser_prod::<Slr>("SLR");
-    test_dfa::<Clr>("Canonical LR");
-    test_dfa::<Lalr>("LALR(1)");
-    test_dfa::<Slr>("SLR");
+    test_table_parser_prod::<Clr<&'static str>>("Canonical LR");
+    test_table_parser_prod::<Lalr<&'static str>>("LALR(1)");
+    test_table_parser_prod::<Slr<&'static str>>("SLR");
+    test_dfa::<Clr<&'static str>>("Canonical LR");
+    test_dfa::<Lalr<&'static str>>("LALR(1)");
+    test_dfa::<Slr<&'static str>>("SLR");
 }
