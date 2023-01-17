@@ -1,8 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-pub const EOF: &str = unsafe { std::str::from_utf8_unchecked(&[0x03]) };
-pub const INTERNAL_START_RULE: &str = "LRP'START";
-
 pub mod grammar;
 pub use grammar::*;
 
