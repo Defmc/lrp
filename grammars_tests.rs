@@ -251,6 +251,7 @@ pub fn puncs() -> Grammar<&'static str> {
         S -> { S }.
     */
     let grammar = grammar! {
+        "S'" -> "S",
         "S" -> "(" ")"
             | "(" "S" ")"
             | "[" "]"
@@ -259,7 +260,12 @@ pub fn puncs() -> Grammar<&'static str> {
             | "{" "S" "}"
     };
 
-    Grammar::new("S", grammar, Set::from(["(", ")", "[", "]", "{", "}"]), "$")
+    Grammar::new(
+        "S'",
+        grammar,
+        Set::from(["(", ")", "[", "]", "{", "}"]),
+        "$",
+    )
 }
 
 pub const SCANNER_INPUTS: &[&[&str]] = &[
@@ -337,6 +343,8 @@ pub fn scanner() -> Grammar<&'static str> {
     Space -> _.
      */
     let grammar = grammar! {
+        "S" -> "Phrase",
+
         "Phrase" -> "Item" "Space" "Phrase"
             | "Item",
 
@@ -361,5 +369,5 @@ pub fn scanner() -> Grammar<&'static str> {
         "_",
     ]);
 
-    Grammar::new("Phrase", grammar, terminals, "$")
+    Grammar::new("S", grammar, terminals, "$")
 }

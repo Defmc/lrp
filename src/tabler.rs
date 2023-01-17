@@ -44,6 +44,7 @@ where
         for rule in self.grammar.rules() {
             table.insert(rule.name.clone(), Set::new());
             for prod in rule.prods.iter().filter(|r| r[0] != rule.name) {
+                // TODO: Unique write op
                 table.get_mut(&rule.name).unwrap().insert(prod[0].clone());
             }
         }
@@ -55,6 +56,7 @@ where
     /// Never.
     #[must_use]
     pub fn gen_follow(&self) -> Table<T> {
+        // TODO: Try apply Start rule before first cycle. Should save one iteration.
         let mut table = Table::new();
         for rule in self.grammar.rules() {
             for prod in rule.prods() {
@@ -82,6 +84,8 @@ where
                 }
             }
         }
+        let basis = self.basis_pos();
+        table.entry(basis.rule).or_default().extend(basis.look);
         table
     }
 
@@ -140,17 +144,22 @@ where
         let mut table = Table::new();
         for (noterm, terms) in input {
             table.insert(noterm.clone(), Set::new());
+            print!("{noterm}: ");
             for term in terms {
                 if self.grammar.is_terminal(term) {
                     table.get_mut(noterm).unwrap().insert(term.clone());
+                    print!("{term} ");
                 } else if let Some(entry) = input.get(term) {
                     table.get_mut(noterm).unwrap().extend(entry.clone());
+                    entry.iter().for_each(|e| print!("{e} "));
                 }
             }
             if table[noterm].contains(noterm) {
                 table.get_mut(noterm).unwrap().remove(noterm);
             }
+            println!("");
         }
+        println!("----------");
         table
     }
 
@@ -235,7 +244,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{grammars_tests, Map, Set, Tabler, INTERNAL_START_RULE};
+    use crate::{grammars_tests, Map, Set, Tabler};
 
     #[test]
     pub fn dragon_book() {
@@ -243,20 +252,12 @@ mod tests {
 
         assert_eq!(
             table.first,
-            Map::from([
-                ("S", Set::from(["c", "d"])),
-                ("C", Set::from(["c", "d"])),
-                (INTERNAL_START_RULE, Set::from(["c", "d"]))
-            ])
+            Map::from([("S", Set::from(["c", "d"])), ("C", Set::from(["c", "d"])),])
         );
 
         assert_eq!(
             table.follow,
-            Map::from([
-                ("C", Set::from(["\u{3}", "c", "d"])),
-                ("S", Set::from(["\u{3}"])),
-                (INTERNAL_START_RULE, Set::from(["\u{3}"])),
-            ])
+            Map::from([("C", Set::from(["$", "c", "d"])), ("S", Set::from(["$"])),])
         );
     }
 
@@ -270,17 +271,15 @@ mod tests {
                 ("S", Set::from(["0", "1"])),
                 ("E", Set::from(["0", "1"])),
                 ("B", Set::from(["0", "1"])),
-                (INTERNAL_START_RULE, Set::from(["0", "1"]))
             ])
         );
 
         assert_eq!(
             table.follow,
             Map::from([
-                ("B", Set::from(["\u{3}", "*", "+"])),
-                ("E", Set::from(["\u{3}", "*", "+"])),
-                ("S", Set::from(["\u{3}"])),
-                (INTERNAL_START_RULE, Set::from(["\u{3}"])),
+                ("B", Set::from(["$", "*", "+"])),
+                ("E", Set::from(["$", "*", "+"])),
+                ("S", Set::from(["$"])),
             ])
         );
     }
@@ -300,7 +299,6 @@ mod tests {
                 ("E", Set::from(["d", "e"])),
                 ("F", Set::from(["d", "e"])),
                 ("S", Set::from(["d", "e"])),
-                (INTERNAL_START_RULE, Set::from(["d", "e"]))
             ])
         );
 
@@ -309,12 +307,11 @@ mod tests {
             Map::from([
                 ("A", Set::from(["b", "c"])),
                 ("B", Set::from(["b", "c"])),
-                ("C", Set::from(["\u{3}"])),
-                ("D", Set::from(["\u{3}"])),
-                ("E", Set::from(["\u{3}"])),
-                ("F", Set::from(["\u{3}"])),
-                ("S", Set::from(["\u{3}"])),
-                (INTERNAL_START_RULE, Set::from(["\u{3}"])),
+                ("C", Set::from(["$"])),
+                ("D", Set::from(["$"])),
+                ("E", Set::from(["$"])),
+                ("F", Set::from(["$"])),
+                ("S", Set::from(["$"])),
             ])
         );
     }
@@ -330,18 +327,16 @@ mod tests {
                 ("Factor", Set::from(["(", "ident", "int"])),
                 ("Start", Set::from(["(", "ident", "int"])),
                 ("Term", Set::from(["(", "ident", "int"])),
-                (INTERNAL_START_RULE, Set::from(["(", "ident", "int"])),
             ])
         );
 
         assert_eq!(
             table.follow,
             Map::from([
-                ("Add", Set::from(["\u{3}", ")", "+"])),
-                ("Factor", Set::from(["\u{3}", ")", "*", "+"])),
-                ("Term", Set::from(["\u{3}", ")", "*", "+"])),
-                ("Start", Set::from(["\u{3}"])),
-                (INTERNAL_START_RULE, Set::from(["\u{3}"])),
+                ("Add", Set::from(["$", ")", "+"])),
+                ("Factor", Set::from(["$", ")", "*", "+"])),
+                ("Term", Set::from(["$", ")", "*", "+"])),
+                ("Start", Set::from(["$"])),
             ])
         );
     }
@@ -353,7 +348,7 @@ mod tests {
         assert_eq!(
             table.first,
             Map::from([
-                ("LRP'START", Set::from(["(", "[", "{",])),
+                ("S'", Set::from(["(", "[", "{",])),
                 ("S", Set::from(["(", "[", "{",])),
             ])
         );
@@ -361,8 +356,8 @@ mod tests {
         assert_eq!(
             table.follow,
             Map::from([
-                ("LRP'START", Set::from(["\u{3}",])),
-                ("S", Set::from(["\u{3}", ")", "]", "}",])),
+                ("S'", Set::from(["$",])),
+                ("S", Set::from(["$", ")", "]", "}",])),
             ])
         );
     }
@@ -393,7 +388,7 @@ mod tests {
                     ]),
                 ),
                 (
-                    "LRP'START",
+                    "S",
                     Set::from([
                         "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e",
                         "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
@@ -429,18 +424,18 @@ mod tests {
                 (
                     "Alpha",
                     Set::from([
-                        "\u{3}", "_", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
-                        "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
+                        "$", "_", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+                        "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
                     ])
                 ),
                 (
                     "Digit",
-                    Set::from(["\u{3}", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "_"])
+                    Set::from(["$", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "_"])
                 ),
-                ("Item", Set::from(["\u{3}", "_"])),
-                ("LRP'START", Set::from(["\u{3}"])),
-                ("Num", Set::from(["\u{3}", "_"])),
-                ("Phrase", Set::from(["\u{3}"])),
+                ("Item", Set::from(["$", "_"])),
+                ("S", Set::from(["$"])),
+                ("Num", Set::from(["$", "_"])),
+                ("Phrase", Set::from(["$"])),
                 (
                     "Space",
                     Set::from([
@@ -449,7 +444,7 @@ mod tests {
                         "u", "v", "w", "x", "y", "z"
                     ])
                 ),
-                ("Word", Set::from(["\u{3}", "_"]))
+                ("Word", Set::from(["$", "_"]))
             ])
         );
     }
