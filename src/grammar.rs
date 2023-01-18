@@ -2,7 +2,8 @@ use std::{fmt::Display, rc::Rc};
 
 use crate::{Map, Position, Set};
 
-pub type Production<T> = Vec<T>;
+/// Production Rule + Index In Declaration
+pub type Production<T> = (Vec<T>, usize);
 pub type RuleMap<T> = Map<T, Rule<T>>;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -13,16 +14,23 @@ pub struct Rule<T> {
 
 impl<T> Rule<T> {
     #[must_use]
-    pub fn new(name: T, prods: Vec<Production<T>>) -> Self {
+    pub fn new<I>(name: T, prods: I) -> Self
+    where
+        I: IntoIterator<Item = Vec<T>>,
+    {
         Self {
             name,
-            prods: prods.into_iter().map(Rc::new).collect(),
+            prods: prods
+                .into_iter()
+                .enumerate()
+                .map(|(i, p)| Rc::new((p, i)))
+                .collect(),
         }
     }
 
     #[must_use]
-    pub fn single(name: T, prod: Production<T>) -> Self {
-        Self::new(name, vec![prod])
+    pub fn single(name: T, prod: Vec<T>) -> Self {
+        Self::new(name, std::iter::once(prod))
     }
 
     pub fn prods(&self) -> impl Iterator<Item = Rc<Production<T>>> + '_ {

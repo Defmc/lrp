@@ -43,17 +43,17 @@ where
 
     #[must_use]
     pub fn peek(&self, qty: usize) -> Option<T> {
-        self.seq.get(self.point + qty).cloned()
+        self.seq.0.get(self.point + qty).cloned()
     }
 
     #[must_use]
     pub fn top(&self) -> Option<T> {
-        self.seq.get(self.point).cloned()
+        self.seq.0.get(self.point).cloned()
     }
 
     #[must_use]
     pub fn finished(&self) -> bool {
-        self.point >= self.seq.len()
+        self.point >= self.seq.0.len()
     }
 
     #[must_use]
@@ -67,7 +67,7 @@ where
 
     #[must_use]
     pub fn abs_idx(&self, idx: usize) -> Option<T> {
-        self.seq.get(idx).cloned()
+        self.seq.0.get(idx).cloned()
     }
 
     #[must_use]
@@ -93,7 +93,7 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("{} =", self.rule))?;
-        for i in 0..=self.point.max(self.seq.len()) {
+        for i in 0..=self.point.max(self.seq.0.len()) {
             f.write_char(' ')?;
             if i == self.point {
                 f.write_str(". ")?;

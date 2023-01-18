@@ -43,9 +43,9 @@ where
         let mut table = Table::new();
         for rule in self.grammar.rules() {
             table.insert(rule.name.clone(), Set::new());
-            for prod in rule.prods.iter().filter(|r| r[0] != rule.name) {
+            for prod in rule.prods.iter().filter(|r| r.0[0] != rule.name) {
                 // TODO: Unique write op
-                table.get_mut(&rule.name).unwrap().insert(prod[0].clone());
+                table.get_mut(&rule.name).unwrap().insert(prod.0[0].clone());
             }
         }
         table
@@ -60,6 +60,7 @@ where
         let mut table = Table::new();
         for rule in self.grammar.rules() {
             for prod in rule.prods() {
+                let prod = &prod.0;
                 for term_idx in 0..prod.len() - 1 {
                     // A = . . . A a -> {A: FIRST(A)} -> {A: A} -> {}
                     if !self.grammar.is_terminal(&prod[term_idx]) {

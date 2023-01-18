@@ -222,7 +222,7 @@ where
         //     }
         // }
         let len = self.items.len();
-        let items = self.items.split_off(len - prod.len());
+        let items = self.items.split_off(len - prod.0.len());
         // TODO: PEG
         self.items.push(Item::Compound(
             Token::new(items[0].source().clone(), name.clone()),
@@ -233,9 +233,9 @@ where
         let len = self.states.len();
         self.top = *self
             .states
-            .get(len - prod.len() - 1)
+            .get(len - prod.0.len() - 1)
             .ok_or(Error::MissingPreviousState)?;
-        self.states.truncate(len - prod.len());
+        self.states.truncate(len - prod.0.len());
         self.travel(name)
     }
 
