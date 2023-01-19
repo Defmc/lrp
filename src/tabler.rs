@@ -42,11 +42,18 @@ where
     pub fn gen_first(&self) -> Table<T> {
         let mut table = Table::new();
         for rule in self.grammar.rules() {
-            table.insert(rule.name.clone(), Set::new());
-            for prod in rule.prods.iter().filter(|r| r.0[0] != rule.name) {
-                // TODO: Unique write op
-                table.get_mut(&rule.name).unwrap().insert(prod.0[0].clone());
-            }
+            let firsts = rule
+                .prods
+                .iter()
+                .filter_map(|rc| {
+                    if rc.0[0] != rule.name {
+                        Some(rc.0[0].clone())
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            table.insert(rule.name.clone(), firsts);
         }
         table
     }
@@ -56,15 +63,16 @@ where
     /// Never.
     #[must_use]
     pub fn gen_follow(&self) -> Table<T> {
-        // TODO: Try apply Start rule before first cycle. Should save one iteration.
-        let mut table = Table::new();
+        let basis = self.basis_pos();
+        let mut table = Table::from([(basis.rule, basis.look)]);
+
         for rule in self.grammar.rules() {
             for prod in rule.prods() {
                 let prod = &prod.0;
                 for term_idx in 0..prod.len() - 1 {
                     // A = . . . A a -> {A: FIRST(A)} -> {A: A} -> {}
                     if !self.grammar.is_terminal(&prod[term_idx]) {
-                        let entry = table.entry(prod[term_idx].clone()).or_insert_with(Set::new);
+                        let entry = table.entry(prod[term_idx].clone()).or_default();
                         if self.grammar.is_terminal(&prod[term_idx + 1]) {
                             // A = . . . T a -> {T: a}
                             entry.insert(prod[term_idx + 1].clone());
@@ -80,13 +88,11 @@ where
                 if !self.grammar.is_terminal(last) && last != &rule.name {
                     table
                         .entry(last.clone())
-                        .or_insert_with(Set::new)
+                        .or_default()
                         .insert(rule.name.clone());
                 }
             }
         }
-        let basis = self.basis_pos();
-        table.entry(basis.rule).or_default().extend(basis.look);
         table
     }
 
@@ -146,10 +152,11 @@ where
         for (noterm, terms) in input {
             table.insert(noterm.clone(), Set::new());
             for term in terms {
+                let entry = table.get_mut(noterm).unwrap();
                 if self.grammar.is_terminal(term) {
-                    table.get_mut(noterm).unwrap().insert(term.clone());
-                } else if let Some(entry) = input.get(term) {
-                    table.get_mut(noterm).unwrap().extend(entry.clone());
+                    entry.insert(term.clone());
+                } else if let Some(set) = input.get(term) {
+                    entry.extend(set.clone());
                 }
             }
             if table[noterm].contains(noterm) {
@@ -209,7 +216,6 @@ where
             Action::Acc | Action::Reduce(..) => return,
             Action::Goto(n) => Action::Goto(travel[n]),
             Action::Shift(n) => Action::Shift(travel[n]),
-            // TODO: Reuse old allocations from `a` and `b`
             Action::Conflict(a, b) => {
                 Self::update_entry(a, travel);
                 Self::update_entry(b, travel);

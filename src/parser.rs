@@ -40,6 +40,7 @@ where
                 .basis()
                 .look
                 .iter()
+                .take(1)
                 .collect::<Vec<_>>()[0]
                 .clone(),
         )
