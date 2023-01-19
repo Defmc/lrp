@@ -187,20 +187,14 @@ where
     /// If there isn't a previous state, raises an `Error::MissingPreviousState`
     pub fn reduce(&mut self, name: &M, prod: &Production<M>) -> BaseResult<(), Error<M>> {
         let len = self.items.len();
-        let items = &self.items[len - prod.0.len()..]; //split_off(len - prod.0.len());
+        let items = &self.items[len - prod.0.len()..];
         let new_item = Token::new(self.reductors[name][prod.1](items), name.clone());
-        unsafe {
-            debug_assert!(len - prod.0.len() < self.items.capacity());
-            self.items.set_len(len - prod.0.len());
-        }
+        self.items.truncate(len - prod.0.len());
         self.items.push(new_item);
-        // TODO: Use `set_len`, once it can't be extended:
-        // len - prod.len() <= len
+
         let len = self.states.len();
-        self.top = *self
-            .states
-            .get(len - prod.0.len() - 1)
-            .ok_or(Error::MissingPreviousState)?;
+        self.top = self.states[len - prod.0.len() - 1];
+
         self.states.truncate(len - prod.0.len());
         self.travel(name)
     }
