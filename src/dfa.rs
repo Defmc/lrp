@@ -77,6 +77,7 @@ where
     pub eof: M,
 }
 
+#[allow(clippy::mismatching_type_param_order)]
 impl<T, I: Iterator<Item = Token<T, T>>> Dfa<T, T, I>
 where
     T: Clone + fmt::Debug + fmt::Display + Ord,

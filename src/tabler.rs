@@ -46,10 +46,10 @@ where
                 .prods
                 .iter()
                 .filter_map(|rc| {
-                    if rc.0[0] != rule.name {
-                        Some(rc.0[0].clone())
-                    } else {
+                    if rc.0[0] == rule.name {
                         None
+                    } else {
+                        Some(rc.0[0].clone())
                     }
                 })
                 .collect();
@@ -207,7 +207,7 @@ where
         self.actions
             .iter_mut()
             .flat_map(Map::iter_mut)
-            .for_each(|(_, mut e)| Self::update_entry(&mut e, &travel));
+            .for_each(|(_, e)| Self::update_entry(e, &travel));
     }
 
     /// Updates an action by re-indexing states from `travel`.
