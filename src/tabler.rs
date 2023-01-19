@@ -213,7 +213,7 @@ where
             Action::Conflict(a, b) => {
                 Self::update_entry(a, travel);
                 Self::update_entry(b, travel);
-                Action::Conflict(a.clone(), b.clone())
+                return;
             }
         };
         *entry = new;
