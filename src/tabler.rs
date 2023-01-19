@@ -200,22 +200,23 @@ where
         self.actions
             .iter_mut()
             .flat_map(Map::iter_mut)
-            .for_each(|(_, e)| *e = Self::update_entry(e, &travel));
+            .for_each(|(_, mut e)| Self::update_entry(&mut e, &travel));
     }
 
     /// Updates an action by re-indexing states from `travel`.
-    #[must_use]
-    pub fn update_entry(entry: &Action<T>, travel: &Map<usize, usize>) -> Action<T> {
-        match entry {
-            Action::Acc | Action::Reduce(..) => entry.clone(),
+    pub fn update_entry(entry: &mut Action<T>, travel: &Map<usize, usize>) {
+        let new = match entry {
+            Action::Acc | Action::Reduce(..) => return,
             Action::Goto(n) => Action::Goto(travel[n]),
             Action::Shift(n) => Action::Shift(travel[n]),
             // TODO: Reuse old allocations from `a` and `b`
-            Action::Conflict(a, b) => Action::Conflict(
-                Self::update_entry(a, travel).into(),
-                Self::update_entry(b, travel).into(),
-            ),
-        }
+            Action::Conflict(a, b) => {
+                Self::update_entry(a, travel);
+                Self::update_entry(b, travel);
+                Action::Conflict(a.clone(), b.clone())
+            }
+        };
+        *entry = new;
     }
 
     /// Generates a map containing the update references (old state idx - new state idx) and a
