@@ -38,11 +38,9 @@ fn main() {
 
         #[allow(clippy::needless_collect)]
         let input: Vec<_> = input.trim().chars().map(|c| c.to_string()).collect();
-        let mut dfa = parser.dfa(input.into_iter().map(|t| {
-            Token::new(
-                t.clone(),
-                *terminals.iter().find(|&&r| r == t.as_str()).unwrap(),
-            )
+        let mut dfa = parser.simple_dfa(input.into_iter().map(|t| {
+            let m = *terminals.iter().find(|&&r| r == t.as_str()).unwrap();
+            Token::new(m, m)
         }));
         print_proc_dfa(&mut dfa);
     }

@@ -1,6 +1,6 @@
 use std::{fmt, iter::Peekable, rc::Rc};
 
-use crate::{ActTable, Production, Token};
+use crate::{ActTable, Map, Production, Tabler, Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Action<T> {
@@ -9,56 +9,6 @@ pub enum Action<T> {
     Reduce(T, Rc<Production<T>>),
     Acc,
     Conflict(Box<Action<T>>, Box<Action<T>>),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Item<T, M>
-where
-    M: fmt::Debug + fmt::Display,
-{
-    Simple(Token<T, M>),
-    Compound(Token<T, M>, Vec<Item<T, M>>),
-}
-
-impl<T, M> Item<T, M>
-where
-    M: fmt::Debug + fmt::Display,
-{
-    #[must_use]
-    pub const fn name(&self) -> &M {
-        &self.token().ty
-    }
-
-    #[must_use]
-    pub const fn source(&self) -> &T {
-        &self.token().item
-    }
-
-    #[must_use]
-    pub const fn token(&self) -> &Token<T, M> {
-        match self {
-            Self::Simple(n) | Self::Compound(n, ..) => n,
-        }
-    }
-}
-
-impl<T, M> fmt::Display for Item<T, M>
-where
-    M: fmt::Debug + fmt::Display,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&format!("{}", self.name()))?;
-        if let Self::Compound(_, elms) = self {
-            f.write_fmt(format_args!(
-                " -> ({})",
-                elms.iter()
-                    .map(|f| format!("{f}"))
-                    .collect::<Vec<String>>()
-                    .join(" ")
-            ))?;
-        }
-        Ok(())
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -108,34 +58,56 @@ where
 pub type Result<T> = BaseResult<T, Error<T>>;
 pub type BaseResult<T, E> = std::result::Result<T, E>;
 
-#[derive(Debug, Clone)]
-pub struct Dfa<M, T, I: Iterator<Item = Token<M, T>>>
+pub type ReductFn<T, M> = fn(&[Token<T, M>]) -> T;
+pub type ReductMap<T, M> = Map<M, Vec<ReductFn<T, M>>>;
+
+#[derive(Clone)]
+pub struct Dfa<T, M, I: Iterator<Item = Token<T, M>>>
 where
-    T: fmt::Debug + fmt::Display + Clone,
-    M: Clone,
+    T: Clone,
+    M: fmt::Debug + fmt::Display + Clone,
 {
     pub buffer: Peekable<I>,
     pub states: Vec<usize>,
-    pub items: Vec<Item<M, T>>,
-    pub table: ActTable<T>,
+    pub items: Vec<Token<T, M>>,
+    pub table: ActTable<M>,
     pub top: usize,
     pub finished: bool,
-    pub eof: T,
+    pub reductors: ReductMap<T, M>,
+    pub eof: M,
 }
 
-impl<M, T, I: Iterator<Item = Token<M, T>>> Dfa<M, T, I>
+impl<T, I: Iterator<Item = Token<T, T>>> Dfa<T, T, I>
 where
-    T: fmt::Debug + fmt::Display + Clone + Ord,
-    M: Clone,
+    T: Clone + fmt::Debug + fmt::Display + Ord,
 {
     #[must_use]
-    pub fn new(buffer: I, table: ActTable<T>, eof: T) -> Self {
+    pub fn transparent(table: &Tabler<T>, func: ReductFn<T, T>) -> ReductMap<T, T> {
+        table
+            .grammar
+            .rules()
+            .map(|r| {
+                let prods = r.prods().map(|_| func);
+                (r.name.clone(), prods.collect::<Vec<_>>())
+            })
+            .collect()
+    }
+}
+
+impl<T, M, I: Iterator<Item = Token<T, M>>> Dfa<T, M, I>
+where
+    T: Clone,
+    M: fmt::Debug + fmt::Display + Clone + Ord,
+{
+    #[must_use]
+    pub fn new(buffer: I, table: ActTable<M>, reductors: ReductMap<T, M>, eof: M) -> Self {
         Self {
             states: vec![0],
             items: Vec::new(),
             buffer: buffer.peekable(),
             top: 0,
             table,
+            reductors,
             finished: false,
             eof,
         }
@@ -143,9 +115,9 @@ where
 
     /// # Errors
     /// When there is no more data in buffer, raises an `Error::UnexepectedEof`
-    pub fn shift(&mut self, to: usize) -> BaseResult<(), Error<T>> {
+    pub fn shift(&mut self, to: usize) -> BaseResult<(), Error<M>> {
         let item = self.buffer.next().ok_or(Error::UnexpectedEof)?;
-        self.items.push(Item::Simple(item));
+        self.items.push(item);
         self.top = to;
         self.states.push(self.top);
         Ok(())
@@ -153,7 +125,7 @@ where
 
     /// # Errors
     /// When finished parse without consume entire buffer, raises an `Error::IncompleteExec`
-    pub fn accept(&mut self) -> BaseResult<(), Error<T>> {
+    pub fn accept(&mut self) -> BaseResult<(), Error<M>> {
         self.finished = true;
         if self.buffer.peek().is_none() {
             Ok(())
@@ -164,13 +136,13 @@ where
 
     /// # Errors
     /// The same of `dfa::travel`
-    pub fn start(&mut self) -> BaseResult<(), Error<T>> {
+    pub fn start(&mut self) -> BaseResult<(), Error<M>> {
         self.trace(|_| {})
     }
 
     /// # Errors
     /// The same of `dfa::travel`
-    pub fn trace(&mut self, mut f: impl FnMut(&mut Self)) -> BaseResult<(), Error<T>> {
+    pub fn trace(&mut self, mut f: impl FnMut(&mut Self)) -> BaseResult<(), Error<M>> {
         while !self.finished {
             f(self);
             let symbol = self
@@ -185,7 +157,7 @@ where
 
     /// # Errors
     /// None
-    pub fn goto(&mut self, to: usize) -> BaseResult<(), Error<T>> {
+    pub fn goto(&mut self, to: usize) -> BaseResult<(), Error<M>> {
         self.states.push(to);
         self.top = to;
         Ok(())
@@ -195,7 +167,7 @@ where
     /// If the current state don't exists in actions table, raises an `Error::StateNotSpecified`
     /// If there isn't an action in current state for `symbol`, raises an `Error::UnexpectedToken`
     /// Returns the action result
-    pub fn travel(&mut self, symbol: &T) -> BaseResult<(), Error<T>> {
+    pub fn travel(&mut self, symbol: &M) -> BaseResult<(), Error<M>> {
         let state = self.table.get(self.top).ok_or(Error::StateNotSpecified)?;
         let action = state.get(symbol).ok_or_else(|| {
             let expecteds = state.keys().cloned().collect();
@@ -213,7 +185,7 @@ where
     /// # Errors
     /// If stack doesn't contains the necessary terms amount, raises an `Error::UnexepectedEof`
     /// If there isn't a previous state, raises an `Error::MissingPreviousState`
-    pub fn reduce(&mut self, name: &T, prod: &Production<T>) -> BaseResult<(), Error<T>> {
+    pub fn reduce(&mut self, name: &M, prod: &Production<M>) -> BaseResult<(), Error<M>> {
         // let mut item = Vec::with_capacity(prod.len());
         // while item.len() != prod.len() {
         //     let poped = self.stack.pop().ok_or(Error::UnexpectedEof)?;
@@ -223,11 +195,8 @@ where
         // }
         let len = self.items.len();
         let items = self.items.split_off(len - prod.0.len());
-        // TODO: PEG
-        self.items.push(Item::Compound(
-            Token::new(items[0].source().clone(), name.clone()),
-            items,
-        ));
+        let new_item = Token::new(self.reductors[name][prod.1](&items[..]), name.clone());
+        self.items.push(new_item);
         // TODO: Use `set_len`, once it can't be extended:
         // len - prod.len() <= len
         let len = self.states.len();
@@ -248,13 +217,13 @@ where
 
     /// # Errors
     /// The same of `dfa::travel`
-    pub fn parse(&mut self, input: I) -> BaseResult<Item<M, T>, Error<T>> {
+    pub fn parse(&mut self, input: I) -> BaseResult<T, Error<M>> {
         self.reset();
         self.buffer = input.peekable();
         self.start()?;
         let res = self.items.pop().ok_or(Error::MissingPreviousState)?;
         self.reset();
-        Ok(res)
+        Ok(res.item)
     }
 
     #[must_use]
@@ -269,7 +238,7 @@ where
             }
 
             if let Some(it) = self.items.get(i) {
-                fmts.push(format!("{it}"));
+                fmts.push(format!("{}", it.ty));
             }
         }
         fmts.join(" ")

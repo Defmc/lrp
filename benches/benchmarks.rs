@@ -7,7 +7,7 @@ mod grammars_tests {
 
 use grammars_tests::GRAMMARS;
 use hermes_bench::{BenchSize, Bencher, ClassicBench, IterBench};
-use lrp::{dfa::Error, to_tokens, Clr, Dfa, Lalr, Parser, Slr, Tabler};
+use lrp::{dfa::Error, to_tokens, Clr, Lalr, Parser, Slr, Tabler};
 
 const BENCH_SIZE: BenchSize = BenchSize::Iters(100);
 
@@ -45,25 +45,20 @@ fn test_dfa<P: Parser<&'static str>>(name: &str) {
     println!("\n{name}'s DFA:");
     for (grammar, inputs, grammar_name) in GRAMMARS {
         let parser = P::new(grammar());
-        let actions_copy = || parser.tables().actions.clone();
         let iter = inputs
             .into_iter()
             .cycle()
-            .map(|&i| to_tokens(i.into_iter().cloned()))
-            .map(|i| (i, actions_copy()));
+            .map(|i| parser.simple_dfa(to_tokens(i.into_iter().cloned())));
         let assert = |r| {
             assert!(
                 matches!(r, Ok(_) | Err(Error::Conflict(_, _))),
                 "rased {r:?}"
             )
         };
-        let mut bench = IterBench::new(iter, &|(input, table)| {
-            let mut dfa = Dfa::new(input, table, "$");
-            dfa.start()
-        })
-        .with_name(format!("{grammar_name} parsing inputs"))
-        .with_post(&assert)
-        .with_size(BENCH_SIZE);
+        let mut bench = IterBench::new(iter, &|mut dfa| dfa.start())
+            .with_name(format!("{grammar_name} parsing inputs"))
+            .with_post(&assert)
+            .with_size(BENCH_SIZE);
         bench.run();
         println!("\t{bench}");
     }

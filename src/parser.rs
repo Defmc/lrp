@@ -1,5 +1,5 @@
-use crate::Dfa;
-use crate::{BaseResult, Error, Grammar, Item, State, Tabler, Token};
+use crate::{BaseResult, Error, Grammar, State, Tabler, Token};
+use crate::{Dfa, ReductMap};
 use std::fmt::{Debug, Display};
 
 pub trait Parser<T>
@@ -23,10 +23,18 @@ where
     fn uninit(table: Tabler<T>) -> Self;
 
     #[must_use]
-    fn dfa<M: Clone, I: Iterator<Item = Token<M, T>>>(&self, buffer: I) -> Dfa<M, T, I> {
+    fn dfa<M, I: Iterator<Item = Token<M, T>>>(
+        &self,
+        buffer: I,
+        maps: ReductMap<M, T>,
+    ) -> Dfa<M, T, I>
+    where
+        M: Clone,
+    {
         Dfa::new(
             buffer,
             self.tables().actions.clone(),
+            maps,
             self.tables()
                 .grammar
                 .basis()
@@ -37,23 +45,42 @@ where
         )
     }
 
+    #[must_use]
+    fn simple_dfa<I: IntoIterator<Item = Token<T, T>>>(&self, buffer: I) -> Dfa<T, T, I::IntoIter> {
+        self.dfa(buffer.into_iter(), self.cloned::<I::IntoIter>())
+    }
+
+    #[must_use]
+    fn cloned<I: Iterator<Item = Token<T, T>>>(&self) -> ReductMap<T, T> {
+        fn clone<A: Clone>(toks: &[Token<A, A>]) -> A {
+            toks[0].ty.clone()
+        }
+        Dfa::<T, T, I>::transparent(self.tables(), clone::<T>)
+    }
+
     /// # Errors
     /// The same of `dfa::travel`
-    fn parse<M: Clone, I: IntoIterator<Item = Token<M, T>>>(
+    fn parse<M, I: IntoIterator<Item = Token<M, T>>>(
         &self,
         buffer: I,
-    ) -> BaseResult<Item<M, T>, Error<T>> {
-        let mut dfa = self.dfa(buffer.into_iter());
+        maps: ReductMap<M, T>,
+    ) -> BaseResult<M, Error<T>>
+    where
+        M: Clone,
+    {
+        let mut dfa = self.dfa(buffer.into_iter(), maps);
         dfa.start()?;
-        dfa.items
+        let item = dfa
+            .items
             .pop()
-            .ok_or(crate::dfa::Error::MissingPreviousState)
+            .ok_or(crate::dfa::Error::MissingPreviousState)?;
+        Ok(item.item)
     }
 
     /// Runs `Parser::parse` and checks by errors
     #[must_use]
-    fn validate<M: Clone, I: IntoIterator<Item = Token<M, T>>>(&self, buffer: I) -> bool {
-        self.parse(buffer).is_ok()
+    fn validate<I: IntoIterator<Item = Token<T, T>>>(&self, buffer: I) -> bool {
+        self.parse(buffer, self.cloned::<I::IntoIter>()).is_ok()
     }
 
     #[must_use]
