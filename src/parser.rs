@@ -47,8 +47,11 @@ where
     }
 
     #[must_use]
-    fn simple_dfa<I: IntoIterator<Item = Token<T, T>>>(&self, buffer: I) -> Dfa<T, T, I::IntoIter> {
-        self.dfa(buffer.into_iter(), self.cloned::<I::IntoIter>())
+    fn simple_dfa<I: IntoIterator<Item = Token<(), T>>>(
+        &self,
+        buffer: I,
+    ) -> Dfa<(), T, I::IntoIter> {
+        self.dfa(buffer.into_iter(), self.empty::<I::IntoIter>())
     }
 
     #[must_use]
@@ -57,6 +60,14 @@ where
             toks[0].ty.clone()
         }
         Dfa::<T, T, I>::transparent(self.tables(), clone::<T>)
+    }
+
+    #[must_use]
+    fn empty<I: Iterator<Item = Token<(), T>>>(&self) -> ReductMap<(), T> {
+        fn empty<A>(_: &[Token<(), A>]) -> () {
+            ()
+        }
+        Dfa::<(), T, I>::transparent(self.tables(), empty::<T>)
     }
 
     /// # Errors
@@ -80,8 +91,8 @@ where
 
     /// Runs `Parser::parse` and checks by errors
     #[must_use]
-    fn validate<I: IntoIterator<Item = Token<T, T>>>(&self, buffer: I) -> bool {
-        self.parse(buffer, self.cloned::<I::IntoIter>()).is_ok()
+    fn validate<I: IntoIterator<Item = Token<(), T>>>(&self, buffer: I) -> bool {
+        self.parse(buffer, self.empty::<I::IntoIter>()).is_ok()
     }
 
     #[must_use]

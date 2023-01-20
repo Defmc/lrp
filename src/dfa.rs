@@ -78,21 +78,9 @@ where
 }
 
 #[allow(clippy::mismatching_type_param_order)]
-impl<T, I: Iterator<Item = Token<T, T>>> Dfa<T, T, I>
-where
-    T: Clone + fmt::Debug + fmt::Display + Ord,
+impl<T, I: Iterator<Item = Token<T, T>>> Dfa<T, T, I> where
+    T: Clone + fmt::Debug + fmt::Display + Ord
 {
-    #[must_use]
-    pub fn transparent(table: &Tabler<T>, func: ReductFn<T, T>) -> ReductMap<T, T> {
-        table
-            .grammar
-            .rules()
-            .map(|r| {
-                let prods = r.prods().map(|_| func);
-                (r.name.clone(), prods.collect::<Vec<_>>())
-            })
-            .collect()
-    }
 }
 
 impl<T, M, I: Iterator<Item = Token<T, M>>> Dfa<T, M, I>
@@ -112,6 +100,18 @@ where
             finished: false,
             eof,
         }
+    }
+
+    #[must_use]
+    pub fn transparent(table: &Tabler<M>, func: ReductFn<T, M>) -> ReductMap<T, M> {
+        table
+            .grammar
+            .rules()
+            .map(|r| {
+                let prods = r.prods().map(|_| func);
+                (r.name.clone(), prods.collect::<Vec<_>>())
+            })
+            .collect()
     }
 
     /// # Errors

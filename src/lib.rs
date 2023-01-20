@@ -71,8 +71,8 @@ impl<T, M> Token<T, M> {
     }
 }
 
-pub fn to_tokens<T: Clone>(it: impl IntoIterator<Item = T>) -> impl Iterator<Item = Token<T, T>> {
-    it.into_iter().map(|i| Token::new(i.clone(), i))
+pub fn to_tokens<T: Clone>(it: impl IntoIterator<Item = T>) -> impl Iterator<Item = Token<(), T>> {
+    it.into_iter().map(|i| Token::new((), i))
 }
 
 #[macro_export]
