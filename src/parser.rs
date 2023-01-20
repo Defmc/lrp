@@ -64,9 +64,7 @@ where
 
     #[must_use]
     fn empty<I: Iterator<Item = Token<(), T>>>(&self) -> ReductMap<(), T> {
-        fn empty<A>(_: &[Token<(), A>]) -> () {
-            ()
-        }
+        const fn empty<A>(_: &[Token<(), A>]) {}
         Dfa::<(), T, I>::transparent(self.tables(), empty::<T>)
     }
 
