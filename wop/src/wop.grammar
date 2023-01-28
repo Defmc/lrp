@@ -1,0 +1,38 @@
+use wop::Token;
+
+token "*=" Token::VarSpec;
+token "+=" Token::RepSpec;
+token "=" Token::NormalSpec;
+token "?=" Token::OptSpec;
+
+token ":" Token::Type;
+token "@" Token::MetaAttr;
+token "~" Token::BoxAttr;
+token "|" Token::Or;
+token "::" Token::PathAccess;
+token ";" Token::Sep;
+token Ident Token::Ident;
+token StrLit Token::StrLit;
+token CodeExpr Token::CodeExpr;
+
+AssignOp = "*=" | "+=" | "?=" | "=";
+
+AttrPrefix = "@" | "~" | "@" | "~";
+AttrSuffix = "?" | "*" | "+";
+VarPipe = ":" Ident;
+TypeDecl = ":" IdentPath;
+
+IdentPath = (Ident "::")* Ident;
+
+Elm = "(" RulePipe ")" | AttrPrefix? Ident VarPipe? | Elm AttrSuffix?;
+
+Prod *= Elm CodeExpr?;
+
+RulePipe = (Prod "|")* Prod;
+
+TokenDecl = "token" (StrLit | Ident) IdentPath;
+UseDecl = "use" IdentPath;
+RuleDecl = Ident TypeDecl? AssignOp RulePipe;
+
+Declaration = TokenDecl | UseDecl | RuleDecl;
+Program = (Declaration ";")*;
