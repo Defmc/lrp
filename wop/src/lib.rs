@@ -2,43 +2,17 @@ use logos::Logos;
 
 #[derive(Logos, Debug, PartialEq)]
 pub enum Token {
-    /// Specifies the grammar type. e.g:
-    /// ``
-    ///     grammar lr | lalr | slr;
-    /// ``
-    #[token("grammar")]
-    Grammar,
-
-    /// LR(1) (Canonical LR parser) grammar type.
-    /// It's the more powerful, but uses a lot of memory more than LALR(1) or SLR.
-    /// As LR(k) can process all CFGs and every LR(k) can be converted to a LR(1) grammar, this
-    /// type can parse every CFG grammar.
-    #[token("lr")]
-    LrParser,
-
-    /// LALR(1) grammar type.
-    /// It's the ideal type for almost every grammar. Has a balance between power and memory usage.
-    /// Can take more compile-time than LR(1) grammars due to table optimizations and is guaranteed
-    /// to have the same SLR parser table size.
-    #[token("lalr")]
-    LalrParser,
-
-    /// SLR grammar type.
-    /// It's the simplest type and has the fatest compile-time.
-    #[token("slr")]
-    SlrParser,
-
     /// An identifier:
     /// ab A AB a__ a0219 _a1 _
     #[regex(r"[a-zA-Z_]\w*")]
     Ident,
 
-    /// Specifies which type will be used as token. e.g:
+    /// Includes a Rust type to the current context. e.g:
     /// ``
-    ///     link wop::Token;
+    ///     use wop::Token;
     /// ``
-    #[token("link")]
-    Link,
+    #[token(use)]
+    Use,
 
     /// Instruction separator.
     #[token(";")]
@@ -49,20 +23,9 @@ pub enum Token {
     #[token("::")]
     PathAccess,
 
-    /// Declares a new rule. e.g:
-    /// ``
-    ///     TwoIdents = Ident Ident;
-    /// ``
-    #[token("rule")]
-    RuleDecl,
-
     /// A normal rule. e.g:
     /// ``
     ///     GrammarType = "grammar" ("lr" | "lalr" | "slr");
-    /// ``
-    /// It's the same of:
-    /// ``
-    ///     TermDecls = ("term" str "=" Ident ";")*;
     /// ``
     #[token("=")]
     NormalSpec,
@@ -116,7 +79,7 @@ pub enum Token {
     #[token("@")]
     MetaAttr,
 
-    /// Auto-box attribute. Assigns to gramem variable an boxed version of the token.
+    /// Auto-box attribute. Handles a grammem variable as a `Box<lrp::Token>`.
     /// NOTE: Using it with a `@` attribute creates some order differences:
     /// `~@` means a boxed token;
     /// `@~` means a token with a boxed content.
@@ -144,7 +107,7 @@ pub enum Token {
     ///     Sum: i32 = Int:lhs "+" Int:rhs => lhs + rhs;;
     /// ``
     #[regex(r#"=>.*;;"#)]
-    Pexpr,
+    CodeExpr,
 
     #[error]
     Error,
