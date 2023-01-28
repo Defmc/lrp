@@ -1,3 +1,13 @@
 grammar lr;
 
-Val = Str | Int;
+use wop::Token;
+token "(" Token::OpenCurly;
+token ")" Token::CloneCurly;
+token "*" Token::MulOp;
+token "+" Token::AddOp;
+
+Term = "(" Add ")" | Str | Int;
+
+Add = Add "+" Factor | Factor;
+
+Factor = Factor "*" Term | Term;
