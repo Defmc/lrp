@@ -35,6 +35,12 @@ pub type State<T> = Set<Position<T>>;
 /// A = . . . . T -> {T: FOLLOW(A)}
 pub type Table<T> = Map<T, Set<T>>;
 
+#[derive(Clone, PartialEq, PartialOrd)]
+pub enum Sym<T, U> {
+    Term(T),
+    NoTerm(U),
+}
+
 /// For a given f(x), processes `x` until f(x) = f(f(x)) -> f(f(f(f....f(x)))) = f(x)
 pub fn transitive<T>(seed: T, map: impl Fn(T) -> T) -> T
 where
