@@ -54,9 +54,20 @@ where
     T: Ord + Clone + Display,
 {
     #[must_use]
-    pub fn new(start: T, rules: RuleMap<T>, mut terminals: Set<T>, eof: T) -> Self {
-        let symbols = rules.keys().chain(terminals.iter()).cloned().collect();
+    pub fn new(start: T, rules: RuleMap<T>, eof: T) -> Self {
+        let mut terminals = Set::new();
+        for rule in rules.values() {
+            for rc in rule.prods() {
+                for term in &rc.0 {
+                    if !rules.contains_key(term) {
+                        terminals.insert(term.clone());
+                    }
+                }
+            }
+        }
         terminals.insert(eof.clone());
+        let symbols = rules.keys().chain(terminals.iter()).cloned().collect();
+
         let prods = &rules[&start].prods;
         debug_assert_eq!(prods.len(), 1, "there's more than one possible entry");
         let basis = Position::new(start, prods[0].clone(), 0, Set::from([eof]));
@@ -75,7 +86,7 @@ where
 
     #[must_use]
     pub fn is_terminal(&self, term: &T) -> bool {
-        self.terminals.contains(term)
+        !self.rules.contains_key(term)
     }
 
     pub fn rules(&self) -> impl Iterator<Item = &Rule<T>> {

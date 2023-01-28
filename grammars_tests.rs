@@ -57,7 +57,7 @@ pub fn dragon_book() -> Grammar<&'static str> {
         "C" -> "c" "C"
             | "d"
     };
-    Grammar::new("S", grammar, Set::from(["c", "d"]), "$")
+    Grammar::new("S", grammar, "$")
 }
 
 pub const SEROKELL_INPUTS: &[&[&str]] = &[
@@ -105,12 +105,7 @@ pub fn serokell() -> Grammar<&'static str> {
             | "ident"
     };
 
-    Grammar::new(
-        "Start",
-        grammar,
-        Set::from(["int", "ident", "(", ")", "+", "*"]),
-        "$",
-    )
+    Grammar::new("Start", grammar, "$")
 }
 
 pub const UCALGARY_UNI_OTH_LR1_INPUTS: &[&[&str]] = &[
@@ -154,7 +149,7 @@ pub fn ucalgary_uni_oth_lr1() -> Grammar<&'static str> {
         "A" ->	"a"
     };
 
-    Grammar::new("S", grammar, Set::from(["a", "b", "c", "d", "e"]), "$")
+    Grammar::new("S", grammar, "$")
 }
 
 pub const WIKIPEDIA_INPUTS: &[&[&str]] = &[
@@ -207,7 +202,7 @@ pub fn wikipedia() -> Grammar<&'static str> {
         "B" -> "0" | "1"
     };
 
-    Grammar::new("S", grammar, Set::from(["0", "1", "+", "*"]), "$")
+    Grammar::new("S", grammar, "$")
 }
 
 pub const PUNCS_INPUTS: &[&[&str]] = &[
@@ -262,12 +257,7 @@ pub fn puncs() -> Grammar<&'static str> {
             | "{" "S" "}"
     };
 
-    Grammar::new(
-        "S'",
-        grammar,
-        Set::from(["(", ")", "[", "]", "{", "}"]),
-        "$",
-    )
+    Grammar::new("S'", grammar, "$")
 }
 
 pub const SCANNER_INPUTS: &[&[&str]] = &[
@@ -365,11 +355,5 @@ pub fn scanner() -> Grammar<&'static str> {
         "Space" -> "_"
     };
 
-    let terminals = Set::from([
-        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
-        "t", "s", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-        "_",
-    ]);
-
-    Grammar::new("S", grammar, terminals, "$")
+    Grammar::new("S", grammar, "$")
 }

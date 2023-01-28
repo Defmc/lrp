@@ -18,7 +18,7 @@ fn main() {
             | "{" "S" "}"
     };
     let terminals = Set::from(["[", "]", "(", ")", "{", "}", "d", "c"]);
-    let grammar = Grammar::new("'S", grammar, terminals.clone(), "$");
+    let grammar = Grammar::new("'S", grammar, "$");
 
     let parser = Lalr::new(grammar);
 
