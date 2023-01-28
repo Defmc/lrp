@@ -159,50 +159,9 @@ mod tests {
         let slr = Slr::new(grammars_tests::dragon_book());
         assert_eq!(0, slr.tables().conflicts().count());
 
-        assert!(slr.validate(to_tokens(["d", "d"])));
-        assert!(slr.validate(to_tokens(["d", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "d", "d"])));
-        assert!(slr.validate(to_tokens(["d", "c", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "d", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "c", "d", "d"])));
-        assert!(slr.validate(to_tokens(["d", "c", "c", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "d", "c", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "c", "d", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "c", "c", "d", "d"])));
-        assert!(slr.validate(to_tokens(["d", "c", "c", "c", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "d", "c", "c", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "c", "d", "c", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "c", "c", "d", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "c", "c", "c", "d", "d"])));
-        assert!(slr.validate(to_tokens(["d", "c", "c", "c", "c", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "d", "c", "c", "c", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "c", "d", "c", "c", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "c", "c", "d", "c", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "c", "c", "c", "d", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "c", "c", "c", "c", "d", "d"])));
-        assert!(slr.validate(to_tokens([
-            "d", "c", "c", "c", "c", "c", "c", "c", "c", "d"
-        ])));
-        assert!(slr.validate(to_tokens([
-            "c", "d", "c", "c", "c", "c", "c", "c", "c", "d"
-        ])));
-        assert!(slr.validate(to_tokens([
-            "c", "c", "d", "c", "c", "c", "c", "c", "c", "d"
-        ])));
-        assert!(slr.validate(to_tokens([
-            "c", "c", "c", "d", "c", "c", "c", "c", "c", "d"
-        ])));
-        assert!(slr.validate(to_tokens([
-            "c", "c", "c", "c", "c", "c", "d", "c", "c", "d"
-        ])));
-        assert!(slr.validate(to_tokens([
-            "c", "c", "c", "c", "c", "c", "c", "d", "c", "d"
-        ])));
-        assert!(slr.validate(to_tokens([
-            "c", "c", "c", "c", "c", "c", "c", "c", "d", "d"
-        ])));
-        assert!(slr.validate(to_tokens(["d", "c", "c", "c", "c", "c", "c", "c", "d"])));
-        assert!(slr.validate(to_tokens(["c", "d", "c", "c", "c", "c", "c", "c", "d"])));
+        for input in grammars_tests::DRAGON_BOOK_INPUTS {
+            assert!(slr.validate(to_tokens(input.into_iter().cloned())));
+        }
     }
 
     #[test]
@@ -210,36 +169,9 @@ mod tests {
         let slr = Slr::new(grammars_tests::wikipedia());
         assert_eq!(0, slr.tables().conflicts().count());
 
-        assert!(slr.validate(to_tokens(["0"])));
-        assert!(slr.validate(to_tokens(["1"])));
-        assert!(slr.validate(to_tokens(["0", "*", "0"])));
-        assert!(slr.validate(to_tokens(["0", "*", "1"])));
-        assert!(slr.validate(to_tokens(["1", "*", "0"])));
-        assert!(slr.validate(to_tokens(["1", "*", "1"])));
-        assert!(slr.validate(to_tokens(["0", "+", "0"])));
-        assert!(slr.validate(to_tokens(["0", "+", "1"])));
-        assert!(slr.validate(to_tokens(["1", "+", "0"])));
-        assert!(slr.validate(to_tokens(["1", "+", "1"])));
-        assert!(slr.validate(to_tokens(["0", "*", "0", "*", "0"])));
-        assert!(slr.validate(to_tokens(["0", "*", "0", "*", "1"])));
-        assert!(slr.validate(to_tokens(["0", "*", "1", "*", "0"])));
-        assert!(slr.validate(to_tokens(["0", "*", "1", "*", "1"])));
-        assert!(slr.validate(to_tokens(["1", "*", "0", "*", "0"])));
-        assert!(slr.validate(to_tokens(["1", "*", "0", "*", "1"])));
-        assert!(slr.validate(to_tokens(["1", "*", "1", "*", "0"])));
-        assert!(slr.validate(to_tokens(["1", "*", "1", "*", "1"])));
-        assert!(slr.validate(to_tokens(["0", "+", "0", "*", "0"])));
-        assert!(slr.validate(to_tokens(["0", "+", "0", "*", "1"])));
-        assert!(slr.validate(to_tokens(["0", "+", "1", "*", "0"])));
-        assert!(slr.validate(to_tokens(["0", "+", "1", "*", "1"])));
-        assert!(slr.validate(to_tokens(["1", "+", "0", "*", "0"])));
-        assert!(slr.validate(to_tokens(["1", "+", "0", "*", "1"])));
-        assert!(slr.validate(to_tokens(["1", "+", "1", "*", "0"])));
-        assert!(slr.validate(to_tokens(["1", "+", "1", "*", "1"])));
-        assert!(slr.validate(to_tokens(["0", "*", "0", "+", "0"])));
-        assert!(slr.validate(to_tokens(["0", "*", "0", "+", "1"])));
-        assert!(slr.validate(to_tokens(["0", "*", "1", "+", "0"])));
-        assert!(slr.validate(to_tokens(["0", "*", "1", "+", "1"])));
+        for input in grammars_tests::WIKIPEDIA_INPUTS {
+            assert!(slr.validate(to_tokens(input.into_iter().cloned())));
+        }
     }
 
     // https://smlweb.cpsc.ucalgary.ca/
@@ -248,14 +180,12 @@ mod tests {
         let slr = Slr::new(grammars_tests::ucalgary_uni_oth_lr1());
         assert_eq!(2, slr.tables().conflicts().count());
 
-        assert!(slr.validate(to_tokens(["e", "a", "c"])));
-        assert!(slr.validate(to_tokens(["d", "a", "b"])));
-        assert!(!slr.validate(to_tokens(["d", "e", "a", "c"])));
-        assert!(!slr.validate(to_tokens(["d", "e", "a", "b"])));
-        assert!(!slr.validate(to_tokens(["e", "d", "a", "b"])));
-        assert!(!slr.validate(to_tokens(["e", "d", "a", "c"])));
-        assert!(slr.validate(to_tokens(["d", "d", "e", "a", "b"])));
-        assert!(slr.validate(to_tokens(["e", "e", "d", "a", "c"])));
+        for input in grammars_tests::UCALGARY_UNI_OTH_LR1_INPUTS {
+            assert_eq!(
+                slr.validate(to_tokens(input.into_iter().cloned())),
+                !grammars_tests::NON_LALR_UCALGARY_UNI_OTH_LR1_INPUTS.contains(input)
+            );
+        }
     }
 
     #[test]
@@ -263,26 +193,9 @@ mod tests {
         let slr = Slr::new(grammars_tests::serokell());
         assert_eq!(0, slr.tables().conflicts().count());
 
-        assert!(slr.validate(to_tokens(["int"])));
-        assert!(slr.validate(to_tokens(["int", "*", "int"])));
-        assert!(slr.validate(to_tokens(["ident", "*", "int"])));
-        assert!(slr.validate(to_tokens(["(", "int", ")"])));
-        assert!(slr.validate(to_tokens(["int", "+", "int"])));
-        assert!(slr.validate(to_tokens(["ident", "+", "int"])));
-        assert!(slr.validate(to_tokens(["int", "*", "int", "*", "int"])));
-        assert!(slr.validate(to_tokens(["int", "*", "ident", "*", "int"])));
-        assert!(slr.validate(to_tokens(["ident", "*", "int", "*", "int"])));
-        assert!(slr.validate(to_tokens(["ident", "*", "ident", "*", "int"])));
-        assert!(slr.validate(to_tokens(["int", "*", "(", "int", ")"])));
-        assert!(slr.validate(to_tokens(["ident", "*", "(", "int", ")"])));
-        assert!(slr.validate(to_tokens(["int", "*", "int", "+", "int"])));
-        assert!(slr.validate(to_tokens(["int", "*", "(", "ident", "+", "int", ")"])));
-        assert!(slr.validate(to_tokens(["ident", "*", "int", "+", "int"])));
-        assert!(slr.validate(to_tokens([
-            "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(", "(",
-            "(", "(", "(", "(", "(", "int", ")", ")", ")", ")", ")", ")", ")", ")", ")", ")", ")",
-            ")", ")", ")", ")", ")", ")", ")", ")", ")", ")", ")",
-        ])));
+        for input in grammars_tests::SEROKELL_INPUTS {
+            assert!(slr.validate(to_tokens(input.into_iter().cloned())));
+        }
     }
 
     #[test]
@@ -290,36 +203,9 @@ mod tests {
         let slr = Slr::new(grammars_tests::puncs());
         assert_eq!(0, slr.tables().conflicts().count());
 
-        assert!(slr.validate(to_tokens(["(", ")"])));
-        assert!(slr.validate(to_tokens(["[", "]"])));
-        assert!(slr.validate(to_tokens(["{", "}"])));
-        assert!(slr.validate(to_tokens(["(", "(", ")", ")"])));
-        assert!(slr.validate(to_tokens(["(", "[", "]", ")"])));
-        assert!(slr.validate(to_tokens(["(", "{", "}", ")"])));
-        assert!(slr.validate(to_tokens(["[", "(", ")", "]"])));
-        assert!(slr.validate(to_tokens(["[", "[", "]", "]"])));
-        assert!(slr.validate(to_tokens(["[", "{", "}", "]"])));
-        assert!(slr.validate(to_tokens(["{", "(", ")", "}"])));
-        assert!(slr.validate(to_tokens(["{", "[", "]", "}"])));
-        assert!(slr.validate(to_tokens(["{", "{", "}", "}"])));
-        assert!(slr.validate(to_tokens(["(", "(", "(", ")", ")", ")"])));
-        assert!(slr.validate(to_tokens(["(", "(", "[", "]", ")", ")"])));
-        assert!(slr.validate(to_tokens(["(", "(", "{", "}", ")", ")"])));
-        assert!(slr.validate(to_tokens(["(", "[", "(", ")", "]", ")"])));
-        assert!(slr.validate(to_tokens(["(", "[", "[", "]", "]", ")"])));
-        assert!(slr.validate(to_tokens(["(", "[", "{", "}", "]", ")"])));
-        assert!(slr.validate(to_tokens(["(", "{", "(", ")", "}", ")"])));
-        assert!(slr.validate(to_tokens(["(", "{", "[", "]", "}", ")"])));
-        assert!(slr.validate(to_tokens(["(", "{", "{", "}", "}", ")"])));
-        assert!(slr.validate(to_tokens(["[", "(", "(", ")", ")", "]"])));
-        assert!(slr.validate(to_tokens(["[", "(", "[", "]", ")", "]"])));
-        assert!(slr.validate(to_tokens(["[", "(", "{", "}", ")", "]"])));
-        assert!(slr.validate(to_tokens(["[", "[", "(", ")", "]", "]"])));
-        assert!(slr.validate(to_tokens(["[", "[", "[", "]", "]", "]"])));
-        assert!(slr.validate(to_tokens(["[", "[", "{", "}", "]", "]"])));
-        assert!(slr.validate(to_tokens(["[", "{", "(", ")", "}", "]"])));
-        assert!(slr.validate(to_tokens(["[", "{", "[", "]", "}", "]"])));
-        assert!(slr.validate(to_tokens(["[", "{", "{", "}", "}", "]"])));
+        for input in grammars_tests::PUNCS_INPUTS {
+            assert!(slr.validate(to_tokens(input.into_iter().cloned())));
+        }
     }
 
     #[test]
@@ -327,24 +213,8 @@ mod tests {
         let slr = Slr::new(grammars_tests::scanner());
         assert_eq!(0, slr.tables().conflicts().count());
 
-        assert!(slr.validate(to_tokens([
-            "l", "o", "r", "e", "m", "_", "i", "p", "s", "u", "m", "_", "d", "o", "l", "o", "r",
-            "_", "s", "i", "t", "_", "a", "m", "e", "t",
-        ])));
-        assert!(slr.validate(to_tokens([
-            "i", "n", "_", "v", "i", "n", "o", "_", "v", "e", "r", "i", "t", "a", "s", "_", "b",
-            "e", "f", "o", "r", "e", "_", "7", "9", "_", "a", "c",
-        ])));
-        assert!(slr.validate(to_tokens([
-            "1", "2", "_", "t", "i", "m", "e", "s", "_", "3", "_", "i", "s", "_", "e", "q", "u",
-            "a", "l", "_", "t", "o", "_", "4", "0", "_", "m", "i", "n", "u", "s", "_", "4",
-        ])));
-        assert!(slr.validate(to_tokens([
-            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
-        ])));
-        assert!(slr.validate(to_tokens([
-            "f", "i", "n", "a", "l", "_", "d", "e", "_", "s", "e", "m", "a", "n", "a", "_", "e",
-            "l", "a", "_", "v", "a", "i", "_", "p", "r", "a", "_", "r", "u", "a",
-        ])));
+        for input in grammars_tests::SCANNER_INPUTS {
+            assert!(slr.validate(to_tokens(input.into_iter().cloned())));
+        }
     }
 }
