@@ -41,7 +41,7 @@ fn main() {
         let mut dfa = parser.simple_dfa(
             input
                 .into_iter()
-                .map(|t| Token::new((), *terminals.iter().find(|&&r| r == t.as_str()).unwrap())),
+                .map(|t| Token::new((), *terminals.get(t.as_str()).unwrap())),
         );
         print_proc_dfa(&mut dfa);
     }
