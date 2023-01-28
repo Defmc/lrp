@@ -108,6 +108,20 @@ pub fn serokell() -> Grammar<&'static str> {
     Grammar::new("Start", grammar, "$")
 }
 
+pub const NON_LALR_UCALGARY_UNI_OTH_LR1_INPUTS: &[&[&str]] = &[
+    &["d", "e", "a", "c"],
+    &["d", "e", "a", "b"],
+    &["e", "d", "a", "b"],
+    &["e", "d", "a", "c"],
+];
+
+pub const NON_SLR_UCALGARY_UNI_OTH_LR1_INPUTS: &[&[&str]] = &[
+    &["d", "e", "a", "c"],
+    &["d", "e", "a", "b"],
+    &["e", "d", "a", "b"],
+    &["e", "d", "a", "c"],
+];
+
 pub const UCALGARY_UNI_OTH_LR1_INPUTS: &[&[&str]] = &[
     &["e", "a", "c"],
     &["d", "a", "b"],
