@@ -188,8 +188,13 @@ where
     pub fn sym_filter(state: &State<T>, sym: &T) -> State<T> {
         state
             .iter()
-            .filter(|p| p.top().as_ref() == Some(sym))
-            .filter_map(Position::clone_next)
+            .filter_map(|p| {
+                if p.top().as_ref() == Some(sym) {
+                    Position::clone_next(p)
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 
