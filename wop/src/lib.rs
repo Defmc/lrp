@@ -1,7 +1,7 @@
 use logos::Logos;
 
 #[derive(Logos, Debug, PartialEq)]
-pub enum Token {
+pub enum Sym {
     /// An identifier:
     /// ab A AB a__ a0219 _a1 _
     #[regex(r"[a-zA-Z_]\w*")]
@@ -123,6 +123,28 @@ pub enum Token {
     /// Line comment
     #[regex(r#"//[^\n]*\r?"#, logos::skip)]
     LineComment,
+
+    /// Terms
+    AssignOp,
+    AttrPrefix,
+    AttrSuffix,
+    VarPipe,
+    TypeDecl,
+    IdentPath,
+    Elm,
+    Prod,
+    RulePipe,
+    TokenDecl,
+    UseDecl,
+    RuleDecl,
+    Declaration,
+    Program,
+}
+
+use lrp::{Grammar, Map, Sym};
+pub fn grammar() {
+    let rules = lrp::Map::from([()]);
+    Grammar::new()
 }
 
 #[cfg(test)]
