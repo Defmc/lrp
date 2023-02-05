@@ -4,7 +4,7 @@ pub type MetaSym = (Sym, Span);
 
 pub type Span = (usize, usize);
 
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
 pub enum Ast {
     Token(MetaSym),
 }
@@ -192,8 +192,12 @@ pub enum Sym {
 }
 
 use lrp::Grammar;
+
+#[must_use]
 pub fn grammar() -> Grammar<Sym> {
+    #[allow(clippy::enum_glob_use)]
     use Sym::*;
+
     let rules = lrp::grammar_map! {
             // Program *= Declaration ";";
             Program -> Program Declaration Sep | Declaration Sep,
