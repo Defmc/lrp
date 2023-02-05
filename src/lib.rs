@@ -82,7 +82,7 @@ pub fn to_tokens<T: Clone>(it: impl IntoIterator<Item = T>) -> impl Iterator<Ite
 }
 
 #[macro_export]
-macro_rules! grammar {
+macro_rules! grammar_map {
     ($($rule:literal -> $($($terms:literal)*)|*),*) => {{
         let mut hmp = $crate::Map::new();
         $($crate::grammar!(hmp, $rule -> $($($terms)*)|*);)*

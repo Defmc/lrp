@@ -52,7 +52,7 @@ pub fn dragon_book() -> Grammar<&'static str> {
         C -> c C.
         C -> d.
     */
-    let grammar = grammar! {
+    let grammar = grammar_map! {
         "S" -> "C" "C",
         "C" -> "c" "C"
             | "d"
@@ -94,7 +94,7 @@ pub fn serokell() -> Grammar<&'static str> {
         Term -> int.
         Term -> ident.
     */
-    let grammar = grammar! {
+    let grammar = grammar_map! {
         "Start" -> "Add",
         "Add" -> "Add" "+" "Factor"
             | "Factor",
@@ -148,7 +148,7 @@ pub fn ucalgary_uni_oth_lr1() -> Grammar<&'static str> {
         B -> a.
         A -> a.
     */
-    let grammar = grammar! {
+    let grammar = grammar_map! {
         "S" -> "E",
         "E" ->	"d" "D"
             |	"D"
@@ -208,7 +208,7 @@ pub fn wikipedia() -> Grammar<&'static str> {
         B -> 0.
         B -> 1.
     */
-    let grammar = grammar! {
+    let grammar = grammar_map! {
         "S" -> "E",
         "E" -> "E" "*" "B"
             | "E" "+" "B"
@@ -261,7 +261,7 @@ pub fn puncs() -> Grammar<&'static str> {
         S -> { }.
         S -> { S }.
     */
-    let grammar = grammar! {
+    let grammar = grammar_map! {
         "S'" -> "S",
         "S" -> "(" ")"
             | "(" "S" ")"
@@ -348,7 +348,7 @@ pub fn scanner() -> Grammar<&'static str> {
 
     Space -> _.
      */
-    let grammar = grammar! {
+    let grammar = grammar_map! {
         "S" -> "Phrase",
 
         "Phrase" -> "Item" "Space" "Phrase"
