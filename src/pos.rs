@@ -8,7 +8,7 @@ use crate::{grammar::Production, Set};
 #[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Position<T>
 where
-    T: Clone + PartialEq + PartialOrd + Ord,
+    T: Clone + PartialEq + PartialOrd + Ord + Debug,
 {
     pub rule: T,
     pub seq: Rc<Production<T>>,
@@ -18,7 +18,7 @@ where
 
 impl<T> Position<T>
 where
-    T: Clone + PartialEq + PartialOrd + Ord,
+    T: Clone + PartialEq + PartialOrd + Ord + Debug,
 {
     #[must_use]
     pub fn new(rule: T, seq: Rc<Production<T>>, point: usize, look: Set<T>) -> Self {
@@ -89,17 +89,17 @@ where
 
 impl<T> Display for Position<T>
 where
-    T: Clone + PartialEq + PartialOrd + Ord + Display + Debug,
+    T: Clone + PartialEq + PartialOrd + Ord + Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_fmt(format_args!("{} =", self.rule))?;
+        f.write_fmt(format_args!("{:?} =", self.rule))?;
         for i in 0..=self.point.max(self.seq.0.len()) {
             f.write_char(' ')?;
             if i == self.point {
                 f.write_str(". ")?;
             }
             if let Some(term) = self.abs_idx(i) {
-                f.write_fmt(format_args!("{term}"))?;
+                f.write_fmt(format_args!("{term:?}"))?;
             }
         }
         f.write_fmt(format_args!(" {:?}", self.look))
@@ -108,7 +108,7 @@ where
 
 impl<T> Debug for Position<T>
 where
-    T: Clone + PartialEq + Ord + Display + Debug,
+    T: Clone + PartialEq + Ord + Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("{self}"))

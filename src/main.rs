@@ -8,7 +8,7 @@ use lrp::{Dfa, Grammar, Lalr, Parser, Set, Tabler, Token};
 use prettytable::{row, Cell, Row, Table};
 
 fn main() {
-    let grammar = lrp::grammar! {
+    let grammar = lrp::grammar_map! {
         "'S" -> "S",
         "S" -> "(" ")"
             | "(" "S" ")"

@@ -1,4 +1,4 @@
-use std::{fmt::Display, rc::Rc};
+use std::{fmt, rc::Rc};
 
 use crate::{Map, Position, Set};
 
@@ -7,12 +7,18 @@ pub type Production<T> = (Vec<T>, usize);
 pub type RuleMap<T> = Map<T, Rule<T>>;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Rule<T> {
+pub struct Rule<T>
+where
+    T: Clone + PartialEq + PartialOrd + Ord + fmt::Debug,
+{
     pub name: T,
     pub prods: Vec<Rc<Production<T>>>,
 }
 
-impl<T> Rule<T> {
+impl<T> Rule<T>
+where
+    T: Clone + PartialEq + PartialOrd + Ord + fmt::Debug,
+{
     #[must_use]
     pub fn new<I>(name: T, prods: I) -> Self
     where
@@ -41,7 +47,7 @@ impl<T> Rule<T> {
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Grammar<T>
 where
-    T: Ord + Clone + Display,
+    T: Clone + PartialEq + PartialOrd + Ord + fmt::Debug,
 {
     pub rules: RuleMap<T>,
     pub terminals: Set<T>,
@@ -51,7 +57,7 @@ where
 
 impl<T> Grammar<T>
 where
-    T: Ord + Clone + Display,
+    T: Clone + PartialEq + PartialOrd + Ord + fmt::Debug,
 {
     #[must_use]
     pub fn new(start: T, rules: RuleMap<T>, eof: T) -> Self {
