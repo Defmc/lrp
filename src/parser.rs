@@ -1,10 +1,10 @@
 use crate::{BaseResult, Error, Grammar, State, Tabler, Token};
 use crate::{Dfa, ReductMap};
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 pub trait Parser<T>
 where
-    T: PartialEq + Ord + Clone + Display + Debug,
+    T: PartialEq + Ord + Clone + Debug,
 {
     #[allow(clippy::inline_always)]
     #[inline(always)]

@@ -14,7 +14,7 @@ pub enum Action<T> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error<T>
 where
-    T: fmt::Debug + fmt::Display,
+    T: fmt::Debug,
 {
     /// Found a unexpected token. Contains a vector with correct tokens after it. Indicates a bad
     /// input.
@@ -65,7 +65,7 @@ pub type ReductMap<T, M> = Map<M, Vec<ReductFn<T, M>>>;
 pub struct Dfa<T, M, I: Iterator<Item = Token<T, M>>>
 where
     T: Clone,
-    M: fmt::Debug + fmt::Display + Clone,
+    M: fmt::Debug + Clone,
 {
     pub buffer: Peekable<I>,
     pub states: Vec<usize>,
@@ -86,7 +86,7 @@ impl<T, I: Iterator<Item = Token<T, T>>> Dfa<T, T, I> where
 impl<T, M, I: Iterator<Item = Token<T, M>>> Dfa<T, M, I>
 where
     T: Clone,
-    M: fmt::Debug + fmt::Display + Clone + Ord,
+    M: fmt::Debug + Clone + Ord,
 {
     #[must_use]
     pub fn new(buffer: I, table: ActTable<M>, reductors: ReductMap<T, M>, eof: M) -> Self {
@@ -230,7 +230,7 @@ where
             }
 
             if let Some(it) = self.items.get(i) {
-                fmts.push(format!("{}", it.ty));
+                fmts.push(format!("{:?}", it.ty));
             }
         }
         fmts.join(" ")

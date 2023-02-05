@@ -1,10 +1,10 @@
 use crate::{transitive, Action, Map, Parser, Position, Set, State, Tabler};
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Lalr<T>
 where
-    T: PartialEq + Ord + Clone + Display + Debug,
+    T: PartialEq + Ord + Clone + Debug,
 {
     pub table: Tabler<T>,
     /// Describes the "raw states" (states without lookahead symbol) in `table.kernels`, using it
@@ -14,7 +14,7 @@ where
 
 impl<T> Parser<T> for Lalr<T>
 where
-    T: PartialEq + Ord + Clone + Display + Debug,
+    T: PartialEq + Ord + Clone + Debug,
 {
     fn new(grammar: crate::Grammar<T>) -> Self
     where
@@ -52,7 +52,7 @@ where
 
 impl<T> Lalr<T>
 where
-    T: PartialEq + Ord + Clone + Display + Debug,
+    T: PartialEq + Ord + Clone + Debug,
 {
     pub fn proc_closures_first_row(&mut self) {
         let start = self.prop_closure(State::from([self.table.basis_pos()]));

@@ -1,17 +1,17 @@
 use crate::{transitive, Action, Map, Parser, Position, Set, State, Tabler};
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Clr<T>
 where
-    T: PartialEq + PartialOrd + Ord + Clone + Display + Debug,
+    T: PartialEq + PartialOrd + Ord + Clone + Debug,
 {
     pub table: Tabler<T>,
 }
 
 impl<T> Parser<T> for Clr<T>
 where
-    T: PartialEq + Ord + Clone + Display + Debug,
+    T: PartialEq + Ord + Clone + Debug,
 {
     fn with_table(table: Tabler<T>) -> Self {
         let mut parser = Self::uninit(table);
@@ -36,7 +36,7 @@ where
 
 impl<T> Clr<T>
 where
-    T: PartialEq + Ord + Clone + Display + Debug,
+    T: PartialEq + Ord + Clone + Debug,
 {
     pub fn proc_closures_first_row(&mut self) {
         let start = self.prop_closure(State::from([self.table.basis_pos()]));

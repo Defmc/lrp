@@ -1,10 +1,10 @@
 use crate::{transitive, ActTable, Action, Grammar, Map, Position, Set, State, Table};
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Tabler<T>
 where
-    T: PartialEq + PartialOrd + Ord + Clone + Display + Debug,
+    T: PartialEq + PartialOrd + Ord + Clone + Debug,
 {
     pub grammar: Grammar<T>,
     pub first: Table<T>,
@@ -16,7 +16,7 @@ where
 
 impl<T> Tabler<T>
 where
-    T: PartialEq + PartialOrd + Ord + Clone + Display + Debug,
+    T: PartialEq + PartialOrd + Ord + Clone + Debug,
 {
     #[must_use]
     pub fn new(grammar: Grammar<T>) -> Self {
@@ -131,7 +131,7 @@ where
                         input
                             .get(first)
                             .unwrap_or_else(|| {
-                                panic!("{name} was not listed as terminal or non-terminal")
+                                panic!("{name:?} was not listed as terminal or non-terminal")
                             })
                             .clone(),
                     );

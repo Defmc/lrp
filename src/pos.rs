@@ -108,7 +108,7 @@ where
 
 impl<T> Debug for Position<T>
 where
-    T: Clone + PartialEq + Ord + Debug,
+    T: Clone + PartialEq + PartialOrd + Ord + Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!("{self}"))
