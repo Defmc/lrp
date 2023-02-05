@@ -23,7 +23,7 @@ pub type ActTable<T> = Vec<Map<T, Action<T>>>;
 pub type Rule = &'static str;
 pub type State<T> = Set<Position<T>>;
 
-/// Terms table,
+/// Terms table.
 /// in FIRST:
 /// A = a . . . . -> {A: a}
 /// A = a . | b . -> {A: a, b}
@@ -35,7 +35,7 @@ pub type State<T> = Set<Position<T>>;
 /// A = . . . . T -> {T: FOLLOW(A)}
 pub type Table<T> = Map<T, Set<T>>;
 
-#[derive(Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum Sym<T, U> {
     Term(T),
     NoTerm(U),
