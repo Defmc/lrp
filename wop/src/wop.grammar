@@ -17,8 +17,8 @@ token CodeExpr Token::CodeExpr;
 
 AssignOp = "*=" | "+=" | "?=" | "=";
 
-AttrPrefix = "@" | "~" | "@" | "~";
-AttrSuffix = "?" | "*" | "+";
+AttrPrefix *= "@" | "~";
+AttrSuffix ?= "?" | "*" | "+";
 VarPipe = ":" Ident;
 TypeDecl = ":" IdentPath;
 
@@ -35,4 +35,4 @@ UseDecl = "use" IdentPath;
 RuleDecl = Ident TypeDecl? AssignOp RulePipe;
 
 Declaration = TokenDecl | UseDecl | RuleDecl;
-Program = (Declaration ";")*;
+Program *= Declaration ";";
