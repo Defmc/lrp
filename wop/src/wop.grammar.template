@@ -1,0 +1,55 @@
+Program -> Program Declaration Sep.
+Program -> Declaration Sep.
+
+Declaration -> TokenDecl.
+Declaration -> UseDecl.
+Declaration -> RuleDecl.
+
+TokenDecl -> TokenWord StrLit IdentPath.
+TokenDecl -> TokenWord Ident IdentPath.
+
+IdentPath -> IdentPath PathAccess Ident.
+IdentPath -> Ident.
+
+UseDecl -> UseWord IdentPath.
+
+AssignOp -> VarSpec.
+AssignOp -> RepSpec.
+AssignOp -> OptSpec.
+AssignOp -> NormalSpec.
+
+AttrPrefix -> AttrPrefix MetaAttr.
+AttrPrefix -> AttrPrefix BoxAttr.
+AttrPrefix -> MetaAttr.
+AttrPrefix -> BoxAttr.
+AttrPrefix -> .
+
+AttrSuffix -> Opt.
+AttrSuffix -> Var.
+AttrSuffix -> Rep.
+AttrSuffix -> .
+
+VarPipe -> Type Ident.
+
+TypeDecl -> Type IdentPath.
+
+Elm -> OpenParen RulePipe CloseParen.
+Elm -> AttrPrefix Ident VarPipe.
+Elm -> Ident VarPipe.
+Elm -> AttrPrefix Ident.
+Elm -> Ident.
+Elm -> Elm AttrSuffix.
+
+Prod -> Prod Elm.
+Prod -> Prod Elm CodeExpr.
+Prod -> Elm CodeExpr.
+Prod -> Elm.
+
+RulePipeRepeater -> RulePipeRepeater Prod Or.
+RulePipeRepeater -> Prod Or.
+RulePipeRepeater -> .
+
+RulePipe -> RulePipeRepeater Prod.
+
+RuleDecl -> Ident TypeDecl AssignOp RulePipe.
+RuleDecl -> Ident AssignOp RulePipe.
