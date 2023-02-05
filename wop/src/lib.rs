@@ -1,18 +1,31 @@
 use logos::Logos;
 
-#[derive(Logos, Debug, PartialEq)]
+pub type MetaSym = (Sym, Span);
+
+pub type Span = (usize, usize);
+
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
+pub enum Ast {
+    Token(MetaSym),
+}
+
+#[derive(Logos, Debug, PartialEq, PartialOrd, Clone, Ord, Eq)]
 pub enum Sym {
     /// An identifier:
     /// ab A AB a__ a0219 _a1 _
     #[regex(r"[a-zA-Z_]\w*")]
     Ident,
 
+    /// An token link. A literal string that acts like a substitution macro.
+    #[token("token")]
+    TokenWord,
+
     /// Includes a Rust type to the current context. e.g:
     /// ``
     ///     use wop::Token;
     /// ``
-    #[token(use)]
-    Use,
+    #[token("use")]
+    UseWord,
 
     /// Instruction separator.
     #[token(";")]
@@ -79,6 +92,39 @@ pub enum Sym {
     #[token("@")]
     MetaAttr,
 
+    /// An optional member. Something that can be parsed as empty.
+    /// ``
+    /// Optional = Digit | ();
+    /// ``
+    /// Is the same of:
+    /// ``
+    /// Optional = Digit?;
+    /// ``
+    #[token("?")]
+    Opt,
+
+    /// A repeated member. Something that can occur one or more times.
+    /// ``
+    /// Variadic = Digit Digit*;
+    /// ``
+    /// Is the same of:
+    /// ``
+    /// Variadic = Digit+;
+    /// ``
+    #[token("+")]
+    Rep,
+
+    /// A variadic member. Something that can occur one time, more than one time, or never.
+    /// ``
+    /// Variadic = () | Digit+;
+    /// ``
+    /// Is the same of:
+    /// ``
+    /// Variadic = Digit*;
+    /// ``
+    #[token("*")]
+    Var,
+
     /// Auto-box attribute. Handles a grammem variable as a `Box<lrp::Token>`.
     /// NOTE: Using it with a `@` attribute creates some order differences:
     /// `~@` means a boxed token;
@@ -124,16 +170,20 @@ pub enum Sym {
     #[regex(r#"//[^\n]*\r?"#, logos::skip)]
     LineComment,
 
-    /// Terms
+    Eof,
+
+    /// Non terminals
     AssignOp,
     AttrPrefix,
     AttrSuffix,
     VarPipe,
     TypeDecl,
     IdentPath,
+    IdentPathRepeater,
     Elm,
     Prod,
     RulePipe,
+    RulePipeRepeater,
     TokenDecl,
     UseDecl,
     RuleDecl,
@@ -141,20 +191,87 @@ pub enum Sym {
     Program,
 }
 
-use lrp::{Grammar, Map, Sym};
-pub fn grammar() {
-    let rules = lrp::Map::from([()]);
-    Grammar::new()
+use lrp::Grammar;
+pub fn grammar() -> Grammar<Sym> {
+    use Sym::*;
+    let rules = lrp::grammar_map! {
+            // Program *= Declaration ";";
+            Program -> Program Declaration Sep | Declaration Sep,
+
+            // Declaration = TokenDecl | UseDecl | RuleDecl;
+            Declaration -> TokenDecl | UseDecl | RuleDecl,
+
+            // TokenDecl = "token" (StrLit | Ident) IdentPath;
+            TokenDecl -> TokenWord StrLit IdentPath
+                | TokenWord Ident IdentPath,
+
+            // IdentPath = (Ident "::")* ...;
+            IdentPathRepeater -> IdentPathRepeater Ident PathAccess
+                | Ident PathAccess
+                |,
+
+            // IdentPath = (Ident "::")* Ident;
+            IdentPath -> IdentPathRepeater Ident,
+
+            // UseDecl = "use" IdentPath;
+            UseDecl -> UseWord IdentPath,
+
+            // AssignOp = "*=" | "+=" | "?=" | "=";
+            AssignOp -> VarSpec | RepSpec | OptSpec | NormalSpec,
+
+            // AttrPrefix *= "@" | "~";
+            AttrPrefix -> AttrPrefix MetaAttr
+                | AttrPrefix BoxAttr
+                | MetaAttr
+                | BoxAttr
+                |,
+
+            // AttrSuffix ?= "?" | "*" | "+";
+            AttrSuffix -> Opt | Var | Rep |,
+
+            // VarPipe = ":" Ident;
+            VarPipe -> Type Ident,
+
+            // TypeDecl = ":" IdentPath;
+            TypeDecl -> Type IdentPath,
+
+            // Elm = "(" RulePipe ")" | AttrPrefix? Ident VarPipe? | Elm AttrSuffix?;
+            Elm -> OpenParen RulePipe CloseParen
+                | AttrPrefix Ident VarPipe
+                | Ident VarPipe
+                | AttrPrefix Ident
+                | Ident
+                | Elm AttrSuffix,
+
+            // Prod *= Elm CodeExpr?;
+            Prod -> Prod Elm
+                | Prod Elm CodeExpr
+                | Elm CodeExpr
+                | Elm,
+
+            // RulePipe = (Prod "|")* ...;
+            RulePipeRepeater -> RulePipeRepeater Prod Or
+                | Prod Or
+                |,
+
+            // RulePipe = (Prod "|")* Prod;
+            RulePipe -> RulePipeRepeater Prod,
+
+            // RuleDecl = Ident TypeDecl? AssignOp RulePipe;
+            RuleDecl -> Ident TypeDecl AssignOp RulePipe
+                | Ident AssignOp RulePipe
+    };
+    Grammar::new(Program, rules, Eof)
 }
 
 #[cfg(test)]
 mod tests {
     use logos::Logos;
 
-    use crate::Token;
+    use crate::Sym;
     #[test]
     fn strings() {
-        let mut toks = Token::lexer(
+        let mut toks = Sym::lexer(
             r#"
             ""
             "em"
@@ -169,13 +286,13 @@ mod tests {
             "#,
         );
         let mut tokens = vec![
-            Token::Ident,
-            Token::StrLit,
-            Token::StrLit,
-            Token::StrLit,
-            Token::StrLit,
-            Token::StrLit,
-            Token::StrLit,
+            Sym::Ident,
+            Sym::StrLit,
+            Sym::StrLit,
+            Sym::StrLit,
+            Sym::StrLit,
+            Sym::StrLit,
+            Sym::StrLit,
         ];
         while let Some(tok) = toks.next() {
             println!("{tok:?}: {} | {:?}", toks.slice(), toks.span());
