@@ -105,6 +105,6 @@ macro_rules! grammar_map {
 
 #[cfg(test)]
 pub mod grammars_tests {
-    use crate::{grammar, Grammar};
+    use crate::Grammar;
     include!("../grammars_tests.rs");
 }

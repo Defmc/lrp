@@ -179,7 +179,6 @@ pub enum Sym {
     VarPipe,
     TypeDecl,
     IdentPath,
-    IdentPathRepeater,
     Elm,
     Prod,
     RulePipe,
@@ -209,13 +208,9 @@ pub fn grammar() -> Grammar<Sym> {
             TokenDecl -> TokenWord StrLit IdentPath
                 | TokenWord Ident IdentPath,
 
-            // IdentPath = (Ident "::")* ...;
-            IdentPathRepeater -> IdentPathRepeater Ident PathAccess
-                | Ident PathAccess
-                |,
-
             // IdentPath = (Ident "::")* Ident;
-            IdentPath -> IdentPathRepeater Ident,
+            IdentPath -> IdentPath PathAccess Ident
+                | Ident,
 
             // UseDecl = "use" IdentPath;
             UseDecl -> UseWord IdentPath,
