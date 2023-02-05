@@ -85,10 +85,19 @@ pub fn to_tokens<T: Clone>(it: impl IntoIterator<Item = T>) -> impl Iterator<Ite
 macro_rules! grammar_map {
     ($($rule:literal -> $($($terms:literal)*)|*),*) => {{
         let mut hmp = $crate::Map::new();
-        $($crate::grammar!(hmp, $rule -> $($($terms)*)|*);)*
+        $($crate::grammar_map!(hmp, $rule -> $($($terms)*)|*);)*
         hmp
     }};
     ($grammar:tt, $rule:literal -> $($($terms:literal)*)|*) => {{
+        let rule = $crate::grammar::Rule::new($rule, vec![$(vec![$($terms),*]),*]);
+        $grammar.insert($rule, rule);
+    }};
+    ($($rule:ident -> $($($terms:ident)*)|*),*) => {{
+        let mut hmp = $crate::Map::new();
+        $($crate::grammar_map!(hmp, $rule -> $($($terms)*)|*);)*
+        hmp
+    }};
+    ($grammar:tt, $rule:ident -> $($($terms:ident)*)|*) => {{
         let rule = $crate::grammar::Rule::new($rule, vec![$(vec![$($terms),*]),*]);
         $grammar.insert($rule, rule);
     }}
