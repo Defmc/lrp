@@ -15,24 +15,51 @@ token Ident Token::Ident;
 token StrLit Token::StrLit;
 token CodeExpr Token::CodeExpr;
 
-AssignOp = "*=" | "+=" | "?=" | "=";
-
-AttrPrefix *= "@" | "~";
-AttrSuffix ?= "?" | "*" | "+";
-VarPipe = ":" Ident;
-TypeDecl = ":" IdentPath;
-
-IdentPath = (Ident "::")* Ident;
-
-Elm = "(" RulePipe ")" | AttrPrefix? Ident VarPipe? | Elm AttrSuffix?;
-
-Prod *= Elm CodeExpr?;
-
-RulePipe = (Prod "|")* Prod;
-
-TokenDecl = "token" (StrLit | Ident) IdentPath;
-UseDecl = "use" IdentPath;
-RuleDecl = Ident TypeDecl? AssignOp RulePipe;
+Program = Program Declaration Sep | Declaration Sep;
 
 Declaration = TokenDecl | UseDecl | RuleDecl;
-Program *= Declaration ";";
+
+TokenDecl = TokenWord StrLit IdentPath
+    | TokenWord Ident IdentPath;
+
+IdentPath = IdentPath PathAccess Ident
+    | Ident;
+
+UseDecl = UseWord IdentPath;
+
+AssignOp = VarSpec | RepSpec | OptSpec | NormalSpec;
+
+AttrPrefix = MetaAttr
+    | BoxAttr
+    | MetaAttr AttrPrefix
+    | BoxAttr AttrPrefix;
+
+AttrSuffix = Opt | Var | Rep;
+
+VarPipe = Type Ident;
+
+TypeDecl = Type IdentPath;
+
+ElmBase = Ident VarPipe
+    | Ident
+    | OpenParen RulePipe CloseParen
+    | OpenParen RulePipe CloseParen VarPipe;
+
+Elm = AttrPrefix ElmBase AttrSuffix
+    | ElmBase AttrSuffix
+    | AttrPrefix ElmBase
+    | ElmBase;
+
+Prod = Prod Elm
+    | Prod Elm CodeExpr
+    | Elm CodeExpr
+    | Elm;
+
+RulePipeRepeater = RulePipeRepeater Prod Or
+    | Prod Or;
+
+RulePipe = RulePipeRepeater Prod
+    | Prod;
+
+RuleDecl = Ident TypeDecl AssignOp RulePipe;
+    | Ident AssignOp RulePipe;

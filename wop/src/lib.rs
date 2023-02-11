@@ -198,68 +198,52 @@ pub fn grammar() -> Grammar<Sym> {
     use Sym::*;
 
     let rules = lrp::grammar_map! {
-            // Program *= Declaration ";";
-            Program -> Program Declaration Sep | Declaration Sep,
+    Program -> Program Declaration Sep
+        | Declaration Sep,
 
-            // Declaration = TokenDecl | UseDecl | RuleDecl;
-            Declaration -> TokenDecl | UseDecl | RuleDecl,
+    Declaration -> TokenDecl | UseDecl | RuleDecl,
 
-            // TokenDecl = "token" (StrLit | Ident) IdentPath;
-            TokenDecl -> TokenWord StrLit IdentPath
-                | TokenWord Ident IdentPath,
+    TokenDecl -> TokenWord StrLit IdentPath | TokenWord Ident IdentPath,
 
-            // IdentPath = (Ident "::")* Ident;
-            IdentPath -> IdentPath PathAccess Ident
-                | Ident,
+    IdentPath -> IdentPath PathAccess Ident | Ident,
 
-            // UseDecl = "use" IdentPath;
-            UseDecl -> UseWord IdentPath,
+    UseDecl -> UseWord IdentPath,
 
-            // AssignOp = "*=" | "+=" | "?=" | "=";
-            AssignOp -> VarSpec | RepSpec | OptSpec | NormalSpec,
+    AssignOp -> VarSpec | RepSpec | OptSpec | NormalSpec,
 
-            // AttrPrefix *= "@" | "~";
-            AttrPrefix -> AttrPrefix MetaAttr
-                | AttrPrefix BoxAttr
-                | MetaAttr
-                | BoxAttr
-                |,
+    AttrPrefix -> MetaAttr | BoxAttr | MetaAttr AttrPrefix | BoxAttr AttrPrefix,
 
-            // AttrSuffix ?= "?" | "*" | "+";
-            AttrSuffix -> Opt | Var | Rep |,
+    AttrSuffix -> Opt | Var | Rep,
 
-            // VarPipe = ":" Ident;
-            VarPipe -> Type Ident,
+    VarPipe -> Type Ident,
 
-            // TypeDecl = ":" IdentPath;
-            TypeDecl -> Type IdentPath,
+    TypeDecl -> Type IdentPath,
 
-            // Elm = "(" RulePipe ")" | AttrPrefix? Ident VarPipe? | Elm AttrSuffix?;
-            Elm -> OpenParen RulePipe CloseParen
-                | AttrPrefix Ident VarPipe
-                | Ident VarPipe
-                | AttrPrefix Ident
-                | Ident
-                | Elm AttrSuffix,
+    ElmBase -> Ident VarPipe
+        | Ident
+        | OpenParen RulePipe CloseParen
+        | OpenParen RulePipe CloseParen VarPipe,
 
-            // Prod *= Elm CodeExpr?;
-            Prod -> Prod Elm
-                | Prod Elm CodeExpr
-                | Elm CodeExpr
-                | Elm,
+    Elm -> AttrPrefix ElmBase AttrSuffix
+        | ElmBase AttrSuffix
+        | AttrPrefix ElmBase
+        | ElmBase,
 
-            // RulePipe = (Prod "|")* ...;
-            RulePipeRepeater -> RulePipeRepeater Prod Or
-                | Prod Or
-                |,
+    Prod -> Prod Elm
+        | Prod Elm CodeExpr
+        | Elm CodeExpr
+        | Elm,
 
-            // RulePipe = (Prod "|")* Prod;
-            RulePipe -> RulePipeRepeater Prod,
+    RulePipeRepeater -> RulePipeRepeater Prod Or
+        | Prod Or,
 
-            // RuleDecl = Ident TypeDecl? AssignOp RulePipe;
-            RuleDecl -> Ident TypeDecl AssignOp RulePipe
-                | Ident AssignOp RulePipe
+    RulePipe -> RulePipeRepeater Prod,
+        | Prod,
+
+    RuleDecl -> Ident TypeDecl AssignOp RulePipe,
+        | Ident AssignOp RulePipe,
     };
+
     Grammar::new(Program, rules, Eof)
 }
 

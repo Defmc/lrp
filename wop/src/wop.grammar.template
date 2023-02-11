@@ -18,27 +18,28 @@ AssignOp -> RepSpec.
 AssignOp -> OptSpec.
 AssignOp -> NormalSpec.
 
-AttrPrefix -> AttrPrefix MetaAttr.
-AttrPrefix -> AttrPrefix BoxAttr.
 AttrPrefix -> MetaAttr.
 AttrPrefix -> BoxAttr.
-AttrPrefix -> .
+AttrPrefix -> MetaAttr AttrPrefix.
+AttrPrefix -> BoxAttr AttrPrefix.
 
 AttrSuffix -> Opt.
 AttrSuffix -> Var.
 AttrSuffix -> Rep.
-AttrSuffix -> .
 
 VarPipe -> Type Ident.
 
 TypeDecl -> Type IdentPath.
 
-Elm -> OpenParen RulePipe CloseParen.
-Elm -> AttrPrefix Ident VarPipe.
-Elm -> Ident VarPipe.
-Elm -> AttrPrefix Ident.
-Elm -> Ident.
-Elm -> Elm AttrSuffix.
+ElmBase -> Ident VarPipe.
+ElmBase -> Ident.
+ElmBase -> OpenParen RulePipe CloseParen.
+ElmBase -> OpenParen RulePipe CloseParen VarPipe.
+
+Elm -> AttrPrefix ElmBase AttrSuffix.
+Elm -> ElmBase AttrSuffix.
+Elm -> AttrPrefix ElmBase.
+Elm -> ElmBase.
 
 Prod -> Prod Elm.
 Prod -> Prod Elm CodeExpr.
@@ -47,9 +48,9 @@ Prod -> Elm.
 
 RulePipeRepeater -> RulePipeRepeater Prod Or.
 RulePipeRepeater -> Prod Or.
-RulePipeRepeater -> .
 
 RulePipe -> RulePipeRepeater Prod.
+RulePipe -> Prod.
 
 RuleDecl -> Ident TypeDecl AssignOp RulePipe.
 RuleDecl -> Ident AssignOp RulePipe.
