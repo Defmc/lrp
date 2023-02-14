@@ -77,6 +77,12 @@ impl<T, M> Token<T, M> {
     }
 }
 
+impl<M> Token<(), M> {
+    pub const fn empty(ty: M) -> Self {
+        Self::new((), ty)
+    }
+}
+
 pub fn to_tokens<T: Clone>(it: impl IntoIterator<Item = T>) -> impl Iterator<Item = Token<(), T>> {
     it.into_iter().map(|i| Token::new((), i))
 }

@@ -19,11 +19,9 @@ Program = Program Declaration Sep | Declaration Sep;
 
 Declaration = TokenDecl | UseDecl | RuleDecl;
 
-TokenDecl = TokenWord StrLit IdentPath
-    | TokenWord Ident IdentPath;
+TokenDecl = TokenWord (StrLit | Ident) IdentPath;
 
-IdentPath = IdentPath PathAccess Ident
-    | Ident;
+IdentPath = (IdentPath PathAccess)? Ident
 
 UseDecl = UseWord IdentPath;
 
@@ -40,26 +38,13 @@ VarPipe = Type Ident;
 
 TypeDecl = Type IdentPath;
 
-ElmBase = Ident VarPipe
-    | Ident
-    | OpenParen RulePipe CloseParen
-    | OpenParen RulePipe CloseParen VarPipe;
+ElmBase = Ident VarPipe?
+    | OpenParen RulePipe CloseParen VarPipe?;
 
-Elm = AttrPrefix ElmBase AttrSuffix
-    | ElmBase AttrSuffix
-    | AttrPrefix ElmBase
-    | ElmBase;
+Elm = AttrPrefix? ElmBase AttrSuffix?;
 
-Prod = Prod Elm
-    | Prod Elm CodeExpr
-    | Elm CodeExpr
-    | Elm;
+Prod = Prod? Elm CodeExpr?;
 
-RulePipeRepeater = RulePipeRepeater Prod Or
-    | Prod Or;
+RulePipe = (Prod Or)* Prod;
 
-RulePipe = RulePipeRepeater Prod
-    | Prod;
-
-RuleDecl = Ident TypeDecl AssignOp RulePipe;
-    | Ident AssignOp RulePipe;
+RuleDecl = Ident TypeDecl? AssignOp RulePipe;

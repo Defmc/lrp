@@ -188,6 +188,8 @@ pub enum Sym {
     RuleDecl,
     Declaration,
     Program,
+    EntryPoint,
+    ElmBase,
 }
 
 use lrp::Grammar;
@@ -198,6 +200,8 @@ pub fn grammar() -> Grammar<Sym> {
     use Sym::*;
 
     let rules = lrp::grammar_map! {
+    EntryPoint -> Program,
+
     Program -> Program Declaration Sep
         | Declaration Sep,
 
@@ -237,14 +241,14 @@ pub fn grammar() -> Grammar<Sym> {
     RulePipeRepeater -> RulePipeRepeater Prod Or
         | Prod Or,
 
-    RulePipe -> RulePipeRepeater Prod,
+    RulePipe -> RulePipeRepeater Prod
         | Prod,
 
-    RuleDecl -> Ident TypeDecl AssignOp RulePipe,
-        | Ident AssignOp RulePipe,
+    RuleDecl -> Ident TypeDecl AssignOp RulePipe
+        | Ident AssignOp RulePipe
     };
 
-    Grammar::new(Program, rules, Eof)
+    Grammar::new(EntryPoint, rules, Eof)
 }
 
 #[cfg(test)]
