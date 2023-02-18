@@ -12,7 +12,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut dfa = slr.simple_dfa(lexer);
 
-    dfa.trace(|st| println!("{:?}", st.stack_fmt()));
+    if let Err(e) = dfa.trace(|st| println!("{:?}", st.stack_fmt())) {
+        println!("FATAL: {e}");
+    }
 
     Ok(())
 }
