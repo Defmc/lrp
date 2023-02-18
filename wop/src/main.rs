@@ -1,4 +1,4 @@
-use std::{fs, io};
+use std::{fs};
 
 use logos::Logos;
 use lrp::{Parser, Slr, Token};
