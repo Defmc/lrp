@@ -35,12 +35,12 @@ where
 
 impl<T> fmt::Display for Error<T>
 where
-    T: fmt::Debug + fmt::Display,
+    T: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::UnexpectedToken(found, expected) => f.write_fmt(format_args!(
-                "unexpected token {found}. expected {expected:?}"
+                "unexpected token {found:?}. expected {expected:?}"
             )),
             Self::UnexpectedEof => f.write_str("unexpected eof"),
             Self::Conflict(a, b) => f.write_fmt(format_args!("conflicting action {a:?} and {b:?}")),
