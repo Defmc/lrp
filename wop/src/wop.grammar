@@ -21,7 +21,7 @@ Declaration = TokenDecl | UseDecl | RuleDecl;
 
 TokenDecl = TokenWord (StrLit | Ident) IdentPath;
 
-IdentPath = (IdentPath PathAccess)? Ident
+IdentPath = (IdentPath PathAccess)? Ident;
 
 UseDecl = UseWord IdentPath;
 
