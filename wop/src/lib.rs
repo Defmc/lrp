@@ -258,6 +258,8 @@ pub fn grammar() -> Grammar<Sym> {
 
     ElmBase -> Ident VarPipe
         | Ident
+        | StrLit VarPipe
+        | StrLit
         | OpenParen RulePipe CloseParen
         | OpenParen RulePipe CloseParen VarPipe,
 

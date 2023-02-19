@@ -37,7 +37,7 @@ VarPipe = ":" Ident;
 
 TypeDecl = ":" IdentPath;
 
-ElmBase = Ident VarPipe?
+ElmBase = (Ident | StrLit) VarPipe?
     | "(" RulePipe ")" VarPipe?;
 
 Elm = AttrPrefix? ElmBase AttrSuffix?;
