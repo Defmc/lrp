@@ -4,9 +4,42 @@ pub type MetaSym = (Sym, Span);
 
 pub type Span = (usize, usize);
 
+pub type Meta<T> = (T, Span);
+
 #[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
 pub enum Ast {
-    Token(MetaSym),
+    Token(Sym),
+    EntryPoint(Box<Ast /* Ast::Program */>),
+    Program(Vec<Ast /* Ast::Declaration */>),
+    Declaration(Box<Ast /* Ast::TokenDecl | Ast::UseDecl | Ast::Ruledecl */>),
+    TokenDecl(Sym, Box<Ast /* Ast::IdentPath */>),
+    IdentPath(Vec<Sym /* Sym::Ident */>),
+    UseDecl(Box<Ast /* Ast::IdentPath */>),
+    AssignOp(Sym /* "*=" | "+=" | "?=" | "=" */),
+    AttrPrefix(Vec<Sym /* "@" | "~" */>),
+    AttrSuffix(Sym /* "?" | "*" | "+" */),
+    VarPipe(Sym /* Sym::Ident */),
+    TypeDecl(Box<Ast /* Ast::IdentPath */>),
+    Elm(
+        Option<Box<Ast /* Ast::AttrPrefix */>>,
+        Box<Ast /* Ast::ElmBase */>,
+        Option<Box<Ast /* Ast::AttrSuffix */>>,
+    ),
+    Prod(Vec<(Ast /* Ast::Elm */, Option<Sym /* "|" */>)>),
+    RulePipeRepeater(Vec<Ast /* Ast::Prod */>),
+    RulePipe(Vec<Ast /* Ast::Prod */>),
+    RuleDecl(
+        Sym, /* Sym::Ident */
+        Option<Box<Ast /* Ast::TypeDecl */>>,
+        Box<Ast /* Ast::AssignOp */>,
+        Box<Ast /* Ast::RulePipe */>,
+    ),
+    ElmBase(
+        Sym, /* Sym::Ident */
+        Option<Box<Ast /* Ast::VarPipe */>>,
+        Box<Ast /* Ast::RulePipe */>,
+        Option<Box<Ast /* Ast::VarPipe */>>,
+    ),
 }
 
 #[derive(Logos, Debug, PartialEq, PartialOrd, Clone, Ord, Eq)]
