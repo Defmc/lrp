@@ -4,7 +4,6 @@ token "*=" Token::VarSpec;
 token "+=" Token::RepSpec;
 token "=" Token::NormalSpec;
 token "?=" Token::OptSpec;
-
 token ":" Token::Type;
 token "@" Token::MetaAttr;
 token "~" Token::BoxAttr;
@@ -15,36 +14,37 @@ token Ident Token::Ident;
 token StrLit Token::StrLit;
 token CodeExpr Token::CodeExpr;
 
-Program = Program Declaration Sep | Declaration Sep;
+Program = Program Declaration ";" | Declaration ";";
 
 Declaration = TokenDecl | UseDecl | RuleDecl;
 
-TokenDecl = TokenWord (StrLit | Ident) IdentPath;
+TokenDecl = "token" (StrLit | Ident) IdentPath;
 
-IdentPath = (IdentPath PathAccess)? Ident;
+IdentPath = (IdentPath "::")? Ident;
 
-UseDecl = UseWord IdentPath;
+UseDecl = "use" IdentPath;
 
-AssignOp = VarSpec | RepSpec | OptSpec | NormalSpec;
+AssignOp = "*=" | "+=" | "?=" | "=";
 
-AttrPrefix = MetaAttr
-    | BoxAttr
-    | MetaAttr AttrPrefix
-    | BoxAttr AttrPrefix;
+AttrPrefix = "@"
+    | "~"
+    | "@" AttrPrefix
+    | "~" AttrPrefix;
 
-AttrSuffix = Opt | Var | Rep;
+AttrSuffix = "?" | "*" | "+";
 
-VarPipe = Type Ident;
+VarPipe = ":" Ident;
 
-TypeDecl = Type IdentPath;
+TypeDecl = ":" IdentPath;
 
 ElmBase = Ident VarPipe?
-    | OpenParen RulePipe CloseParen VarPipe?;
+    | "(" RulePipe ")" VarPipe?;
 
 Elm = AttrPrefix? ElmBase AttrSuffix?;
 
-Prod = Prod? Elm CodeExpr?;
+// FIXME: Couldn't it be variadic?
+Prod += Elm CodeExpr?;
 
-RulePipe = (Prod Or)* Prod;
+RulePipe = (Prod "|")* Prod;
 
 RuleDecl = Ident TypeDecl? AssignOp RulePipe;
