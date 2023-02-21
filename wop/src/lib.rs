@@ -1,11 +1,5 @@
 use logos::Logos;
 
-pub type MetaSym = (Sym, Span);
-
-pub type Span = (usize, usize);
-
-pub type Meta<T> = (T, Span);
-
 #[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
 pub enum Ast {
     Token(Sym),
@@ -225,7 +219,7 @@ pub enum Sym {
     ElmBase,
 }
 
-use lrp::Grammar;
+use lrp::{Dfa, Grammar, Parser, Slr, Token};
 
 #[must_use]
 pub fn grammar() -> Grammar<Sym> {
@@ -284,6 +278,21 @@ pub fn grammar() -> Grammar<Sym> {
     };
 
     Grammar::new(EntryPoint, rules, Eof)
+}
+
+pub mod reduct_map;
+
+#[must_use]
+pub fn lexer<'source>(
+    source: &'source <Sym as Logos>::Source,
+) -> impl Iterator<Item = Token<Ast, Sym>> + 'source {
+    Sym::lexer(source.as_ref()).map(|s| Token::new(Ast::Token(s.clone()), s))
+}
+
+#[must_use]
+pub fn build_parser<I: Iterator<Item = Token<(), Sym>>>(buffer: I) -> Dfa<(), Sym, I> {
+    let parser = Slr::new(grammar());
+    parser.dfa(buffer, reduct_map::reduct_map())
 }
 
 #[cfg(test)]
