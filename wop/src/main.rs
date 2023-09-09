@@ -2,6 +2,7 @@ use std::fs;
 
 use logos::Logos;
 use lrp::{Clr, Parser, Token};
+use wop::{Ast, Meta};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::env::args().nth(1).unwrap();
@@ -11,22 +12,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let lexer = wop::Sym::lexer(&file).spanned().map(|(m, s)| {
         println!("\"{}\" ({m:?}) [{s:?}]", &file[s.clone()]);
         copy.push(&file[s.clone()]);
-        Token::empty(m)
+        Token::new(Meta::new(Ast::Token(m), (s.start, s.end)), m)
     });
-    let clr = Clr::new(wop::grammar());
 
-    let mut dfa = clr.simple_dfa(lexer);
+    let mut dfa = wop::build_parser(lexer);
 
-    match dfa.trace(|_| ()) {
+    let res = match dfa.trace(|st| println!("{:?}", st.stack_fmt())) {
         Err(e) => {
             println!("FATAL: {e}");
             println!("source:");
-            copy.into_iter().for_each(|a| print!("{a} "));
+            // copy.into_iter().for_each(|a| print!("{a} "));
             Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "impossible to parse").into())
         }
         Ok(p) => {
-            println!("{p:?}");
+            println!("OUTPUT: {p:?}");
             Ok(())
         }
-    }
+    };
+    println!("{:#?}", dfa.items[0]);
+    res
 }
