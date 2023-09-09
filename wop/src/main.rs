@@ -1,7 +1,7 @@
 use std::fs;
 
 use logos::Logos;
-use lrp::{Parser, Slr, Token};
+use lrp::{Clr, Parser, Token};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::env::args().skip(1).next().unwrap();
@@ -10,15 +10,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut copy = Vec::new();
 
     let lexer = wop::Sym::lexer(&file).spanned().map(|(m, s)| {
+        println!("\"{}\" ({m:?}) [{s:?}]", &file[s.clone()]);
         copy.push(&file[s.clone()]);
-        println!("{m:?} | {}", &file[s]);
         Token::empty(m)
     });
-    let slr = Slr::new(wop::grammar());
+    let clr = Clr::new(wop::grammar());
 
-    let mut dfa = slr.simple_dfa(lexer);
+    let mut dfa = clr.simple_dfa(lexer);
 
-    if let Err(e) = dfa.trace(|st| println!("{:?}", st.stack_fmt())) {
+    if let Err(e) = dfa.trace(|st| /* println!("{:?}", st.stack_fmt()) */()) {
         println!("FATAL: {e}");
         println!("source:");
         copy.into_iter().for_each(|a| print!("{a} "));

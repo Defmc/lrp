@@ -1,6 +1,5 @@
-grammar lr;
-
 use wop::Token;
+
 token "(" Token::OpenCurly;
 token ")" Token::CloneCurly;
 token "*" Token::MulOp;

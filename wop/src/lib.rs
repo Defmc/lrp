@@ -2,39 +2,47 @@ use logos::Logos;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
 pub enum Ast {
-    Token(Sym),
-    EntryPoint(Box<Ast /* Ast::Program */>),
-    Program(Vec<Ast /* Ast::Declaration */>),
-    Declaration(Box<Ast /* Ast::TokenDecl | Ast::UseDecl | Ast::Ruledecl */>),
-    TokenDecl(Sym, Box<Ast /* Ast::IdentPath */>),
-    IdentPath(Vec<Sym /* Sym::Ident */>),
-    UseDecl(Box<Ast /* Ast::IdentPath */>),
-    AssignOp(Sym /* "*=" | "+=" | "?=" | "=" */),
-    AttrPrefix(Vec<Sym /* "@" | "~" */>),
-    AttrSuffix(Sym /* "?" | "*" | "+" */),
-    VarPipe(Sym /* Sym::Ident */),
-    TypeDecl(Box<Ast /* Ast::IdentPath */>),
+    Token(Token<Span, Sym>),
+    EntryPoint(Box<Gramem /* Ast::Program */>),
+    Program(Vec<Gramem /* Ast::Declaration */>),
+    Declaration(Box<Gramem /* Ast::TokenDecl | Ast::UseDecl | Ast::Ruledecl */>),
+    TokenDecl(Sym, Box<Gramem /* Ast::IdentPath */>),
+    IdentPath(Vec<Token<Span, Sym> /* Sym::Ident */>),
+    UseDecl(Box<Gramem /* Ast::IdentPath */>),
+    AssignOp(Token<Span, Sym> /* "*=" | "+=" | "?=" | "=" */),
+    AttrPrefix(Vec<Token<Span, Sym> /* "@" | "~" */>),
+    AttrSuffix(Token<Span, Sym> /* "?" | "*" | "+" */),
+    VarPipe(Token<Span, Sym> /* Sym::Ident */),
+    TypeDecl(Box<Gramem /* Ast::IdentPath */>),
     Elm(
-        Option<Box<Ast /* Ast::AttrPrefix */>>,
-        Box<Ast /* Ast::ElmBase */>,
-        Option<Box<Ast /* Ast::AttrSuffix */>>,
+        Option<Box<Gramem /* Ast::AttrPrefix */>>,
+        Box<Gramem /* Ast::ElmBase */>,
+        Option<Box<Gramem /* Ast::AttrSuffix */>>,
     ),
-    Prod(Vec<(Ast /* Ast::Elm */, Option<Sym /* "|" */>)>),
-    RulePipeRepeater(Vec<Ast /* Ast::Prod */>),
-    RulePipe(Vec<Ast /* Ast::Prod */>),
+    Prod(
+        Vec<(
+            Gramem, /* Ast::Elm */
+            Option<Token<Span, Sym> /* "|" */>,
+        )>,
+    ),
+    RulePipeRepeater(Vec<Gramem /* Ast::Prod */>),
+    RulePipe(Vec<Gramem /* Ast::Prod */>),
     RuleDecl(
-        Sym, /* Sym::Ident */
-        Option<Box<Ast /* Ast::TypeDecl */>>,
-        Box<Ast /* Ast::AssignOp */>,
-        Box<Ast /* Ast::RulePipe */>,
+        Token<Span, Sym>, /* Sym::Ident */
+        Option<Box<Gramem /* Ast::TypeDecl */>>,
+        Box<Gramem /* Ast::AssignOp */>,
+        Box<Gramem /* Ast::RulePipe */>,
     ),
     ElmBase(
-        Sym, /* Sym::Ident */
-        Option<Box<Ast /* Ast::VarPipe */>>,
-        Box<Ast /* Ast::RulePipe */>,
-        Option<Box<Ast /* Ast::VarPipe */>>,
+        Token<Span, Sym>, /* Sym::Ident */
+        Option<Box<Gramem /* Ast::VarPipe */>>,
+        Box<Gramem /* Ast::RulePipe */>,
+        Option<Box<Gramem /* Ast::VarPipe */>>,
     ),
 }
+
+pub type Gramem = Token<Span, Ast>;
+pub type Span = (usize, usize);
 
 #[derive(Logos, Debug, PartialEq, PartialOrd, Clone, Ord, Eq)]
 pub enum Sym {
@@ -285,8 +293,10 @@ pub mod reduct_map;
 #[must_use]
 pub fn lexer<'source>(
     source: &'source <Sym as Logos>::Source,
-) -> impl Iterator<Item = Token<Ast, Sym>> + 'source {
-    Sym::lexer(source.as_ref()).map(|s| Token::new(Ast::Token(s.clone()), s))
+) -> impl Iterator<Item = Token<Sym, Span>> + 'source {
+    Sym::lexer(source.as_ref())
+        .spanned()
+        .map(|(t, s)| Token::new(t.clone(), (s.start, s.end)))
 }
 
 #[must_use]
