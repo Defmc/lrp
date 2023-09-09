@@ -1,7 +1,7 @@
 use std::fmt;
 
 mod grammars_tests {
-    use lrp::{grammar, Grammar, Set};
+    use lrp::{grammar, grammar_map, Grammar, Set};
     include!("../grammars_tests.rs");
 }
 
