@@ -236,4 +236,25 @@ where
         }
         fmts.join(" ")
     }
+
+    #[must_use]
+    pub fn stack_debug(&self) -> String
+    where
+        T: std::fmt::Debug,
+    {
+        let mut fmts = Vec::new();
+        for i in 0.. {
+            if i >= self.states.len() && i >= self.items.len() {
+                break;
+            }
+            if let Some(s) = self.states.get(i) {
+                fmts.push(format!("{s}"));
+            }
+
+            if let Some(it) = self.items.get(i) {
+                fmts.push(format!("{:?}", it));
+            }
+        }
+        fmts.join(" ")
+    }
 }
