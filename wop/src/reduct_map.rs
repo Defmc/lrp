@@ -14,42 +14,53 @@ pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {
 
     let mut map = ReductMap::new();
     map.insert(Sym::EntryPoint, vec![entry_point]);
-    map.insert(Sym::Program, vec![program]);
+    map.insert(Sym::Program, vec![program_rec, program_rec]);
     map.insert(Sym::Declaration, vec![decl, decl, decl]);
     map.insert(Sym::TokenDecl, vec![tokendecl, tokendecl]);
     map.insert(Sym::IdentPath, vec![identpath]);
+    map.insert(Sym::UseDecl, vec![usedecl]);
+    map.insert(Sym::AssignOp, vec![assignop]);
     map
 }
 
 fn entry_point(program: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     let program = program[0].item.clone();
-    let (start, end) = (program.start, program.end);
-    Meta::new(program.item, (start, end))
+    let span = (program.start, program.end);
+    Meta::new(program.item, span)
 }
 
-fn program(expressions: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+fn program_rec(expressions: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     let start = expressions.first().unwrap().item.start;
     let end = expressions.last().unwrap().item.end;
-    let program = expressions.into_iter().map(|e| e.clone()).collect();
+    let program = expressions.into_iter().cloned().collect();
     Meta::new(Ast::Program(program), (start, end))
 }
 
 fn decl(decl: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
-    let start = decl[0].item.start;
-    let end = decl[0].item.end;
-    Meta::new(Ast::Declaration(decl[0].clone().into()), (start, end))
+    let span = (decl[0].item.start, decl[0].item.end);
+    Meta::new(Ast::Declaration(decl[0].clone().into()), span)
 }
 
 fn tokendecl(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
-    let token = toks[1];
-    let ident = toks[2];
-    let (start, end) = (token.item.start, ident.item.end);
-    Meta::new(Ast::TokenDecl(token.into(), ident.into()), (start, end))
+    let token = toks[1].clone();
+    let ident = toks[2].clone();
+    let span = (token.item.start, ident.item.end);
+    Meta::new(Ast::TokenDecl(token.into(), ident.into()), span)
 }
 
 fn identpath(path: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     let start = path.first().unwrap().item.start;
     let end = path.last().unwrap().item.end;
-    let program = path.into_iter().map(|e| e.clone()).collect();
+    let program = path.into_iter().cloned().collect();
     Meta::new(Ast::Program(program), (start, end))
+}
+
+fn usedecl(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    let span = (toks[0].item.start, toks[1].item.end);
+    Meta::new(Ast::UseDecl(toks[1].clone().into()), span)
+}
+
+fn assignop(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    let span = (toks[0].item.start, toks[0].item.end);
+    Meta::new(Ast::AssignOp(toks[0].clone().into()), span)
 }

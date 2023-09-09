@@ -9,7 +9,7 @@ pub enum Ast {
     TokenDecl(Box<Gramem>, Box<Gramem /* Ast::IdentPath */>),
     IdentPath(Vec<Gramem /* Sym::Ident */>),
     UseDecl(Box<Gramem /* Ast::IdentPath */>),
-    AssignOp(Sym /* "*=" | "+=" | "?=" | "=" */),
+    AssignOp(Box<Gramem /* "*=" | "+=" | "?=" | "=" */>),
     AttrPrefix(Vec<Meta<Sym> /* "@" | "~" */>),
     AttrSuffix(Sym /* "?" | "*" | "+" */),
     VarPipe(Sym /* Sym::Ident */),
