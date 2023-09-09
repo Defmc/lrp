@@ -14,26 +14,37 @@ pub enum Ast {
     AttrSuffix(Sym /* "?" | "*" | "+" */),
     VarPipe(Sym /* Sym::Ident */),
     TypeDecl(Box<Gramem /* Ast::IdentPath */>),
-    Elm(
-        Option<Box<Gramem /* Ast::AttrPrefix */>>,
-        Box<Gramem /* Ast::ElmBase */>,
-        Option<Box<Gramem /* Ast::AttrSuffix */>>,
-    ),
-    Prod(Vec<(Gramem /* Ast::Elm */, Option<Meta<Sym> /* "|" */>)>),
+    ElmBase(Vec<Gramem /* Ast::RulePipe */>),
+    Elm(Vec<Gramem /* Ast::ElmBase */>),
+    Prod(Vec<Gramem /* Ast::Elm */>),
     RulePipeRepeater(Vec<Gramem /* Ast::Prod */>),
     RulePipe(Vec<Gramem /* Ast::Prod */>),
-    RuleDecl(
-        Meta<Sym>, /* Sym::Ident */
-        Option<Box<Gramem /* Ast::TypeDecl */>>,
-        Box<Gramem /* Ast::AssignOp */>,
-        Box<Gramem /* Ast::RulePipe */>,
-    ),
-    ElmBase(
-        Meta<Sym>, /* Sym::Ident */
-        Option<Box<Gramem /* Ast::VarPipe */>>,
-        Box<Gramem /* Ast::RulePipe */>,
-        Option<Box<Gramem /* Ast::VarPipe */>>,
-    ),
+    RuleDecl(Vec<Gramem>),
+}
+
+impl Ast {
+    pub fn as_sym(&self) -> Sym {
+        match self {
+            Self::Token(s) => s.clone(),
+            Self::EntryPoint(..) => Sym::EntryPoint,
+            Self::Program(..) => Sym::Program,
+            Self::Declaration(..) => Sym::Declaration,
+            Self::TokenDecl(..) => Sym::TokenDecl,
+            Self::IdentPath(..) => Sym::IdentPath,
+            Self::UseDecl(..) => Sym::UseDecl,
+            Self::AssignOp(..) => Sym::AssignOp,
+            Self::AttrPrefix(..) => Sym::AttrPrefix,
+            Self::AttrSuffix(..) => Sym::AttrSuffix,
+            Self::VarPipe(..) => Sym::VarPipe,
+            Self::TypeDecl(..) => Sym::TypeDecl,
+            Self::Elm(..) => Sym::Elm,
+            Self::Prod(..) => Sym::Prod,
+            Self::RulePipeRepeater(..) => Sym::RulePipeRepeater,
+            Self::RulePipe(..) => Sym::RulePipe,
+            Self::RuleDecl(..) => Sym::RuleDecl,
+            Self::ElmBase(..) => Sym::ElmBase,
+        }
+    }
 }
 
 pub type Gramem = Token<Meta<Ast>, Sym>;
@@ -52,7 +63,7 @@ impl<T> Meta<T> {
     }
 }
 
-#[derive(Logos, Debug, PartialEq, PartialOrd, Clone, Ord, Eq)]
+#[derive(Logos, Debug, PartialEq, PartialOrd, Clone, Copy, Ord, Eq)]
 pub enum Sym {
     /// An identifier:
     /// ab A AB a__ a0219 _a1 _
@@ -236,6 +247,7 @@ pub enum Sym {
 }
 
 use lrp::{Dfa, Grammar, Parser, Slr, Token};
+use reduct_map::reduct_map;
 
 #[must_use]
 pub fn grammar() -> Grammar<Sym> {
@@ -309,7 +321,7 @@ pub fn lexer<'source>(
 #[must_use]
 pub fn build_parser<I: Iterator<Item = Gramem>>(buffer: I) -> Dfa<Meta<Ast>, Sym, I> {
     let parser = Slr::new(grammar());
-    parser.dfa(buffer, reduct_map::reduct_map())
+    parser.dfa(buffer, reduct_map())
 }
 
 #[cfg(test)]
