@@ -6,7 +6,7 @@ pub enum Ast {
     EntryPoint(Box<Gramem /* Ast::Program */>),
     Program(Vec<Gramem /* Ast::Declaration */>),
     Declaration(Box<Gramem /* Ast::TokenDecl | Ast::UseDecl | Ast::Ruledecl */>),
-    TokenDecl(Sym, Box<Gramem /* Ast::IdentPath */>),
+    TokenDecl(Box<Gramem>, Box<Gramem /* Ast::IdentPath */>),
     IdentPath(Vec<Gramem /* Sym::Ident */>),
     UseDecl(Box<Gramem /* Ast::IdentPath */>),
     AssignOp(Sym /* "*=" | "+=" | "?=" | "=" */),
