@@ -2,47 +2,55 @@ use logos::Logos;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
 pub enum Ast {
-    Token(Token<Span, Sym>),
+    Token(Sym),
     EntryPoint(Box<Gramem /* Ast::Program */>),
     Program(Vec<Gramem /* Ast::Declaration */>),
     Declaration(Box<Gramem /* Ast::TokenDecl | Ast::UseDecl | Ast::Ruledecl */>),
     TokenDecl(Sym, Box<Gramem /* Ast::IdentPath */>),
-    IdentPath(Vec<Token<Span, Sym> /* Sym::Ident */>),
+    IdentPath(Vec<Gramem /* Sym::Ident */>),
     UseDecl(Box<Gramem /* Ast::IdentPath */>),
-    AssignOp(Token<Span, Sym> /* "*=" | "+=" | "?=" | "=" */),
-    AttrPrefix(Vec<Token<Span, Sym> /* "@" | "~" */>),
-    AttrSuffix(Token<Span, Sym> /* "?" | "*" | "+" */),
-    VarPipe(Token<Span, Sym> /* Sym::Ident */),
+    AssignOp(Sym /* "*=" | "+=" | "?=" | "=" */),
+    AttrPrefix(Vec<Meta<Sym> /* "@" | "~" */>),
+    AttrSuffix(Sym /* "?" | "*" | "+" */),
+    VarPipe(Sym /* Sym::Ident */),
     TypeDecl(Box<Gramem /* Ast::IdentPath */>),
     Elm(
         Option<Box<Gramem /* Ast::AttrPrefix */>>,
         Box<Gramem /* Ast::ElmBase */>,
         Option<Box<Gramem /* Ast::AttrSuffix */>>,
     ),
-    Prod(
-        Vec<(
-            Gramem, /* Ast::Elm */
-            Option<Token<Span, Sym> /* "|" */>,
-        )>,
-    ),
+    Prod(Vec<(Gramem /* Ast::Elm */, Option<Meta<Sym> /* "|" */>)>),
     RulePipeRepeater(Vec<Gramem /* Ast::Prod */>),
     RulePipe(Vec<Gramem /* Ast::Prod */>),
     RuleDecl(
-        Token<Span, Sym>, /* Sym::Ident */
+        Meta<Sym>, /* Sym::Ident */
         Option<Box<Gramem /* Ast::TypeDecl */>>,
         Box<Gramem /* Ast::AssignOp */>,
         Box<Gramem /* Ast::RulePipe */>,
     ),
     ElmBase(
-        Token<Span, Sym>, /* Sym::Ident */
+        Meta<Sym>, /* Sym::Ident */
         Option<Box<Gramem /* Ast::VarPipe */>>,
         Box<Gramem /* Ast::RulePipe */>,
         Option<Box<Gramem /* Ast::VarPipe */>>,
     ),
 }
 
-pub type Gramem = Token<Span, Ast>;
-pub type Span = (usize, usize);
+pub type Gramem = Token<Meta<Ast>, Sym>;
+
+#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
+pub struct Meta<T> {
+    item: T,
+    start: usize,
+    end: usize,
+}
+
+impl<T> Meta<T> {
+    pub fn new(item: T, range: impl Into<(usize, usize)>) -> Self {
+        let (start, end) = range.into();
+        Self { item, start, end }
+    }
+}
 
 #[derive(Logos, Debug, PartialEq, PartialOrd, Clone, Ord, Eq)]
 pub enum Sym {
@@ -293,16 +301,16 @@ pub mod reduct_map;
 #[must_use]
 pub fn lexer<'source>(
     source: &'source <Sym as Logos>::Source,
-) -> impl Iterator<Item = Token<Sym, Span>> + 'source {
+) -> impl Iterator<Item = Gramem> + 'source {
     Sym::lexer(source.as_ref())
         .spanned()
-        .map(|(t, s)| Token::new(t.clone(), (s.start, s.end)))
+        .map(|(t, s)| Token::new(Meta::new(Ast::Token(t.clone()), (s.start, s.end)), t))
 }
 
 #[must_use]
-pub fn build_parser<I: Iterator<Item = Token<(), Sym>>>(buffer: I) -> Dfa<(), Sym, I> {
+pub fn build_parser<I: Iterator<Item = Gramem>>(buffer: I) -> Dfa<Meta<Ast>, Sym, I> {
     let parser = Slr::new(grammar());
-    parser.dfa(buffer, reduct_map::reduct_map())
+    parser.dfa(buffer, todo!() /* reduct_map::reduct_map() */)
 }
 
 #[cfg(test)]
