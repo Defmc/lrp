@@ -2,7 +2,7 @@ use logos::Logos;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
 pub enum Ast {
-    Token(Sym),
+    Token(Sym), /* irreducible */
     EntryPoint(Box<Gramem /* Ast::Program */>),
     Program(Vec<Gramem /* Ast::Declaration */>),
     Declaration(Box<Gramem /* Ast::TokenDecl | Ast::UseDecl | Ast::Ruledecl */>),

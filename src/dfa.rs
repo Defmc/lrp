@@ -58,6 +58,7 @@ where
 pub type Result<T> = BaseResult<T, Error<T>>;
 pub type BaseResult<T, E> = std::result::Result<T, E>;
 
+// TODO: Allow to move the value
 pub type ReductFn<T, M> = fn(&[Token<T, M>]) -> T;
 pub type ReductMap<T, M> = Map<M, Vec<ReductFn<T, M>>>;
 
