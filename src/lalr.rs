@@ -164,8 +164,8 @@ where
                 let raw_kernel = Self::without_look(&kernel);
                 let main_kernel = self.raws.get(&raw_kernel).cloned();
                 let Some(main_kernel) = main_kernel else {
-                continue;
-            };
+                    continue;
+                };
                 let Some(nk) = self.update_closures(&main_kernel, kernel, closures) else {
                     continue;
                 };
@@ -192,7 +192,7 @@ where
         // By definition, there will be always more closure items than kernels (because
         // essencially, every kernel can become a reduction closure or more than one shifting).
         // So it's better to check kernel equality first.
-        let both_kernels = inc.into_iter().chain(main.clone().into_iter()).collect();
+        let both_kernels = inc.into_iter().chain(main.clone()).collect();
         let new_kernel = Self::merged(both_kernels);
 
         if &new_kernel == main {
@@ -202,7 +202,7 @@ where
         let both_closures = self.table.states[state_id]
             .clone()
             .into_iter()
-            .chain(closures.into_iter())
+            .chain(closures)
             .collect();
 
         self.table.kernels.remove(main);
@@ -273,7 +273,7 @@ mod tests {
         assert_eq!(0, lalr.tables().conflicts().count());
 
         for input in grammars_tests::DRAGON_BOOK_INPUTS {
-            assert!(lalr.validate(to_tokens(input.into_iter().cloned())));
+            assert!(lalr.validate(to_tokens(input.iter().cloned())));
         }
     }
 
@@ -283,7 +283,7 @@ mod tests {
         assert_eq!(0, lalr.tables().conflicts().count());
 
         for input in grammars_tests::WIKIPEDIA_INPUTS {
-            assert!(lalr.validate(to_tokens(input.into_iter().cloned())));
+            assert!(lalr.validate(to_tokens(input.iter().cloned())));
         }
     }
 
@@ -295,7 +295,7 @@ mod tests {
 
         for input in grammars_tests::UCALGARY_UNI_OTH_LR1_INPUTS {
             assert_eq!(
-                lalr.validate(to_tokens(input.into_iter().cloned())),
+                lalr.validate(to_tokens(input.iter().cloned())),
                 !grammars_tests::NON_LALR_UCALGARY_UNI_OTH_LR1_INPUTS.contains(input)
             );
         }
@@ -307,7 +307,7 @@ mod tests {
         assert_eq!(0, lalr.tables().conflicts().count());
 
         for input in grammars_tests::SEROKELL_INPUTS {
-            assert!(lalr.validate(to_tokens(input.into_iter().cloned())));
+            assert!(lalr.validate(to_tokens(input.iter().cloned())));
         }
     }
 
@@ -317,7 +317,7 @@ mod tests {
         assert_eq!(0, lalr.tables().conflicts().count());
 
         for input in grammars_tests::PUNCS_INPUTS {
-            assert!(lalr.validate(to_tokens(input.into_iter().cloned())));
+            assert!(lalr.validate(to_tokens(input.iter().cloned())));
         }
     }
 
@@ -327,7 +327,7 @@ mod tests {
         assert_eq!(0, lalr.tables().conflicts().count());
 
         for input in grammars_tests::SCANNER_INPUTS {
-            assert!(lalr.validate(to_tokens(input.into_iter().cloned())));
+            assert!(lalr.validate(to_tokens(input.iter().cloned())));
         }
     }
 }

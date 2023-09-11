@@ -165,7 +165,7 @@ mod tests {
         assert_eq!(0, clr.tables().conflicts().count());
 
         for input in grammars_tests::DRAGON_BOOK_INPUTS {
-            assert!(clr.validate(to_tokens(input.into_iter().cloned())));
+            assert!(clr.validate(to_tokens(input.iter().cloned())));
         }
     }
 
@@ -175,7 +175,7 @@ mod tests {
         assert_eq!(0, clr.tables().conflicts().count());
 
         for input in grammars_tests::WIKIPEDIA_INPUTS {
-            assert!(clr.validate(to_tokens(input.into_iter().cloned())));
+            assert!(clr.validate(to_tokens(input.iter().cloned())));
         }
     }
 
@@ -186,7 +186,7 @@ mod tests {
         assert_eq!(0, clr.tables().conflicts().count());
 
         for input in grammars_tests::UCALGARY_UNI_OTH_LR1_INPUTS {
-            assert!(clr.validate(to_tokens(input.into_iter().cloned())));
+            assert!(clr.validate(to_tokens(input.iter().cloned())));
         }
     }
 
@@ -196,7 +196,7 @@ mod tests {
         assert_eq!(0, clr.tables().conflicts().count());
 
         for input in grammars_tests::SEROKELL_INPUTS {
-            assert!(clr.validate(to_tokens(input.into_iter().cloned())));
+            assert!(clr.validate(to_tokens(input.iter().cloned())));
         }
     }
 
@@ -206,7 +206,7 @@ mod tests {
         assert_eq!(0, clr.tables().conflicts().count());
 
         for input in grammars_tests::PUNCS_INPUTS {
-            assert!(clr.validate(to_tokens(input.into_iter().cloned())));
+            assert!(clr.validate(to_tokens(input.iter().cloned())));
         }
     }
 
@@ -216,7 +216,7 @@ mod tests {
         assert_eq!(0, clr.tables().conflicts().count());
 
         for input in grammars_tests::SCANNER_INPUTS {
-            assert!(clr.validate(to_tokens(input.into_iter().cloned())));
+            assert!(clr.validate(to_tokens(input.iter().cloned())));
         }
     }
 }
