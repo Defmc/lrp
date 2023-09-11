@@ -298,11 +298,10 @@ pub fn grammar() -> Grammar<Sym> {
 
 pub mod reduct_map;
 
-#[must_use]
 pub fn lexer<'source>(
     source: &'source <Sym as Logos>::Source,
 ) -> impl Iterator<Item = Gramem> + 'source {
-    Sym::lexer(source.as_ref())
+    Sym::lexer(source)
         .spanned()
         .map(|(t, s)| Token::new(Meta::new(Ast::Token(t.clone()), (s.start, s.end)), t))
 }
@@ -310,7 +309,7 @@ pub fn lexer<'source>(
 #[must_use]
 pub fn build_parser<I: Iterator<Item = Gramem>>(buffer: I) -> Dfa<Meta<Ast>, Sym, I> {
     let parser = Slr::new(grammar());
-    parser.dfa(buffer, todo!() /* reduct_map::reduct_map() */)
+    parser.dfa(buffer, reduct_map::reduct_map())
 }
 
 #[cfg(test)]
