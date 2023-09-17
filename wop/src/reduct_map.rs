@@ -4,30 +4,32 @@ use lrp::{ReductMap, Token};
 pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {
     // pub type ReductFn<T, M> = fn(&[Token<T, M>]) -> T;
     // pub type ReductMap<T, M> = Map<M, Vec<ReductFn<T, M>>>;
-    /* ReductMap::from([(
-        Sym,
-        vec![
-            fn2_with_ref_to_tokens,
-            fn3_with_ref_to_tokens,
-        ],
-    )]); */
 
     let mut map = ReductMap::new();
     map.insert(Sym::EntryPoint, vec![entry_point]);
-    map.insert(Sym::Program, vec![program_rec; 2]);
+    map.insert(Sym::Program, vec![program_rec, program]);
     map.insert(Sym::Declaration, vec![decl; 3]);
     map.insert(Sym::TokenDecl, vec![token_decl; 2]);
-    map.insert(Sym::IdentPath, vec![ident_path; 2]);
+    map.insert(Sym::IdentPath, vec![ident_path_rec, ident_path]);
     map.insert(Sym::UseDecl, vec![use_decl]);
     map.insert(Sym::AssignOp, vec![assign_op; 4]);
-    map.insert(Sym::AttrPrefix, vec![attr_prefix; 4]);
+    map.insert(
+        Sym::AttrPrefix,
+        vec![attr_prefix, attr_prefix, attr_prefix_rec, attr_prefix_rec],
+    );
     map.insert(Sym::AttrSuffix, vec![attr_suffix; 3]);
     map.insert(Sym::VarPipe, vec![var_pipe]);
     map.insert(Sym::TypeDecl, vec![type_decl]);
     map.insert(Sym::ElmBase, vec![elm_base; 6]);
-    map.insert(Sym::Elm, vec![elm; 4]);
-    map.insert(Sym::Prod, vec![prod; 4]);
-    map.insert(Sym::RulePipeRepeater, vec![rule_pipe_repeater; 4]);
+    map.insert(
+        Sym::Elm,
+        vec![elm_with_all, elm_with_suffix, elm_with_prefix, elm],
+    );
+    map.insert(Sym::Prod, vec![prod_rec, prod_expr_rec, prod_expr, prod]);
+    map.insert(
+        Sym::RulePipeRepeater,
+        vec![rule_pipe_repeater_rec, rule_pipe_repeater],
+    );
     map.insert(Sym::RulePipe, vec![rule_pipe; 4]);
     map.insert(Sym::RuleDecl, vec![rule_decl; 2]);
     map
