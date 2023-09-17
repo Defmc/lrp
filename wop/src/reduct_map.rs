@@ -79,6 +79,20 @@ fn token_decl(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     Meta::new(Ast::TokenDecl(token.into(), ident.into()), span)
 }
 
+fn ident_path_rec(path: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    let mut program = path[0].item.clone();
+    let start = program.start;
+    let end = path[2].item.end;
+    match program.item {
+        Ast::IdentPath(ref mut vec) => {
+            debug_assert!(matches!(path[2].ty, Sym::Ident));
+            vec.push(path[2].clone())
+        }
+        _ => unreachable!(),
+    };
+    Meta::new(program.item, (start, end))
+}
+
 fn ident_path(path: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     let start = path.first().unwrap().item.start;
     let end = path.last().unwrap().item.end;
