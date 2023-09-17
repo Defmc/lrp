@@ -15,8 +15,17 @@ pub enum Ast {
     VarPipe(Sym /* Sym::Ident */),
     TypeDecl(Box<Gramem /* Ast::IdentPath */>),
     ElmBase(Vec<Gramem /* Ast::RulePipe */>),
-    Elm(Vec<Gramem /* Ast::ElmBase */>),
-    Prod(Vec<Gramem /* Ast::Elm */>),
+    Elm(
+        Option<Box<Gramem>>,
+        Box<Gramem /* Ast::ElmBase */>,
+        Option<Box<Gramem>>,
+    ),
+    Prod(
+        Vec<(
+            Gramem, /* Ast::Elm */
+            Option<Gramem /* Sym::CodeExpr */>,
+        )>,
+    ),
     RulePipeRepeater(Vec<Gramem /* Ast::Prod */>),
     RulePipe(Vec<Gramem /* Ast::Prod */>),
     RuleDecl(Vec<Gramem>),
