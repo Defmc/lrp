@@ -110,6 +110,22 @@ fn assign_op(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     Meta::new(Ast::AssignOp(toks[0].clone().into()), span)
 }
 
+fn attr_prefix_rec(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    let mut program = toks[1].item.clone();
+    let end = program.end;
+    let start = toks[0].item.start;
+    match program.item {
+        Ast::AttrPrefix(ref mut vec) => {
+            debug_assert!(matches!(toks[1].ty, Sym::MetaAttr | Sym::BoxAttr));
+            let sym = toks[0].item.item.as_sym(); // TODO: Couldn't it be `.ty`?
+            let span = (toks[0].item.start, toks[0].item.end);
+            vec.push(Meta::new(sym, span))
+        }
+        _ => unreachable!(),
+    };
+    Meta::new(program.item, (start, end))
+}
+
 fn attr_prefix(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     let start = toks.first().unwrap().item.start;
     let end = toks.last().unwrap().item.end;
