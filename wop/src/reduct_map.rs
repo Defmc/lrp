@@ -36,16 +36,31 @@ pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {
 }
 
 fn entry_point(program: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    debug_assert!(matches!(program[0].ty, Sym::Program));
     let program = program[0].item.clone();
     let span = (program.start, program.end);
     Meta::new(program.item, span)
 }
 
-fn program_rec(expressions: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
-    let start = expressions.first().unwrap().item.start;
-    let end = expressions.last().unwrap().item.end;
-    let program = expressions.into_iter().cloned().collect();
-    Meta::new(Ast::Program(program), (start, end))
+fn program_rec(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    let mut program = toks[0].item.clone();
+    let start = program.start;
+    let end = toks[1].item.end;
+    match program.item {
+        Ast::Program(ref mut vec) => {
+            debug_assert!(matches!(toks[1].ty, Sym::Declaration));
+            vec.push(toks[1].clone())
+        }
+        _ => unreachable!(),
+    };
+    Meta::new(program.item, (start, end))
+}
+
+fn program(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    debug_assert!(matches!(toks[0].ty, Sym::Declaration));
+    let program = toks[0].clone();
+    let span = (program.item.start, program.item.end);
+    Meta::new(Ast::Program(vec![program]), span)
 }
 
 fn decl(decl: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
