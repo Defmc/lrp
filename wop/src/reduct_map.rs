@@ -225,7 +225,21 @@ fn prod(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     Meta::new(Ast::Prod(vec![(elm, None)]), (start, end))
 }
 
-fn rule_pipe_repeater(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+fn prod_expr_rec(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    let mut rec = toks[0].item.clone();
+    let start = rec.start;
+    let elm = toks[1].clone();
+    let code_expr = toks[2].clone();
+    let end = code_expr.item.end;
+    match rec.item {
+        Ast::Prod(ref mut vec) => {
+            vec.push((elm, Some(code_expr.into())));
+        }
+        _ => unreachable!(),
+    }
+    Meta::new(rec.item, (start, end))
+}
+
     let start = toks.first().unwrap().item.start;
     let end = toks.last().unwrap().item.end;
     let program = toks.into_iter().cloned().collect();
