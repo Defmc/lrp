@@ -175,10 +175,34 @@ fn elm_base(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
 }
 
 fn elm(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
-    let start = toks.first().unwrap().item.start;
-    let end = toks.last().unwrap().item.end;
-    let program = toks.into_iter().cloned().collect();
-    Meta::new(Ast::Elm(program), (start, end))
+    let elm = toks[0].clone();
+    let span = (elm.item.start, elm.item.end);
+    Meta::new(Ast::Elm(None, elm.into(), None), span) // TODO: Box clones
+}
+
+fn elm_with_prefix(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    let prefix = toks[0].clone();
+    let elm = toks[1].clone();
+    let span = (prefix.item.start, elm.item.end);
+    Meta::new(Ast::Elm(Some(prefix.into()), elm.into(), None), span)
+}
+
+fn elm_with_suffix(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    let elm = toks[0].clone();
+    let suffix = toks[1].clone();
+    let span = (elm.item.start, suffix.item.end);
+    Meta::new(Ast::Elm(None, elm.into(), Some(suffix.into())), span)
+}
+
+fn elm_with_all(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    let prefix = toks[0].clone();
+    let elm = toks[1].clone();
+    let suffix = toks[2].clone();
+    let span = (prefix.item.start, suffix.item.end);
+    Meta::new(
+        Ast::Elm(Some(prefix.into()), elm.into(), Some(suffix.into())),
+        span,
+    )
 }
 
 fn prod(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
