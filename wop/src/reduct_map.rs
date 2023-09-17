@@ -64,6 +64,10 @@ fn program(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
 }
 
 fn decl(decl: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    debug_assert!(matches!(
+        decl[0].ty,
+        Sym::TokenDecl | Sym::UseDecl | Sym::RuleDecl
+    ));
     let span = (decl[0].item.start, decl[0].item.end);
     Meta::new(Ast::Declaration(decl[0].clone().into()), span)
 }
