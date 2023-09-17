@@ -205,11 +205,24 @@ fn elm_with_all(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     )
 }
 
+fn prod_rec(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    let mut rec = toks[0].item.clone();
+    let start = rec.start;
+    let elm = toks[1].clone();
+    let end = elm.item.end;
+    match rec.item {
+        Ast::Prod(ref mut vec) => {
+            vec.push((elm, None));
+        }
+        _ => unreachable!(),
+    }
+    Meta::new(rec.item, (start, end))
+}
 fn prod(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
-    let start = toks.first().unwrap().item.start;
-    let end = toks.last().unwrap().item.end;
-    let program = toks.into_iter().cloned().collect();
-    Meta::new(Ast::Prod(program), (start, end))
+    let elm = toks[0].clone();
+    let start = elm.item.start;
+    let end = elm.item.end;
+    Meta::new(Ast::Prod(vec![(elm, None)]), (start, end))
 }
 
 fn rule_pipe_repeater(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
