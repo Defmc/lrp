@@ -117,7 +117,7 @@ fn attr_prefix_rec(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     match program.item {
         Ast::AttrPrefix(ref mut vec) => {
             debug_assert!(matches!(toks[1].ty, Sym::MetaAttr | Sym::BoxAttr));
-            let sym = toks[0].item.item.as_sym(); // TODO: Couldn't it be `.ty`?
+            let sym = toks[0].ty;
             let span = (toks[0].item.start, toks[0].item.end);
             vec.push(Meta::new(sym, span))
         }
@@ -131,35 +131,19 @@ fn attr_prefix(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     let end = toks.last().unwrap().item.end;
     let program = toks
         .into_iter()
-        .map(|t| Meta::new(t.item.item.as_sym(), (t.item.start, t.item.end)))
+        .map(|t| Meta::new(t.ty, (t.item.start, t.item.end)))
         .collect();
     Meta::new(Ast::AttrPrefix(program), (start, end))
 }
 
 fn attr_suffix(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     let span = (toks[0].item.start, toks[0].item.end);
-    Meta::new(
-        Ast::AttrSuffix(
-            toks[0]
-                .item /* TODO: couldn't it be `ty` directly */
-                .item
-                .as_sym(),
-        ),
-        span,
-    )
+    Meta::new(Ast::AttrSuffix(toks[0].ty), span)
 }
 
 fn var_pipe(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     let span = (toks[0].item.start, toks[0].item.end);
-    Meta::new(
-        Ast::VarPipe(
-            toks[0]
-                .item /* TODO: couldn't it be `ty` directly */
-                .item
-                .as_sym(),
-        ),
-        span,
-    )
+    Meta::new(Ast::VarPipe(toks[0].ty), span)
 }
 
 fn type_decl(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
@@ -177,7 +161,7 @@ fn elm_base(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
 fn elm(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     let elm = toks[0].clone();
     let span = (elm.item.start, elm.item.end);
-    Meta::new(Ast::Elm(None, elm.into(), None), span) // TODO: Box clones
+    Meta::new(Ast::Elm(None, elm.into(), None), span)
 }
 
 fn elm_with_prefix(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
@@ -249,13 +233,6 @@ fn prod_expr(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
 }
 
 fn rule_pipe_repeater_rec(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
-    let start = toks.first().unwrap().item.start;
-    let end = toks.last().unwrap().item.end;
-    let program = toks.into_iter().cloned().collect();
-    Meta::new(Ast::RulePipeRepeater(program), (start, end))
-}
-
-fn rule_pipe_repeater(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     let mut program = toks[0].item.clone();
     let start = program.start;
     let end = toks[1].item.end;
@@ -267,6 +244,13 @@ fn rule_pipe_repeater(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
         _ => unreachable!(),
     };
     Meta::new(program.item, (start, end))
+}
+
+fn rule_pipe_repeater(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
+    let start = toks.first().unwrap().item.start;
+    let end = toks.last().unwrap().item.end;
+    let program = toks.into_iter().cloned().collect();
+    Meta::new(Ast::RulePipeRepeater(program), (start, end))
 }
 
 fn rule_pipe(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
