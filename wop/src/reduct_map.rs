@@ -161,7 +161,7 @@ fn elm_base(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
 fn elm(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     let elm = toks[0].clone();
     let span = (elm.item.start, elm.item.end);
-    Meta::new(Ast::Elm(None, elm.into(), None), span)
+    Meta::new(Ast::Elm(None, elm.into(), None), span) // TODO: Box clones
 }
 
 fn elm_with_prefix(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {

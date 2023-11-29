@@ -1,8 +1,8 @@
 use std::fs;
 
 use logos::Logos;
-use lrp::{Clr, Parser, Token};
-use wop::{Ast, Meta};
+use lrp::Token;
+use wop::{Ast, Meta, Sym, Gramem};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::env::args().nth(1).unwrap();
@@ -29,6 +29,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
     };
-    println!("{:#?}", dfa.items[0]);
+    // println!("{:?}", dfa.items[0]);
+    nested_print(&dfa.items[0], 0);
     res
+}
+
+fn nested_print(tok: &Gramem, lvl: usize) {
+    let tabs = "\t".repeat(lvl);
+    print!("{tabs}: ")
+    match tok.ty {
+    }
 }
