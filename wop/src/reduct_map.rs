@@ -1,4 +1,4 @@
-use crate::{Ast, Meta, Sym};
+use crate::{AssignOp, Ast, Meta, Sym};
 use lrp::{ReductMap, Token};
 
 pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {
@@ -107,7 +107,15 @@ fn use_decl(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
 
 fn assign_op(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {
     let span = (toks[0].item.start, toks[0].item.end);
-    Meta::new(Ast::AssignOp(toks[0].clone().into()), span)
+    println!("toks[0]: {:?}", toks[0]);
+    let op = match toks[0].ty {
+        Sym::NormalSpec => AssignOp::Normal,
+        Sym::RepSpec => AssignOp::Repeated,
+        Sym::VarSpec => AssignOp::Variadic,
+        Sym::OptSpec => AssignOp::Optional,
+        _ => unreachable!(),
+    };
+    Meta::new(Ast::AssignOp(op), span)
 }
 
 fn attr_prefix_rec(toks: &[Token<Meta<Ast>, Sym>]) -> Meta<Ast> {

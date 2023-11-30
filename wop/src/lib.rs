@@ -9,7 +9,7 @@ pub enum Ast {
     TokenDecl(Box<Gramem>, Box<Gramem /* Ast::IdentPath */>),
     IdentPath(Vec<Gramem /* Sym::Ident */>),
     UseDecl(Box<Gramem /* Ast::IdentPath */>),
-    AssignOp(Box<Gramem /* "*=" | "+=" | "?=" | "=" */>),
+    AssignOp(AssignOp),
     AttrPrefix(Vec<Meta<Sym> /* "@" | "~" */>),
     AttrSuffix(Sym /* "?" | "*" | "+" */),
     VarPipe(Sym /* Sym::Ident */),
@@ -31,38 +31,21 @@ pub enum Ast {
     RuleDecl(Vec<Gramem>),
 }
 
-impl Ast {
-    pub fn as_sym(&self) -> Sym {
-        match self {
-            Self::Token(s) => s.clone(),
-            Self::EntryPoint(..) => Sym::EntryPoint,
-            Self::Program(..) => Sym::Program,
-            Self::Declaration(..) => Sym::Declaration,
-            Self::TokenDecl(..) => Sym::TokenDecl,
-            Self::IdentPath(..) => Sym::IdentPath,
-            Self::UseDecl(..) => Sym::UseDecl,
-            Self::AssignOp(..) => Sym::AssignOp,
-            Self::AttrPrefix(..) => Sym::AttrPrefix,
-            Self::AttrSuffix(..) => Sym::AttrSuffix,
-            Self::VarPipe(..) => Sym::VarPipe,
-            Self::TypeDecl(..) => Sym::TypeDecl,
-            Self::Elm(..) => Sym::Elm,
-            Self::Prod(..) => Sym::Prod,
-            Self::RulePipeRepeater(..) => Sym::RulePipeRepeater,
-            Self::RulePipe(..) => Sym::RulePipe,
-            Self::RuleDecl(..) => Sym::RuleDecl,
-            Self::ElmBase(..) => Sym::ElmBase,
-        }
-    }
-}
-
 pub type Gramem = Token<Meta<Ast>, Sym>;
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub enum AssignOp {
+    Variadic, // *=
+    Optional, // ?=
+    Repeated, // +=
+    Normal,
+}
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
 pub struct Meta<T> {
-    item: T,
-    start: usize,
-    end: usize,
+    pub item: T,
+    pub start: usize,
+    pub end: usize,
 }
 
 impl<T> Meta<T> {
