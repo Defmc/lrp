@@ -1,4 +1,7 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    ops::{Index, Range},
+};
 
 pub mod grammar;
 pub use grammar::*;
@@ -65,6 +68,18 @@ pub use tabler::*;
 pub mod pos;
 pub use pos::*;
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct Meta<T> {
+    pub item: T,
+    pub span: Span,
+}
+
+impl<T> Meta<T> {
+    pub fn new(item: T, span: Span) -> Self {
+        Self { item, span }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Token<T, M> {
     pub item: T,
@@ -85,6 +100,42 @@ impl<M> Token<(), M> {
 
 pub fn to_tokens<T: Clone>(it: impl IntoIterator<Item = T>) -> impl Iterator<Item = Token<(), T>> {
     it.into_iter().map(|i| Token::new((), i))
+}
+
+/// A exclusive Span struct, for indexing metadata on Tokens.
+/// start is where it BEGINS, end is UNTIL collect.
+/// ```
+/// use lrp::Span;
+/// let i: Span = Span::new(0, 2);
+/// let src = [0, 1, 2, 3, 4];
+/// assert_eq!(i.from_source(&src), &[0, 1]);
+/// ```
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
+pub struct Span {
+    pub start: usize,
+    pub end: usize,
+}
+
+impl Span {
+    pub const fn new(start: usize, end: usize) -> Self {
+        Self { start, end }
+    }
+
+    pub fn from_source<'a, T: Index<Range<usize>> + ?Sized>(
+        &'a self,
+        slice: &'a T,
+    ) -> &'a T::Output {
+        slice.index(self.start..self.end)
+    }
+}
+
+impl From<(usize, usize)> for Span {
+    fn from(value: (usize, usize)) -> Self {
+        Self {
+            start: value.0,
+            end: value.1,
+        }
+    }
 }
 
 #[macro_export]

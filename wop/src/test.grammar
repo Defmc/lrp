@@ -1,12 +1,12 @@
 use wop::Token;
 
-token "(" Token::OpenCurly;
-token ")" Token::CloneCurly;
-token "*" Token::MulOp;
-token "+" Token::AddOp;
+//token "(" Token::OpenCurly;
+//token ")" Token::CloneCurly;
+//token "*" Token::MulOp;
+//token "+" Token::AddOp;
 
-Term = "(" Add ")" | Str | Int;
+//Term = "(" Add ")" | Str | Int;
 
-Add = Add "+" Factor | Factor;
+//Add = Add "+" Factor | Factor;
 
-Factor = Factor "*" Term | Term;
+//Factor = Factor "*" Term | Term;
