@@ -1,8 +1,8 @@
-use std::fs;
+use std::{fs, time::Instant};
 
 use logos::Logos;
-use lrp::Token;
-use wop::{Ast, Gramem, Meta};
+use lrp::{Meta, Span, Token};
+use wop::{builder::Builder, Ast, Gramem};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::env::args().nth(1).unwrap();
@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let lexer = wop::Sym::lexer(&file).spanned().map(|(m, s)| {
         println!("\"{}\" ({m:?}) [{s:?}]", &file[s.clone()]);
         copy.push(&file[s.clone()]);
-        Token::new(Meta::new(Ast::Token(m), (s.start, s.end)), m)
+        Token::new(Meta::new(Ast::Token(m), Span::new(s.start, s.end)), m)
     });
 
     let mut dfa = wop::build_parser(lexer);
@@ -29,8 +29,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Ok(())
         }
     };
-    //println!("{:#?}", dfa.items[0]);
+    println!("PARSING OUTPUT:");
     print_nested(&dfa.items[0], "", 0, &file);
+
+    let mut builder = Builder::default();
+    let start = Instant::now();
+    builder.process(&dfa.items[0], &file);
+    println!("CODE BUILDER OUTPUT (after {:?}):", start.elapsed());
+
+    println!("\x1B[1;33m{}\x1B[0;m", builder.dump(&file));
     res
 }
 
@@ -47,10 +54,10 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
     }
 
     println!(
-        "{}{prefix}{:?}: \x1B[1;33m{:?}\x1B[0;m",
+        "{}{prefix}{:?}: \x1B[1;33m\"{}\"\x1B[0;m",
         TAB_C.repeat(lvl),
         tok.ty,
-        txt.get(tok.item.start..tok.item.end).unwrap()
+        txt.get(tok.item.span.start..tok.item.span.end).unwrap()
     );
     let lvl = lvl + 1;
 
@@ -65,7 +72,7 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
         }
         Ast::IdentPath(gs) => print_iter_nested(gs.iter(), "", lvl, txt),
         Ast::UseDecl(g) => print_nested(g.as_ref(), "", lvl, txt),
-        Ast::AssignOp(op) => println!("{}{op:?}", TAB_C.repeat(lvl)),
+        Ast::AssignOp(s) => println!("{}{s:?}", TAB_C.repeat(lvl)),
         Ast::AttrPrefix(ss) => {
             let tabs = TAB_C.repeat(lvl);
             ss.iter().for_each(|s| println!("{tabs}{s:?}"));

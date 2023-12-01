@@ -1,4 +1,7 @@
 use logos::Logos;
+use lrp::{Meta, Span};
+
+pub mod builder;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
 pub enum Ast {
@@ -6,10 +9,13 @@ pub enum Ast {
     EntryPoint(Box<Gramem /* Ast::Program */>),
     Program(Vec<Gramem /* Ast::Declaration */>),
     Declaration(Box<Gramem /* Ast::TokenDecl | Ast::UseDecl | Ast::Ruledecl */>),
-    TokenDecl(Box<Gramem>, Box<Gramem /* Ast::IdentPath */>),
-    IdentPath(Vec<Gramem /* Sym::Ident */>),
+    TokenDecl(
+        Box<Gramem>, /* Sym::Ident */
+        Box<Gramem /* Ast::IdentPath */>,
+    ),
+    IdentPath(Vec<Gramem> /* Sym::Ident */),
     UseDecl(Box<Gramem /* Ast::IdentPath */>),
-    AssignOp(AssignOp),
+    AssignOp(Sym),
     AttrPrefix(Vec<Meta<Sym> /* "@" | "~" */>),
     AttrSuffix(Sym /* "?" | "*" | "+" */),
     VarPipe(Sym /* Sym::Ident */),
@@ -32,28 +38,6 @@ pub enum Ast {
 }
 
 pub type Gramem = Token<Meta<Ast>, Sym>;
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub enum AssignOp {
-    Variadic, // *=
-    Optional, // ?=
-    Repeated, // +=
-    Normal,
-}
-
-#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
-pub struct Meta<T> {
-    pub item: T,
-    pub start: usize,
-    pub end: usize,
-}
-
-impl<T> Meta<T> {
-    pub fn new(item: T, range: impl Into<(usize, usize)>) -> Self {
-        let (start, end) = range.into();
-        Self { item, start, end }
-    }
-}
 
 #[derive(Logos, Debug, PartialEq, PartialOrd, Clone, Copy, Ord, Eq)]
 pub enum Sym {
@@ -110,17 +94,6 @@ pub enum Sym {
     /// ``
     #[token("+=")]
     RepSpec,
-
-    /// An optional specific rule. e.g:
-    /// ``
-    ///     RuleType ?= "?" | "+" | "*";
-    /// ``
-    /// It's the same of:
-    /// ``
-    ///     RuleType = ("?" | "+" | "*")?;
-    /// ``
-    #[token("?=")]
-    OptSpec,
 
     /// Type or ident specifier. Used to define the return type of a or a gramem variable name
     /// for parsing expression.
@@ -260,7 +233,7 @@ pub fn grammar() -> Grammar<Sym> {
 
     UseDecl -> UseWord IdentPath,
 
-    AssignOp -> VarSpec | RepSpec | OptSpec | NormalSpec,
+    AssignOp -> VarSpec | RepSpec | NormalSpec,
 
     AttrPrefix -> MetaAttr | BoxAttr | MetaAttr AttrPrefix | BoxAttr AttrPrefix,
 
@@ -305,9 +278,12 @@ pub mod reduct_map;
 pub fn lexer<'source>(
     source: &'source <Sym as Logos>::Source,
 ) -> impl Iterator<Item = Gramem> + 'source {
-    Sym::lexer(source)
-        .spanned()
-        .map(|(t, s)| Token::new(Meta::new(Ast::Token(t.clone()), (s.start, s.end)), t))
+    Sym::lexer(source).spanned().map(|(t, s)| {
+        Token::new(
+            Meta::new(Ast::Token(t.clone()), Span::new(s.start, s.end)),
+            t,
+        )
+    })
 }
 
 #[must_use]
