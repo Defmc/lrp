@@ -34,7 +34,7 @@ impl Builder {
         let program = Self::get_program_instructions(&ast);
         for decl in program.iter() {
             match &decl.item.item {
-                Ast::Rule(rule_name, rule) => self.rule_decl(rule_name, rule),
+                Ast::RuleDecl(rule_name, rule) => self.rule_decl(rule_name, rule),
                 Ast::Import(decl) => self.use_decl(*decl),
                 Ast::Alias(tk, alias) => self.token_decl(*tk, *alias, src),
                 c => unreachable!("unexpected {c:?} in code builder"),
@@ -42,7 +42,7 @@ impl Builder {
         }
     }
 
-    fn rule_decl(&mut self, rule_name: &Span, rule: &[Span]) {
+    fn rule_decl(&mut self, rule_name: &Span, rule: &[Vec<Gramem>]) {
         // let rule_name = rule[0];
         // let rule: Vec<_> = rule.iter().skip(2).cloned().collect();
         todo!()

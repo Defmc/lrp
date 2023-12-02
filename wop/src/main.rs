@@ -1,5 +1,5 @@
 use logos::Logos;
-use lrp::{Meta, Span, Token};
+use lrp::{Meta, Parser, Span, Token};
 use std::{fs, time::Instant};
 use wop::{builder::Builder, Ast, Gramem};
 
@@ -56,14 +56,61 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
         "{}{prefix}{:?}: \x1B[1;33m\"{}\"\x1B[0;m",
         TAB_C.repeat(lvl),
         tok.ty,
-        txt.get(tok.item.span.start..tok.item.span.end).unwrap()
+        tok.item.span.from_source(txt)
     );
     let lvl = lvl + 1;
+    let tab_spc = TAB_C.repeat(lvl);
 
     match &tok.item.item {
         Ast::Token(_) => (),
         Ast::EntryPoint(g) => print_nested(g.as_ref(), "", lvl, txt),
-        Ast::Program(gs) => print_iter_nested(gs.iter(), "", lvl, txt),
-        _ => unreachable!(),
+        Ast::Program(gs) => print_iter_nested(gs.iter(), "- ", lvl, txt),
+        Ast::RuleDecl(g, gs) => {
+            println!(
+                "{tab_spc}rule_name: \x1B[1;33m\"{}\"\x1B[0;m",
+                g.from_source(txt)
+            );
+            for p in gs {
+                print!("{tab_spc}-");
+                for e in p {
+                    print!(" {:?}", e.ty);
+                }
+                println!(
+                    ": \x1B[1;33m\"{}\"\x1B[0;m",
+                    Span::new(p[0].item.span.start, p.last().unwrap().item.span.end)
+                        .from_source(txt)
+                );
+            }
+        }
+        Ast::Rule(gs) => {
+            for p in gs {
+                print!("{tab_spc}-");
+                for e in p {
+                    print!(" {:?}", e.ty);
+                }
+                println!(
+                    ": \x1B[1;33m\"{}\"\x1B[0;m",
+                    Span::new(p[0].item.span.start, p.last().unwrap().item.span.end)
+                        .from_source(txt)
+                );
+            }
+        }
+        Ast::RulePipe(gs) => {
+            print!("{tab_spc}-");
+            for e in gs {
+                print!(" {:?}", e.ty);
+            }
+            println!(
+                ": \x1B[1;33m\"{}\"\x1B[0;m",
+                Span::new(gs[0].item.span.start, gs.last().unwrap().item.span.end).from_source(txt)
+            );
+        }
+        Ast::Import(g) => println!("{tab_spc}|> path: {}", g.from_source(txt)),
+        Ast::Alias(g, h) => {
+            println!("{tab_spc}|> alias: {}", g.from_source(txt));
+            println!("{tab_spc}|> definition: {}", h.from_source(txt));
+        }
+        Ast::IdentPath(g) => println!("{tab_spc} {}", g.from_source(txt)),
+        // _ => unreachable!(),
     }
 }

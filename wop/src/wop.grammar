@@ -15,36 +15,3 @@ alias StrLit Token::StrLit;
 alias CodeExpr Token::CodeExpr;
 
 Program = Program Declaration ";" | Declaration ";";
-
-Declaration = TokenDecl | UseDecl | RuleDecl;
-
-TokenDecl = "token" (StrLit | Ident) IdentPath;
-
-IdentPath = (IdentPath "::")? Ident;
-
-UseDecl = "use" IdentPath;
-
-AssignOp = "*=" | "+=" | "?=" | "=";
-
-AttrPrefix = "@"
-    | "~"
-    | "@" AttrPrefix
-    | "~" AttrPrefix;
-
-AttrSuffix = "?" | "*" | "+";
-
-VarPipe = ":" Ident;
-
-TypeDecl = ":" IdentPath;
-
-ElmBase = (Ident | StrLit) VarPipe?
-    | "(" RulePipe ")" VarPipe?;
-
-Elm = AttrPrefix? ElmBase AttrSuffix?;
-
-// FIXME: Couldn't it be variadic?
-Prod += Elm CodeExpr?;
-
-RulePipe = (Prod "|")* Prod;
-
-RuleDecl = Ident TypeDecl? AssignOp RulePipe;

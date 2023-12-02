@@ -8,8 +8,9 @@ pub mod builder;
 pub enum Ast {
     Token(Sym),
     EntryPoint(Box<Gramem>),
-    Program(Vec<Gramem /* Ast::Rule | Ast::Import | Ast::Alias */>),
-    Rule(Span, Vec<Span>),
+    Program(Vec<Gramem /* Ast::RuleDecl | Ast::Import | Ast::Alias */>),
+    RuleDecl(SrcRef, Vec<Vec<Gramem>>),
+    Rule(Vec<Vec<Gramem>>),
     RulePipe(Vec<Gramem>),
     Import(SrcRef),
     Alias(SrcRef, SrcRef),
@@ -76,6 +77,7 @@ pub enum Sym {
     Import,
     Alias,
     RulePipe,
+    RuleDecl,
     IdentPath,
 }
 
@@ -91,15 +93,18 @@ pub fn grammar() -> Grammar<Sym> {
         EntryPoint -> Program,
         Program -> Program Alias Sc
             | Program Import Sc
-            | Program Rule Sc
+            | Program RuleDecl Sc
             | Alias Sc
             | Import Sc
-            | Rule Sc,
+            | RuleDecl Sc,
         IdentPath -> IdentPath PathAccess Ident
             | Ident,
+        RuleDecl -> Ident Assign Rule,
         Rule -> Rule Pipe RulePipe
             | RulePipe,
         RulePipe -> RulePipe Ident
+            | RulePipe StrLit
+            | StrLit
             | Ident,
         Import -> UseWord IdentPath,
         Alias -> AliasWord Ident IdentPath
