@@ -1,7 +1,6 @@
-use std::{fs, time::Instant};
-
 use logos::Logos;
 use lrp::{Meta, Span, Token};
+use std::{fs, time::Instant};
 use wop::{builder::Builder, Ast, Gramem};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -65,46 +64,6 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
         Ast::Token(_) => (),
         Ast::EntryPoint(g) => print_nested(g.as_ref(), "", lvl, txt),
         Ast::Program(gs) => print_iter_nested(gs.iter(), "", lvl, txt),
-        Ast::Declaration(g) => print_nested(g.as_ref(), "", lvl, txt),
-        Ast::TokenDecl(g, h) => {
-            print_nested(g.as_ref(), "", lvl, txt);
-            print_nested(h.as_ref(), "", lvl, txt);
-        }
-        Ast::IdentPath(gs) => print_iter_nested(gs.iter(), "", lvl, txt),
-        Ast::UseDecl(g) => print_nested(g.as_ref(), "", lvl, txt),
-        Ast::AssignOp(s) => println!("{}{s:?}", TAB_C.repeat(lvl)),
-        Ast::AttrPrefix(ss) => {
-            let tabs = TAB_C.repeat(lvl);
-            ss.iter().for_each(|s| println!("{tabs}{s:?}"));
-        }
-        Ast::AttrSuffix(s) => println!("{}{s:?}", TAB_C.repeat(lvl)),
-        Ast::VarPipe(s) => println!("{}{s:?}", TAB_C.repeat(lvl)),
-        Ast::TypeDecl(g) => print_nested(g.as_ref(), "", lvl, txt),
-        Ast::ElmBase(gs) => print_iter_nested(gs.iter(), "", lvl, txt),
-        Ast::Elm(g, h, j) => {
-            let tabs = TAB_C.repeat(lvl);
-            if let Some(g) = g {
-                print_nested(g.as_ref(), "", lvl, txt);
-            } else {
-                println!("{tabs}none");
-            }
-            print_nested(h.as_ref(), "", lvl, txt);
-            if let Some(j) = j {
-                print_nested(j.as_ref(), "", lvl, txt);
-            } else {
-                println!("{tabs}none");
-            }
-        }
-        Ast::Prod(v) => {
-            for (tk, opt) in v {
-                print_nested(&tk, "", lvl, txt);
-                if let Some(opt) = opt {
-                    print_nested(&opt, "", lvl, txt);
-                }
-            }
-        }
-        Ast::RulePipeRepeater(gs) => print_iter_nested(gs.iter(), "", lvl, txt),
-        Ast::RulePipe(gs) => print_iter_nested(gs.iter(), "", lvl, txt),
-        Ast::RuleDecl(gs) => print_iter_nested(gs.iter(), "", lvl, txt),
+        _ => unreachable!(),
     }
 }

@@ -1,18 +1,18 @@
 use wop::Token;
 
-token "*=" Token::VarSpec;
-token "+=" Token::RepSpec;
-token "=" Token::NormalSpec;
-token "?=" Token::OptSpec;
-token ":" Token::Type;
-token "@" Token::MetaAttr;
-token "~" Token::BoxAttr;
-token "|" Token::Or;
-token "::" Token::PathAccess;
-token ";" Token::Sep;
-token Ident Token::Ident;
-token StrLit Token::StrLit;
-token CodeExpr Token::CodeExpr;
+alias "*=" Token::VarSpec;
+alias "+=" Token::RepSpec;
+alias "=" Token::NormalSpec;
+alias "?=" Token::OptSpec;
+alias ":" Token::Type;
+alias "@" Token::MetaAttr;
+alias "~" Token::BoxAttr;
+alias "|" Token::Or;
+alias "::" Token::PathAccess;
+alias ";" Token::Sep;
+alias Ident Token::Ident;
+alias StrLit Token::StrLit;
+alias CodeExpr Token::CodeExpr;
 
 Program = Program Declaration ";" | Declaration ";";
 

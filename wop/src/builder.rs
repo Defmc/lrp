@@ -8,8 +8,8 @@ pub type SrcRef = Span;
 
 #[derive(Debug, Default)]
 pub struct Builder {
-    pub aliases: HashMap<String, String>,
-    pub variants: HashMap<String, Vec<(GramemEntry, Vec<SrcRef>)>>,
+    pub aliases: HashMap<String, SrcRef>,
+    pub gramems: HashMap<String, Vec<Vec<SrcRef>>>,
     pub imports: Vec<SrcRef>,
 }
 
@@ -32,38 +32,35 @@ impl Builder {
 
     pub fn process(&mut self, ast: &Gramem, src: &str) {
         let program = Self::get_program_instructions(&ast);
-        for decl in program.iter().map(|e| {
-            if let Ast::Declaration(ref decl) = e.item.item {
-                decl
-            } else {
-                unreachable!()
-            }
-        }) {
+        for decl in program.iter() {
             match &decl.item.item {
-                Ast::RuleDecl(rule) => {}
-                Ast::UseDecl(decl) => self.use_decl(decl),
-                Ast::TokenDecl(tk, alias) => self.token_decl(tk, alias, src),
+                Ast::Rule(rule_name, rule) => self.rule_decl(rule_name, rule),
+                Ast::Import(decl) => self.use_decl(*decl),
+                Ast::Alias(tk, alias) => self.token_decl(*tk, *alias, src),
                 c => unreachable!("unexpected {c:?} in code builder"),
             }
         }
     }
 
-    fn token_decl(&mut self, tk: &Gramem, alias: &Gramem, src: &str) {
+    fn rule_decl(&mut self, rule_name: &Span, rule: &[Span]) {
+        // let rule_name = rule[0];
+        // let rule: Vec<_> = rule.iter().skip(2).cloned().collect();
+        todo!()
+    }
+
+    fn token_decl(&mut self, tk: Span, alias: Span, src: &str) {
         assert!(
             self.aliases
-                .insert(
-                    tk.item.span.from_source(src).to_string(),
-                    alias.item.span.from_source(src).to_string(),
-                )
+                .insert(tk.from_source(src).to_string(), alias)
                 .is_none(),
             "overriding an already defined alias: {} to {} ",
-            tk.item.span.from_source(src).to_string(),
-            alias.item.span.from_source(src).to_string(),
+            tk.from_source(src).to_string(),
+            alias.from_source(src).to_string(),
         );
     }
 
-    fn use_decl(&mut self, decl: &Gramem) {
-        self.imports.push(decl.item.span);
+    fn use_decl(&mut self, decl: Span) {
+        self.imports.push(decl);
     }
 
     pub fn dump(&self, src: &str) -> String {
