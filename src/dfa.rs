@@ -190,6 +190,15 @@ where
     pub fn reduce(&mut self, name: &M, prod: &Production<M>) -> BaseResult<(), Error<M>> {
         let len = self.items.len();
         let items = &self.items[len - prod.0.len()..];
+        debug_assert!(
+            self.reductors.get(name).is_some(),
+            "missing reductor table for {name:?}"
+        );
+        debug_assert!(
+            self.reductors[name].get(prod.1).is_some(),
+            "missing production {} reductor for {name:?}",
+            prod.1
+        );
         let new_item = Token::new(self.reductors[name][prod.1](items), name.clone());
         self.items.truncate(len - prod.0.len());
         self.items.push(new_item);
