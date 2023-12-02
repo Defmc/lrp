@@ -1,17 +1,35 @@
 use wop::Token;
 
-alias "*=" Token::VarSpec;
-alias "+=" Token::RepSpec;
-alias "=" Token::NormalSpec;
-alias "?=" Token::OptSpec;
-alias ":" Token::Type;
-alias "@" Token::MetaAttr;
-alias "~" Token::BoxAttr;
-alias "|" Token::Or;
+alias "=" Token::Assign;
+alias "|" Token::Pipe;
 alias "::" Token::PathAccess;
-alias ";" Token::Sep;
+alias ";" Token::Sc;
 alias Ident Token::Ident;
 alias StrLit Token::StrLit;
-alias CodeExpr Token::CodeExpr;
 
-Program = Program Declaration ";" | Declaration ";";
+EntryPoint = Program;
+
+Program = Program Alias ";"
+    | Program Import ";"
+    | Program RuleDecl ";"
+    | Alias ";"
+    | Import ";"
+    | RuleDecl ";";
+
+IdentPath = IdentPath "::" Ident
+    | Ident;
+
+RuleDecl = Ident "=" Rule;
+
+Rule = Rule "|" RulePipe
+    | RulePipe;
+
+RulePipe = RulePipe Ident
+    | RulePipe StrLit
+    | StrLit
+    | Ident;
+
+Import = "use" IdentPath;
+
+Alias = "alias" Ident IdentPath
+    | "alias" StrLit IdentPath;
