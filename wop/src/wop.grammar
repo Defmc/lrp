@@ -4,6 +4,8 @@ alias "=" Token::Assign;
 alias "|" Token::Pipe;
 alias "::" Token::PathAccess;
 alias ";" Token::Sc;
+alias "use" Token::UseWord;
+alias "alias" Token::AliasWord;
 alias Ident Token::Ident;
 alias StrLit Token::StrLit;
 
