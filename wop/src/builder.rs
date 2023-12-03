@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use lrp::Span;
 
-use crate::{Ast, Gramem};
+use crate::{Ast, Gramem, Sym};
 
 pub type SrcRef = Span;
 
@@ -34,7 +34,7 @@ impl Builder {
         let program = Self::get_program_instructions(&ast);
         for decl in program.iter() {
             match &decl.item.item {
-                Ast::RuleDecl(rule_name, rule) => self.rule_decl(rule_name, rule),
+                Ast::RuleDecl(rule_name, rule) => self.rule_decl(rule_name, rule, src),
                 Ast::Import(decl) => self.use_decl(*decl),
                 Ast::Alias(tk, alias) => self.token_decl(*tk, *alias, src),
                 c => unreachable!("unexpected {c:?} in code builder"),
@@ -42,10 +42,51 @@ impl Builder {
         }
     }
 
-    fn rule_decl(&mut self, rule_name: &Span, rule: &[Vec<Gramem>]) {
-        // let rule_name = rule[0];
-        // let rule: Vec<_> = rule.iter().skip(2).cloned().collect();
-        todo!()
+    fn rule_decl(&mut self, rule_name: &Span, rule: &[Vec<Gramem>], src: &str) {
+        let mut prods = Vec::new();
+        rule.iter()
+            .for_each(|r| self.extend_complete_rule(&[], &mut prods, r, src));
+
+        assert!(
+            self.gramems
+                .insert(rule_name.from_source(src).to_string(), prods)
+                .is_none(),
+            "rule {} was already defined",
+            rule_name.from_source(src)
+        );
+    }
+
+    fn extend_complete_rule(
+        &self,
+        prefix: &[SrcRef],
+        buf: &mut Vec<Vec<SrcRef>>,
+        rule: &[Gramem],
+        src: &str,
+    ) {
+        // TODO: Impl sub prods
+        let mut prod = prefix.to_vec();
+        for g in rule {
+            match g.ty {
+                Sym::Ident => {
+                    let p = self
+                        .aliases
+                        .get(g.item.span.from_source(src))
+                        .unwrap_or(&g.item.span);
+                    prod.push(*p);
+                }
+                Sym::StrLit => {
+                    let p = self
+                        .aliases
+                        .get(g.item.span.from_source(src))
+                        .unwrap_or_else(|| {
+                            panic!("no entry for {:?} literal", g.item.span.from_source(src))
+                        });
+                    prod.push(*p);
+                }
+                _ => unreachable!("{:?}", g.ty),
+            }
+        }
+        buf.push(prod);
     }
 
     fn token_decl(&mut self, tk: Span, alias: Span, src: &str) {

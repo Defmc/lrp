@@ -190,6 +190,7 @@ where
     pub fn reduce(&mut self, name: &M, prod: &Production<M>) -> BaseResult<(), Error<M>> {
         let len = self.items.len();
         let items = &self.items[len - prod.0.len()..];
+        // TODO: Create a custom Error
         debug_assert!(
             self.reductors.get(name).is_some(),
             "missing reductor table for {name:?}"
