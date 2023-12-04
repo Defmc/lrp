@@ -31,12 +31,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("PARSING OUTPUT:");
     print_nested(&dfa.items[0], "", 0, &file);
 
+    println!("BUILDING OUTPUT");
     let mut builder = Builder::default();
     let start = Instant::now();
     builder.process(&dfa.items[0], &file);
-    println!("CODE BUILDER OUTPUT (after {:?}):", start.elapsed());
+    println!(
+        "CODE BUILDER OUTPUT (after {:?}): {builder:?}",
+        start.elapsed()
+    );
 
-    println!("\x1B[1;33m{}\x1B[0;m", builder.dump(&file));
+    println!("PRODUCED CODE:\n\x1B[1;33m{}\x1B[0;m", builder.dump(&file));
     res
 }
 
