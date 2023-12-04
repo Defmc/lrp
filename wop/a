@@ -12,8 +12,10 @@ Rule -> Rule Pipe RulePipe
 Rule -> RulePipe
 RulePipe -> RulePipe Ident
 RulePipe -> RulePipe StrLit
-RulePipe ->  StrLit
-RulePipe ->  Ident
+RulePipe -> RulePipe OpenParen RulePipe CloseParen
+RulePipe -> StrLit
+RulePipe -> Ident
+RulePipe -> OpenParen RulePipe CloseParen
 Import -> UseWord IdentPath
 Alias -> AliasWord Ident IdentPath
 Alias -> AliasWord StrLit IdentPath
