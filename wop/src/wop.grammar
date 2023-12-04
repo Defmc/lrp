@@ -11,12 +11,8 @@ alias StrLit Token::StrLit;
 
 EntryPoint = Program;
 
-Program = Program Alias ";"
-    | Program Import ";"
-    | Program RuleDecl ";"
-    | Alias ";"
-    | Import ";"
-    | RuleDecl ";";
+Program = Program (Alias | Import | RuleDecl) ";"
+    | (Alias | Import | RuleDecl) ";";
 
 IdentPath = IdentPath "::" Ident
     | Ident;
@@ -26,12 +22,9 @@ RuleDecl = Ident "=" Rule;
 Rule = Rule "|" RulePipe
     | RulePipe;
 
-RulePipe = RulePipe Ident
-    | RulePipe StrLit
-    | StrLit
-    | Ident;
+RulePipe = RulePipe (Ident | StrLit)
+    | (Ident | StrLit);
 
 Import = "use" IdentPath;
 
-Alias = "alias" Ident IdentPath
-    | "alias" StrLit IdentPath;
+Alias = "alias" (Ident | StrLit) IdentPath;

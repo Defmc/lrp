@@ -104,8 +104,10 @@ pub fn grammar() -> Grammar<Sym> {
             | RulePipe,
         RulePipe -> RulePipe Ident
             | RulePipe StrLit
+            | RulePipe OpenParen Rule CloseParen
             | StrLit
-            | Ident,
+            | Ident
+            | OpenParen Rule CloseParen,
         Import -> UseWord IdentPath,
         Alias -> AliasWord Ident IdentPath
             | AliasWord StrLit IdentPath

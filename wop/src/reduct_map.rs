@@ -26,8 +26,10 @@ pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {
         vec![
             rule_pipe_extend,
             rule_pipe_extend,
+            rule_pipe_sub_extend,
             rule_pipe_origin,
             rule_pipe_origin,
+            rule_pipe_sub,
         ],
     );
     map.insert(Sym::RuleDecl, vec![rule_decl]);
@@ -146,6 +148,32 @@ fn rule_extend(toks: &[Gramem]) -> Meta<Ast> {
     Meta::new(
         Ast::Rule(rule_vec),
         Span::new(toks[0].item.span.start, toks[1].item.span.end),
+    )
+}
+
+fn rule_pipe_sub_extend(toks: &[Gramem]) -> Meta<Ast> {
+    debug_assert_eq!(toks[0].ty, Sym::RulePipe);
+    debug_assert_eq!(toks[1].ty, Sym::OpenParen);
+    debug_assert_eq!(toks[2].ty, Sym::Rule);
+    debug_assert_eq!(toks[3].ty, Sym::CloseParen);
+    let mut rule_vec = match toks[0].item.item {
+        Ast::RulePipe(ref v) => v.clone(),
+        _ => unreachable!(),
+    };
+    rule_vec.push(toks[2].clone());
+    Meta::new(
+        Ast::RulePipe(rule_vec),
+        Span::new(toks[0].item.span.start, toks[3].item.span.end),
+    )
+}
+
+fn rule_pipe_sub(toks: &[Gramem]) -> Meta<Ast> {
+    debug_assert_eq!(toks[0].ty, Sym::OpenParen);
+    debug_assert_eq!(toks[1].ty, Sym::Rule);
+    debug_assert_eq!(toks[2].ty, Sym::CloseParen);
+    Meta::new(
+        Ast::RulePipe(vec![toks[1].clone()]),
+        Span::new(toks[0].item.span.start, toks[2].item.span.end),
     )
 }
 
