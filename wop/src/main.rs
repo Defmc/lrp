@@ -1,7 +1,7 @@
 use logos::Logos;
 use lrp::{Meta, Span, Token};
 use std::{fs, time::Instant};
-use wop::{builder::Builder, Ast, Gramem};
+use wop::{builder::Builder, Ast, Attr, Gramem};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::env::args().nth(1).unwrap();
@@ -65,9 +65,18 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
     let lvl = lvl + 1;
     let tab_spc = TAB_C.repeat(lvl);
     match &tok.item.item {
-        Ast::Token(_) => (),
+        Ast::Token(s) => println!("{tab_spc}|> sym: {s:?}"),
         Ast::EntryPoint(g) => print_nested(g.as_ref(), "", lvl, txt),
         Ast::Program(gs) => print_iter_nested(gs.iter(), "- ", lvl, txt),
+        Ast::RuleAttr(a) => println!(
+            "{tab_spc}|> type: {a:?} ({})",
+            match a {
+                Attr::Normal => " ",
+                Attr::Optional => "?",
+                Attr::Repeated => "+",
+                Attr::Variadic => "*",
+            }
+        ),
         Ast::RuleDecl(g, gs) => {
             println!(
                 "{tab_spc}|> rule_name: \x1B[1;33m\"{}\"\x1B[0;m",
@@ -93,6 +102,9 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
             println!("{tab_spc}|> definition: {}", h.from_source(txt));
         }
         Ast::IdentPath(g) => println!("{tab_spc} {}", g.from_source(txt)),
-        // _ => unreachable!(),
+        Ast::RuleItem(g) => {
+            print_nested(&g.0, "", lvl, txt);
+            println!("{tab_spc}|> type: {:?}", g.1)
+        }
     }
 }

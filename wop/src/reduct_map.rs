@@ -1,4 +1,4 @@
-use crate::{Ast, Gramem, Meta, Sym};
+use crate::{Ast, Attr, Gramem, Meta, Sym};
 use lrp::{ReductMap, Span};
 
 pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {
@@ -21,19 +21,21 @@ pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {
     map.insert(Sym::IdentPath, vec![ident_path_extend, ident_path_origin]);
     map.insert(Sym::Import, vec![import]);
     map.insert(Sym::Alias, vec![alias; 2]);
-    map.insert(
-        Sym::RulePipe,
-        vec![
-            rule_pipe_extend,
-            rule_pipe_extend,
-            rule_pipe_sub_extend,
-            rule_pipe_origin,
-            rule_pipe_origin,
-            rule_pipe_sub,
-        ],
-    );
+    map.insert(Sym::RulePipe, vec![rule_pipe_extend, rule_pipe]);
     map.insert(Sym::RuleDecl, vec![rule_decl]);
     map.insert(Sym::Rule, vec![rule_extend, rule_origin]);
+    map.insert(
+        Sym::RuleItem,
+        vec![
+            rule_item,
+            rule_item,
+            rule_item,
+            rule_item,
+            rule_sub_item,
+            rule_sub_item,
+        ],
+    );
+    map.insert(Sym::RuleAttr, vec![rule_attr]);
     map
 }
 
@@ -105,23 +107,22 @@ fn alias(toks: &[Gramem]) -> Meta<Ast> {
     )
 }
 
-fn rule_pipe_origin(toks: &[Gramem]) -> Meta<Ast> {
-    debug_assert!(matches!(toks[0].ty, Sym::Ident | Sym::StrLit));
-    Meta::new(Ast::RulePipe(toks[..1].to_vec()), toks[0].item.span)
-}
-
 fn rule_pipe_extend(toks: &[Gramem]) -> Meta<Ast> {
     debug_assert_eq!(toks[0].ty, Sym::RulePipe);
-    let mut rule_pipe_vec = match toks[0].item.item {
+    debug_assert_eq!(toks[1].ty, Sym::RuleItem);
+    let mut v = match toks[0].item.item {
         Ast::RulePipe(ref v) => v.clone(),
         _ => unreachable!(),
     };
-    debug_assert!(matches!(toks[1].ty, Sym::Ident | Sym::StrLit));
-    rule_pipe_vec.push(toks[1].clone());
+    v.push(toks[1].clone());
     Meta::new(
-        Ast::RulePipe(rule_pipe_vec),
+        Ast::RulePipe(v),
         Span::new(toks[0].item.span.start, toks[1].item.span.end),
     )
+}
+fn rule_pipe(toks: &[Gramem]) -> Meta<Ast> {
+    debug_assert_eq!(toks[0].ty, Sym::RuleItem);
+    Meta::new(Ast::RulePipe(toks[..1].to_vec()), toks[0].item.span)
 }
 
 fn rule_origin(toks: &[Gramem]) -> Meta<Ast> {
@@ -151,32 +152,6 @@ fn rule_extend(toks: &[Gramem]) -> Meta<Ast> {
     )
 }
 
-fn rule_pipe_sub_extend(toks: &[Gramem]) -> Meta<Ast> {
-    debug_assert_eq!(toks[0].ty, Sym::RulePipe);
-    debug_assert_eq!(toks[1].ty, Sym::OpenParen);
-    debug_assert_eq!(toks[2].ty, Sym::Rule);
-    debug_assert_eq!(toks[3].ty, Sym::CloseParen);
-    let mut rule_vec = match toks[0].item.item {
-        Ast::RulePipe(ref v) => v.clone(),
-        _ => unreachable!(),
-    };
-    rule_vec.push(toks[2].clone());
-    Meta::new(
-        Ast::RulePipe(rule_vec),
-        Span::new(toks[0].item.span.start, toks[3].item.span.end),
-    )
-}
-
-fn rule_pipe_sub(toks: &[Gramem]) -> Meta<Ast> {
-    debug_assert_eq!(toks[0].ty, Sym::OpenParen);
-    debug_assert_eq!(toks[1].ty, Sym::Rule);
-    debug_assert_eq!(toks[2].ty, Sym::CloseParen);
-    Meta::new(
-        Ast::RulePipe(vec![toks[1].clone()]),
-        Span::new(toks[0].item.span.start, toks[2].item.span.end),
-    )
-}
-
 fn rule_decl(toks: &[Gramem]) -> Meta<Ast> {
     debug_assert_eq!(toks[0].ty, Sym::Ident);
     debug_assert_eq!(toks[1].ty, Sym::Assign);
@@ -189,4 +164,54 @@ fn rule_decl(toks: &[Gramem]) -> Meta<Ast> {
         Ast::RuleDecl(toks[0].item.span, rule_vec),
         Span::new(toks[0].item.span.start, toks[2].item.span.end),
     )
+}
+
+fn rule_item(toks: &[Gramem]) -> Meta<Ast> {
+    debug_assert!(matches!(toks[0].ty, Sym::Ident | Sym::StrLit));
+    let (attr, end) = if let Some(tk) = toks.get(1) {
+        debug_assert_eq!(tk.ty, Sym::RuleAttr);
+        match tk.item.item {
+            Ast::RuleAttr(attr) => (attr, tk.item.span.end),
+            _ => unreachable!(),
+        }
+    } else {
+        (Attr::default(), toks[0].item.span.end)
+    };
+    Meta::new(
+        Ast::RuleItem(Box::new((toks[0].clone(), attr))),
+        Span::new(toks[0].item.span.start, end),
+    )
+}
+
+fn rule_sub_item(toks: &[Gramem]) -> Meta<Ast> {
+    debug_assert_eq!(toks[0].ty, Sym::OpenParen);
+    debug_assert_eq!(toks[1].ty, Sym::Rule);
+    debug_assert_eq!(toks[2].ty, Sym::CloseParen);
+    let (attr, end) = if let Some(tk) = toks.get(3) {
+        debug_assert_eq!(tk.ty, Sym::RuleAttr);
+        match tk.item.item {
+            Ast::RuleAttr(attr) => (attr, tk.item.span.end),
+            _ => unreachable!(),
+        }
+    } else {
+        (Attr::default(), toks[0].item.span.end)
+    };
+    Meta::new(
+        Ast::RuleItem(Box::new((toks[1].clone(), attr))),
+        Span::new(toks[0].item.span.start, end),
+    )
+}
+
+fn rule_attr(toks: &[Gramem]) -> Meta<Ast> {
+    debug_assert!(matches!(
+        toks[0].ty,
+        Sym::Optional | Sym::Repeated | Sym::Variadic
+    ));
+    let attr = match toks[0].ty {
+        Sym::Optional => Attr::Optional,
+        Sym::Repeated => Attr::Repeated,
+        Sym::Variadic => Attr::Variadic,
+        _ => unreachable!(),
+    };
+    Meta::new(Ast::RuleAttr(attr), toks[0].item.span)
 }

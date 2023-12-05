@@ -12,12 +12,33 @@ pub enum Ast {
     RuleDecl(SrcRef, Vec<Vec<Gramem>>),
     Rule(Vec<Vec<Gramem>>),
     RulePipe(Vec<Gramem>),
+    RuleItem(Box<RuleItem>),
+    RuleAttr(Attr),
     Import(SrcRef),
     Alias(SrcRef, SrcRef),
     IdentPath(SrcRef),
 }
 
+impl Ast {
+    pub fn as_rule_item(&self) -> Option<&RuleItem> {
+        match self {
+            Ast::RuleItem(item) => Some(item),
+            _ => None,
+        }
+    }
+}
+
+pub type RuleItem = (Gramem, Attr);
 pub type Gramem = Token<Meta<Ast>, Sym>;
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default)]
+pub enum Attr {
+    #[default]
+    Normal,
+    Optional,
+    Repeated,
+    Variadic,
+}
 
 #[derive(Logos, Debug, PartialEq, PartialOrd, Clone, Copy, Ord, Eq)]
 pub enum Sym {
@@ -44,6 +65,15 @@ pub enum Sym {
 
     #[token("::")]
     PathAccess,
+
+    #[token("?")]
+    Optional,
+
+    #[token("*")]
+    Variadic, // Optional + Repeated
+
+    #[token("+")]
+    Repeated,
 
     #[regex(r#"[a-zA-Z_]\w*"#)]
     Ident,
@@ -79,6 +109,8 @@ pub enum Sym {
     RulePipe,
     RuleDecl,
     IdentPath,
+    RuleAttr,
+    RuleItem,
 }
 
 use lrp::{Dfa, Grammar, Parser, Slr, Token};
@@ -90,28 +122,30 @@ pub fn grammar() -> Grammar<Sym> {
     use Sym::*;
 
     let rules = lrp::grammar_map! {
-        EntryPoint -> Program,
-        Program -> Program Alias Sc
-            | Program Import Sc
-            | Program RuleDecl Sc
-            | Alias Sc
-            | Import Sc
-            | RuleDecl Sc,
-        IdentPath -> IdentPath PathAccess Ident
-            | Ident,
-        RuleDecl -> Ident Assign Rule,
-        Rule -> Rule Pipe RulePipe
-            | RulePipe,
-        RulePipe -> RulePipe Ident
-            | RulePipe StrLit
-            | RulePipe OpenParen Rule CloseParen
-            | StrLit
-            | Ident
-            | OpenParen Rule CloseParen,
-        Import -> UseWord IdentPath,
-        Alias -> AliasWord Ident IdentPath
-            | AliasWord StrLit IdentPath
-    };
+    EntryPoint -> Program,
+    Program -> Program Alias Sc
+    |  Program Import Sc
+    |  Program RuleDecl Sc
+    |  Alias Sc
+    |  Import Sc
+    |  RuleDecl Sc,
+    IdentPath -> IdentPath PathAccess Ident
+    | Ident,
+    RuleDecl -> Ident Assign Rule,
+    Rule -> Rule Pipe RulePipe
+    | RulePipe,
+    RuleAttr -> Optional | Variadic | Repeated,
+    RulePipe -> RulePipe RuleItem | RuleItem,
+    RuleItem -> Ident RuleAttr
+    | Ident
+    | StrLit RuleAttr
+    | StrLit
+    | OpenParen Rule CloseParen RuleAttr
+    | OpenParen Rule CloseParen,
+    Import -> UseWord IdentPath,
+    Alias -> AliasWord Ident IdentPath
+    | AliasWord StrLit IdentPath
+        };
 
     Grammar::new(EntryPoint, rules, Eof)
 }
