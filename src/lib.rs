@@ -138,6 +138,15 @@ impl From<(usize, usize)> for Span {
     }
 }
 
+impl From<Range<usize>> for Span {
+    fn from(value: Range<usize>) -> Self {
+        Self {
+            start: value.start,
+            end: value.end,
+        }
+    }
+}
+
 #[macro_export]
 macro_rules! grammar_map {
     ($($rule:literal -> $($($terms:literal)*)|*),*) => {{
