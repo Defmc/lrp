@@ -4,7 +4,7 @@ use std::{
     iter::Peekable,
 };
 
-use lrp::{Dfa, Grammar, Lalr, Parser, Set, Tabler, Token};
+use lrp::{Dfa, Grammar, Lalr, Parser, RuleMap, Set, Tabler, Token};
 use prettytable::{row, Cell, Row, Table};
 
 fn main() {
@@ -17,6 +17,21 @@ fn main() {
             | "{" "}"
             | "{" "S" "}"
     };
+    let mut grammar = RuleMap::new();
+    // let rule = lrp::grammar::Rule::new("'S", vec![vec!["S"]]);
+    // grammar.insert("'S", rule);
+    // let rule = lrp::grammar::Rule::new(
+    //     "S",
+    //     vec![
+    //         vec!["(", ")"],
+    //         vec!["(", "S", ")"],
+    //         vec!["[", "]"],
+    //         vec!["[", "S", "]"],
+    //         vec!["{", "}"],
+    //         vec!["{", "S", "}"],
+    //     ],
+    // );
+    grammar.insert("S", rule);
     let terminals = Set::from(["[", "]", "(", ")", "{", "}", "d", "c"]);
     let grammar = Grammar::new("'S", grammar, "$");
 
