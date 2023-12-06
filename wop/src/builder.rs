@@ -145,9 +145,9 @@ impl Builder {
                 for gramem in imp {
                     write!(out, "{}, ", gramem.from_source(src)).unwrap();
                 }
-                out.push_str("]),\n");
+                out.push_str("],\n");
             }
-            out.push_str("\n\t]);\n");
+            out.push_str("\n\t]));\n");
         }
         out.push_str("\n\tmap\n}");
         out
