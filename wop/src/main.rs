@@ -1,6 +1,10 @@
 use logos::Logos;
 use lrp::{Meta, Span, Token};
-use std::{fs, time::Instant};
+use std::{
+    fs::{self, File},
+    io::{BufWriter, Write},
+    time::Instant,
+};
 use wop::{builder::Builder, Ast, Gramem};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -44,6 +48,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         elapsed,
         builder.dump_reductor(&file)
     );
+    println!("WRITING DUMP");
+    let start = Instant::now();
+    let out = File::create("out.rs")?;
+    let mut writer = BufWriter::new(out);
+    writeln!(
+        writer,
+        r#"
+use crate::{{Ast, Gramem, Meta, Sym}};
+use lrp::{{Grammar, ReductMap, Span}};
+
+#[allow(clippy::enum_glob_use)]
+#[allow(unused_imports)]
+#[must_use]
+pub fn grammar() -> Grammar<Sym> {}"#,
+        builder.dump_grammar(&file)
+    )?;
+
+    writeln!(
+        writer,
+        r#"
+#[allow(non_snake_case)]
+pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {}"#,
+        builder.dump_reductor(&file)
+    )?;
+    println!("ELAPSED TIME: {:?}", start.elapsed());
     res
 }
 
