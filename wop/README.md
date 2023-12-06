@@ -36,6 +36,10 @@ And for DFA building, remember to dump the reduct_map:
 format!("parser.dfa(buf, {})", builder.dump_reduct_map())
 ```
 
+Fun fact: This project use itself.
+
 Ideas:
 - [x] `Builder::dump_grammar` // should return a `RuleMap`
 - [] For composite rules (with `( x | y)`), the codeblock will be applied to both
+- [x] Impl codeblocks
+- [] Allow to set custom slice entry for codeblocks
