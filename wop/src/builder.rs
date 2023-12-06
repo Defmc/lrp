@@ -135,13 +135,17 @@ impl Builder {
         });
         writeln!(out, "\tlet mut map = lrp::RuleMap::new();").unwrap();
         for (r_name, impls) in &self.rules {
-            writeln!(out, "\tmap.insert({r_name}, vec![").unwrap();
+            writeln!(
+                out,
+                "\tmap.insert({r_name}, lrp::grammar::Rule::new({r_name}, vec!["
+            )
+            .unwrap();
             for imp in impls {
                 out.push_str("\t\tvec![");
                 for gramem in imp {
                     write!(out, "{}, ", gramem.from_source(src)).unwrap();
                 }
-                out.push_str("],\n");
+                out.push_str("]),\n");
             }
             out.push_str("\n\t]);\n");
         }
