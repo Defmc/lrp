@@ -50,7 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     println!("WRITING DUMP");
     let start = Instant::now();
-    let out = File::create("out.rs")?;
+    let out = File::create("src/out.rs")?;
     let mut writer = BufWriter::new(out);
     writeln!(
         writer,
@@ -61,7 +61,9 @@ use lrp::{{Grammar, ReductMap, Span}};
 #[allow(clippy::enum_glob_use)]
 #[allow(unused_imports)]
 #[must_use]
-pub fn grammar() -> Grammar<Sym> {}"#,
+pub fn grammar() -> Grammar<Sym> {{
+    Grammar::new(EntryPoint, {}, Eof)
+}}"#,
         builder.dump_grammar(&file)
     )?;
 
