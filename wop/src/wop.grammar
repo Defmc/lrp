@@ -1,5 +1,5 @@
-use wop::Sym::*;
-use wop::Ast;
+use crate::Sym::*;
+use crate::Ast;
 
 alias ";" Sc;
 alias "::" PathAccess;
