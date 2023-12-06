@@ -144,7 +144,8 @@ impl Builder {
             out.push_str(i.from_source(src));
             out.push_str(";\n");
         });
-        out.push_str("fn grammar() -> Grammar {");
+        out.push_str("fn grammar() -> Grammar<Ast> {");
+        out.push_str("\n\tuse Ast::*");
         out.push_str("\n\tlet mut grammar = lrp::RuleMap::new();");
         for (r_name, impls) in &self.rules {
             out.push_str("\n\tgrammar.insert(");
@@ -160,7 +161,7 @@ impl Builder {
             }
             out.push_str("]);");
         }
-        out.push_str("\n\tgrammar\n}");
+        out.push_str("\n\tGrammar::new(Token::EntryPoint, grammar, Token::Eof)\n}");
         out
     }
 }

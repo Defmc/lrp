@@ -35,12 +35,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = Builder::default();
     let start = Instant::now();
     builder.process(&dfa.items[0], &file);
+    let elapsed = start.elapsed();
     println!(
         "CODE BUILDER OUTPUT (after {:?}): {builder:?}",
-        start.elapsed()
+        elapsed
     );
 
-    println!("PRODUCED CODE:\n\x1B[1;33m{}\x1B[0;m", builder.dump(&file));
+    println!("PRODUCED CODE (after {:?}):\n\x1B[1;33m{}\x1B[0;m", elapsed, builder.dump(&file));
     res
 }
 

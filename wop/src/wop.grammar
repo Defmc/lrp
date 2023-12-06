@@ -15,12 +15,12 @@ alias Ident Token::Ident;
 alias StrLit Token::StrLit;
 
 EntryPoint = Program;
-Program = Program (Alias | Import | RuleDecl) ";" | (Alias | Import | RuleDecl) ";";
+Program = ((Alias | Import | RuleDecl) ";")*;
 IdentPath = IdentPath "::" Ident | Ident;
 RuleDecl = Ident "=" Rule;
-Rule = Rule "|" RulePipe | RulePipe;
+Rule = (RulePipe "|")* RulePipe;
 RuleAttr = "?" | "*" | "+";
-RulePipe = RulePipe(Ident | StrLit) RuleAttr ? | (Ident | StrLit) RuleAttr ? ;
-RuleItem = (Ident | StrLit | "(" Rule ")") RuleAttr? ;
+RulePipe = ((Ident | StrLit) RuleAttr?)+;
+RuleItem = (Ident | StrLit | "(" Rule ")") RuleAttr?;
 Import = "use" IdentPath;
-Alias = "alias"(Ident | StrLit) IdentPath;
+Alias = "alias" (Ident | StrLit) IdentPath;
