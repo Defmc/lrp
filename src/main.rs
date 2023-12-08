@@ -17,7 +17,7 @@ fn main() {
             | "{" "}"
             | "{" "S" "}"
     };
-    let mut grammar = RuleMap::new();
+    // let mut grammar = RuleMap::new();
     // let rule = lrp::grammar::Rule::new("'S", vec![vec!["S"]]);
     // grammar.insert("'S", rule);
     // let rule = lrp::grammar::Rule::new(
@@ -31,7 +31,7 @@ fn main() {
     //         vec!["{", "S", "}"],
     //     ],
     // );
-    grammar.insert("S", rule);
+    // grammar.insert("S", rule);
     let terminals = Set::from(["[", "]", "(", ")", "{", "}", "d", "c"]);
     let grammar = Grammar::new("'S", grammar, "$");
 
