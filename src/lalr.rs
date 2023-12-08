@@ -73,8 +73,9 @@ where
 
     fn proc_actions(&mut self) {
         self.proc_closures();
-        let mut kers: Vec<_> = self.table.kernels.iter().collect();
-        kers.sort_by_key(|(_, i)| *i);
+        // TODO: Check impl
+        // let mut kers: Vec<_> = self.table.kernels.iter().collect();
+        // kers.sort_by_key(|(_, i)| *i);
         let start = self.table.basis_pos().rule;
         for row in &self.table.states {
             let mut map: Map<T, Action<T>> = Map::new();

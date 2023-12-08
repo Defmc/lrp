@@ -20,7 +20,7 @@ pub enum Ast {
 
 impl Ast {
     #[must_use]
-    pub fn get_src_ref(&self) -> Option<SrcRef> {
+    pub const fn get_src_ref(&self) -> Option<SrcRef> {
         match self {
             Self::RuleItem(o) | Self::IdentPath(o) => Some(*o),
             _ => None,

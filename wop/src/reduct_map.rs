@@ -80,13 +80,14 @@ fn ident_path_extend(toks: &[Gramem]) -> Meta<Ast> {
 fn import(toks: &[Gramem]) -> Meta<Ast> {
     debug_assert_eq!(toks[0].ty, Sym::UseWord);
     debug_assert_eq!(toks[1].ty, Sym::IdentPath);
-    let end = if let Some(tk) = toks.get(2) {
-        debug_assert_eq!(tk.ty, Sym::PathAccess);
-        debug_assert_eq!(toks[3].ty, Sym::Glob);
-        toks[3].item.span.end
-    } else {
-        toks[1].item.span.end
-    };
+    let end = toks.get(2).map_or_else(
+        || toks[1].item.span.end,
+        |tk| {
+            debug_assert_eq!(tk.ty, Sym::PathAccess);
+            debug_assert_eq!(toks[3].ty, Sym::Glob);
+            toks[3].item.span.end
+        },
+    );
 
     Meta::new(
         Ast::Import(Span::new(toks[1].item.span.start, end)),

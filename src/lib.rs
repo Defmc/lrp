@@ -75,7 +75,7 @@ pub struct Meta<T> {
 }
 
 impl<T> Meta<T> {
-    pub fn new(item: T, span: Span) -> Self {
+    pub const fn new(item: T, span: Span) -> Self {
         Self { item, span }
     }
 }
