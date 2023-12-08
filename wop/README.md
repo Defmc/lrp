@@ -1,4 +1,4 @@
-```hs
+```cpp
 use my_crate::Ast;
 use my_crate::Sym;
 
@@ -14,7 +14,7 @@ Ast::Add: Ast = Number:*n1 "+" Number:*n2 {
 
 Ast::Expr: Ast = Sym::Add:*a {
 /* Meta::new( */
-    Ast:Expr(a)/*,
+    Ast::Expr(a)/*,
     Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end)
 )*/
 }
