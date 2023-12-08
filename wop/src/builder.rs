@@ -155,13 +155,13 @@ impl Builder {
         self.imports.iter().for_each(|i| {
             writeln!(out, "\tuse {};", i.from_source(src)).unwrap();
         });
-        writeln!(out, "\tlet mut map = lrp::ReductMap::new();").unwrap();
+        writeln!(out, "\tlet mut map = lrp::ReductMap::new();\n").unwrap();
         for (r_name, (ty, impls)) in &self.reductors {
             let ty = ty.from_source(src);
             for (i, imp) in impls.iter().enumerate() {
                 writeln!(
                     out,
-                    "\tfn lrp_wop_{r_name}_{i}(toks: &[Gramem]) -> lrp::Meta<{ty}> {}\n",
+                    "\tfn lrp_wop_{r_name}_{i}(toks: &[Gramem]) -> lrp::Meta<{ty}> {{\n\t\tMeta::new({}, lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end))\n\t}}",
                     imp.from_source(src).strip_prefix("->").unwrap()
                 )
                 .unwrap();
@@ -170,7 +170,7 @@ impl Builder {
             for (i, _) in impls.iter().enumerate() {
                 write!(out, "lrp_wop_{r_name}_{i}, ").unwrap()
             }
-            out.push_str("\t]);\n");
+            out.push_str("\t]);\n\n");
         }
 
         out.push_str("\tmap\n}");
