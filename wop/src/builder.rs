@@ -122,6 +122,7 @@ impl Builder {
         self.imports.iter().for_each(|i| {
             writeln!(out, "\tuse {};", i.from_source(src)).unwrap();
         });
+        writeln!(out, "\tlet mut map = lrp::RuleMap::new()").unwrap();
         for (r_name, impls) in &self.rules {
             writeln!(out, "\tmap.insert({r_name}, vec![").unwrap();
             for i in 0..impls.len() {
