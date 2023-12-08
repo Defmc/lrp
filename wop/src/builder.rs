@@ -1,13 +1,13 @@
 use crate::{Ast, Gramem, RulePipe};
-use lrp::Span;
 use std::{collections::HashMap, fmt::Write};
 
-pub type SrcRef = Span;
+pub type SrcRef = lrp::Span;
 
 #[derive(Debug, Default)]
 pub struct Builder {
     pub aliases: HashMap<String, SrcRef>,
     pub rules: HashMap<String, Vec<Vec<SrcRef>>>,
+    pub reductors: HashMap<String, (SrcRef, Vec<SrcRef>)>,
     pub imports: Vec<SrcRef>,
 }
 
@@ -34,12 +34,13 @@ impl Builder {
         }
     }
 
-    fn rule_decl(&mut self, rule_ident: Span, rule_ty: Span, rule: &[RulePipe], src: &str) {
+    fn rule_decl(&mut self, rule_ident: SrcRef, rule_ty: SrcRef, rule: &[RulePipe], src: &str) {
         let mut prods = Vec::new();
+        let mut reductors = Vec::new();
         rule.iter().for_each(|prod| {
-            for p in self.get_complete_rule(rule_ident, rule_ty, prod, src) {
-                prods.push(p);
-            }
+            let (p, r) = self.get_complete_rule(rule_ident, rule_ty, prod, src);
+            prods.extend(p);
+            reductors.extend(r);
         });
 
         assert!(
@@ -49,22 +50,32 @@ impl Builder {
             "rule {} was already defined",
             rule_ident.from_source(src)
         );
+        assert!(
+            self.reductors
+                .insert(
+                    rule_ident.from_source(src).to_string(),
+                    (rule_ty, reductors)
+                )
+                .is_none(),
+            "rule {} was already defined",
+            rule_ident.from_source(src)
+        );
     }
 
     fn get_complete_rule(
         &self,
-        rule_ident: Span,
-        rule_ty: Span,
+        rule_ident: SrcRef,
+        rule_ty: SrcRef,
         pipe: &RulePipe,
         src: &str,
-    ) -> Vec<Vec<SrcRef>> {
+    ) -> (Vec<Vec<SrcRef>>, Vec<SrcRef>) {
         let mut prods = vec![vec![]];
-        fn push_all(prods: &mut [Vec<Span>], item: SrcRef) {
+        fn push_all(prods: &mut [Vec<SrcRef>], item: SrcRef) {
             for prod in prods.iter_mut() {
                 prod.push(item);
             }
         }
-        // fn clone_all(prods: &mut Vec<Vec<Span>>) -> &mut [Vec<Span>] {
+        // fn clone_all(prods: &mut Vec<Vec<SrcRef>>) -> &mut [Vec<Span>] {
         //     let len = prods.len();
         //     prods.reserve(prods.len());
         //     for i in 0..prods.len() {
@@ -99,10 +110,11 @@ impl Builder {
             //     _ => unreachable!(),
             // },
         }
-        prods
+        let prods_size_it = 0..prods.len();
+        (prods, prods_size_it.map(|_| pipe.1).collect())
     }
 
-    fn token_decl(&mut self, tk: Span, alias: Span, src: &str) {
+    fn token_decl(&mut self, tk: SrcRef, alias: SrcRef, src: &str) {
         assert!(
             self.aliases
                 .insert(tk.from_source(src).to_string(), alias)
@@ -113,7 +125,7 @@ impl Builder {
         );
     }
 
-    fn use_decl(&mut self, decl: Span) {
+    fn use_decl(&mut self, decl: SrcRef) {
         self.imports.push(decl);
     }
 
@@ -134,7 +146,34 @@ impl Builder {
             }
             out.push_str("\n\t]);\n");
         }
-        out.push_str("\n}");
+        out.push_str("\n\tmap\n}");
+        out
+    }
+
+    pub fn dump_reductor(&self, src: &str) -> String {
+        let mut out = "{\n".to_string();
+        self.imports.iter().for_each(|i| {
+            writeln!(out, "\tuse {};", i.from_source(src)).unwrap();
+        });
+        writeln!(out, "\tlet mut map = lrp::ReductMap::new();").unwrap();
+        for (r_name, (ty, impls)) in &self.reductors {
+            let ty = ty.from_source(src);
+            for (i, imp) in impls.iter().enumerate() {
+                writeln!(
+                    out,
+                    "\tfn lrp_wop_{r_name}_{i}(toks: &[Gramem]) -> lrp::Meta<{ty}> {}\n",
+                    imp.from_source(src).strip_prefix("->").unwrap()
+                )
+                .unwrap();
+            }
+            write!(out, "\tmap.insert({r_name}, vec![").unwrap();
+            for (i, _) in impls.iter().enumerate() {
+                write!(out, "lrp_wop_{r_name}_{i}, ").unwrap()
+            }
+            out.push_str("\t]);\n");
+        }
+
+        out.push_str("\tmap\n}");
         out
     }
 }

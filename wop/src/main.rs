@@ -39,9 +39,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("CODE BUILDER OUTPUT (after {:?}): {builder:?}", elapsed);
 
     println!(
-        "PRODUCED CODE (after {:?}):\n\x1B[1;33m{}\x1B[0;m",
+        "PRODUCED GRAMMAR CODE (after {:?}):\n\x1B[1;33m{}\x1B[0;m",
         elapsed,
         builder.dump_grammar(&file)
+    );
+    println!(
+        "PRODUCED REDUCTOR CODE (after({:?}):\n\x1B[1;33m{}\x1B[0;m",
+        elapsed,
+        builder.dump_reductor(&file)
     );
     res
 }
