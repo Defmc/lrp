@@ -173,7 +173,7 @@ mod tests {
     use crate::Sym;
     #[test]
     fn strings() {
-        let mut toks = Sym::lexer(
+        let lex = Sym::lexer(
             r#"
             ""
             "em"
@@ -181,24 +181,30 @@ mod tests {
             "é o crime perfeito\""
             "\"ce ta sempre linda mulher\""
             "\\\"\\\""
+            "// a fake comment"
+            "/* another fake comment */"
             // Just a comment...
             /* thats amazing */
             /* a fake* final block comment */
             NowAnIdent
             "#,
         );
-        let mut tokens = vec![
+        const SYMBOLS: &[Sym] = &[
+            Sym::StrLit,
+            Sym::StrLit,
+            Sym::StrLit,
+            Sym::StrLit,
+            Sym::StrLit,
+            Sym::StrLit,
+            Sym::StrLit,
+            Sym::StrLit,
             Sym::Ident,
-            Sym::StrLit,
-            Sym::StrLit,
-            Sym::StrLit,
-            Sym::StrLit,
-            Sym::StrLit,
-            Sym::StrLit,
         ];
-        while let Some(tok) = toks.next() {
-            println!("{tok:?}: {} | {:?}", toks.slice(), toks.span());
-            assert_eq!(Some(tok), tokens.pop());
-        }
+        SYMBOLS.iter().zip(lex).for_each(|(&l, s)| assert_eq!(l, s));
+    }
+
+    #[test]
+    fn bootstrap() {
+        Sym::lexer(include_str!("wop.grammar")).for_each(|tk| assert_ne!(tk, Sym::Error));
     }
 }
