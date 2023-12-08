@@ -12,6 +12,7 @@ pub struct Builder {
 }
 
 impl Builder {
+    #[must_use]
     pub fn get_program_instructions(ast: &Gramem) -> &Vec<Gramem> {
         if let Ast::Program(p) = &ast.item.item {
             p
@@ -21,11 +22,11 @@ impl Builder {
     }
 
     pub fn process(&mut self, ast: &Gramem, src: &str) {
-        let program = Self::get_program_instructions(&ast);
-        for decl in program.iter() {
+        let program = Self::get_program_instructions(ast);
+        for decl in program {
             match &decl.item.item {
                 Ast::RuleDecl((rule_ident, rule_ty, rule)) => {
-                    self.rule_decl(*rule_ident, *rule_ty, rule, src)
+                    self.rule_decl(*rule_ident, *rule_ty, rule, src);
                 }
                 Ast::Import(decl) => self.use_decl(*decl),
                 Ast::Alias(tk, alias) => self.token_decl(*tk, *alias, src),
@@ -37,11 +38,11 @@ impl Builder {
     fn rule_decl(&mut self, rule_ident: SrcRef, rule_ty: SrcRef, rule: &[RulePipe], src: &str) {
         let mut prods = Vec::new();
         let mut reductors = Vec::new();
-        rule.iter().for_each(|prod| {
-            let (p, r) = self.get_complete_rule(rule_ident, rule_ty, prod, src);
+        for prod in rule {
+            let (p, r) = self.get_complete_rule(prod, src);
             prods.extend(p);
             reductors.extend(r);
-        });
+        }
 
         assert!(
             self.rules
@@ -62,19 +63,13 @@ impl Builder {
         );
     }
 
-    fn get_complete_rule(
-        &self,
-        rule_ident: SrcRef,
-        rule_ty: SrcRef,
-        pipe: &RulePipe,
-        src: &str,
-    ) -> (Vec<Vec<SrcRef>>, Vec<SrcRef>) {
-        let mut prods = vec![vec![]];
+    fn get_complete_rule(&self, pipe: &RulePipe, src: &str) -> (Vec<Vec<SrcRef>>, Vec<SrcRef>) {
         fn push_all(prods: &mut [Vec<SrcRef>], item: SrcRef) {
             for prod in prods.iter_mut() {
                 prod.push(item);
             }
         }
+        let mut prods = vec![vec![]];
         // fn clone_all(prods: &mut Vec<Vec<SrcRef>>) -> &mut [Vec<Span>] {
         //     let len = prods.len();
         //     prods.reserve(prods.len());
@@ -120,8 +115,8 @@ impl Builder {
                 .insert(tk.from_source(src).to_string(), alias)
                 .is_none(),
             "overriding an already defined alias: {} to {} ",
-            tk.from_source(src).to_string(),
-            alias.from_source(src).to_string(),
+            tk.from_source(src),
+            alias.from_source(src),
         );
     }
 
@@ -129,6 +124,10 @@ impl Builder {
         self.imports.push(decl);
     }
 
+    /// Returns an expressions that returns a `RuleMap`
+    /// # Panics
+    /// Never.
+    #[must_use]
     pub fn dump_grammar(&self, src: &str) -> String {
         let mut out = "{\n".to_string();
         self.imports.iter().for_each(|i| {
@@ -137,9 +136,9 @@ impl Builder {
         writeln!(out, "\tlet mut map = lrp::RuleMap::new();").unwrap();
         for (r_name, impls) in &self.rules {
             writeln!(out, "\tmap.insert({r_name}, vec![").unwrap();
-            for i in 0..impls.len() {
+            for imp in impls {
                 out.push_str("\t\tvec![");
-                for gramem in &impls[i] {
+                for gramem in imp {
                     write!(out, "{}, ", gramem.from_source(src)).unwrap();
                 }
                 out.push_str("],\n");
@@ -150,6 +149,10 @@ impl Builder {
         out
     }
 
+    /// Dumps an expression that returns a `ReductMap`
+    /// # Panics
+    /// Never.
+    #[must_use]
     pub fn dump_reductor(&self, src: &str) -> String {
         let mut out = "{\n".to_string();
         self.imports.iter().for_each(|i| {
@@ -162,13 +165,13 @@ impl Builder {
                 writeln!(
                     out,
                     "\tfn lrp_wop_{r_name}_{i}(toks: &[Gramem]) -> lrp::Meta<{ty}> {{\n\t\tlrp::Meta::new({}, lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end))\n\t}}",
-                    imp.from_source(src).strip_prefix("->").unwrap().strip_suffix("%").unwrap()
+                    imp.from_source(src).strip_prefix("->").unwrap().strip_suffix('%').unwrap()
                 )
                 .unwrap();
             }
             write!(out, "\tmap.insert({r_name}, vec![").unwrap();
             for (i, _) in impls.iter().enumerate() {
-                write!(out, "lrp_wop_{r_name}_{i}, ").unwrap()
+                write!(out, "lrp_wop_{r_name}_{i}, ").unwrap();
             }
             out.push_str("\t]);\n\n");
         }

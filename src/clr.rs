@@ -117,6 +117,9 @@ where
         }
     }
 
+    /// Maps the decisions for the passed position
+    /// # Panics
+    /// Never.
     #[must_use]
     pub fn decision(&self, start: &T, pos: &Position<T>, row: &State<T>) -> Map<T, Action<T>> {
         pos.top().map_or_else(

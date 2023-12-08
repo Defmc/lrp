@@ -117,6 +117,7 @@ pub struct Span {
 }
 
 impl Span {
+    #[must_use]
     pub const fn new(start: usize, end: usize) -> Self {
         Self { start, end }
     }

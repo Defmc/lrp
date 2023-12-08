@@ -36,11 +36,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start = Instant::now();
     builder.process(&dfa.items[0], &file);
     let elapsed = start.elapsed();
-    println!("CODE BUILDER OUTPUT (after {:?}): {builder:?}", elapsed);
+    println!("CODE BUILDER OUTPUT (after {elapsed:?}): {builder:?}");
 
     println!(
-        "PRODUCED GRAMMAR CODE (after {:?}):\n\x1B[1;33m{}\x1B[0;m",
-        elapsed,
+        "PRODUCED GRAMMAR CODE (after {elapsed:?}):\n\x1B[1;33m{}\x1B[0;m",
         builder.dump_grammar(&file)
     );
     println!(

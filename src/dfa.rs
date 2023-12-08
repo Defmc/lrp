@@ -262,7 +262,7 @@ where
             }
 
             if let Some(it) = self.items.get(i) {
-                fmts.push(format!("{:?}", it));
+                fmts.push(format!("{it:?}"));
             }
         }
         fmts.join(" ")

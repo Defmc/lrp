@@ -19,10 +19,10 @@ pub enum Ast {
 }
 
 impl Ast {
+    #[must_use]
     pub fn get_src_ref(&self) -> Option<SrcRef> {
         match self {
-            Self::RuleItem(o) => Some(*o),
-            Self::IdentPath(o) => Some(*o),
+            Self::RuleItem(o) | Self::IdentPath(o) => Some(*o),
             _ => None,
         }
     }
@@ -152,12 +152,9 @@ pub mod reduct_map;
 pub fn lexer<'source>(
     source: &'source <Sym as Logos>::Source,
 ) -> impl Iterator<Item = Gramem> + 'source {
-    Sym::lexer(source).spanned().map(|(t, s)| {
-        Token::new(
-            Meta::new(Ast::Token(t.clone()), Span::new(s.start, s.end)),
-            t,
-        )
-    })
+    Sym::lexer(source)
+        .spanned()
+        .map(|(t, s)| Token::new(Meta::new(Ast::Token(t), Span::new(s.start, s.end)), t))
 }
 
 #[must_use]

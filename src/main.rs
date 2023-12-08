@@ -4,7 +4,7 @@ use std::{
     iter::Peekable,
 };
 
-use lrp::{Dfa, Grammar, Lalr, Parser, RuleMap, Set, Tabler, Token};
+use lrp::{Dfa, Grammar, Lalr, Parser, Set, Tabler, Token};
 use prettytable::{row, Cell, Row, Table};
 
 fn main() {
@@ -204,7 +204,7 @@ where
     });
     out.add_row(row![
         "state",
-        res.map_or_else(|e| format!("{e}"), |_| "ok".to_string())
+        res.map_or_else(|e| format!("{e}"), |()| "ok".to_string())
     ]);
 
     out.printstd();

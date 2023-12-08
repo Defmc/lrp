@@ -125,9 +125,8 @@ fn rule_pipe(toks: &[Gramem]) -> Meta<Ast> {
 fn rule_origin(toks: &[Gramem]) -> Meta<Ast> {
     debug_assert_eq!(toks[0].ty, Sym::RulePipe);
     debug_assert_eq!(toks[1].ty, Sym::CodeBlock);
-    let prod = match toks[0].item.item {
-        Ast::RulePipe(ref v) => v,
-        _ => unreachable!(),
+    let Ast::RulePipe(ref prod) = toks[0].item.item else {
+        unreachable!()
     };
     Meta::new(
         Ast::Rule(vec![(prod.clone(), toks[1].item.span)]),

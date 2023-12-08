@@ -14,4 +14,4 @@ harness = false
 hermes_bench = "0.1.0"
 
 [workspace]
-members = ["qk", "wop"]
+members = ["wop"]
