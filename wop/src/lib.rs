@@ -77,7 +77,7 @@ pub enum Sym {
     LineComment,
 
     /// Matches a entire function tail definition: arrow ("->"), return type and a expression
-    #[regex(r#"->[\s]*\{[^\}]*\}"#)]
+    #[regex(r#"(->)([^\}]|\}[^%])*\}%"#)]
     CodeBlock,
 
     #[error]

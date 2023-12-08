@@ -1,26 +1,35 @@
-use wop::Token;
+use wop::Sym;
+use wop::Ast;
 
-alias "=" Token::Assign;
-alias "|" Token::Pipe;
-alias "::" Token::PathAccess;
-alias ";" Token::Sc;
-alias "use" Token::UseWord;
-alias "alias" Token::AliasWord;
-alias "*" Token::Variadic;
-alias "+" Token::Repeated;
-alias "?" Token::Optional;
-alias "(" Token::OpenParen;
-alias ")" Token::CloseParen;
-alias Ident Token::Ident;
-alias StrLit Token::StrLit;
+alias ";" Sym::Sc;
+alias "::" Sym::PathAccess;
+alias "=" Sym::Assign;
+alias "alias" Sym::AliasWord;
+alias "use" Sym::UseWord;
 
-EntryPoint = Program;
-Program = ((Alias | Import | RuleDecl) ";")*;
-IdentPath = IdentPath "::" Ident | Ident;
-RuleDecl = Ident "=" Rule;
-Rule = (RulePipe "|")* RulePipe;
-RuleAttr = "?" | "*" | "+";
-RulePipe = ((Ident | StrLit) RuleAttr?)+;
-RuleItem = (Ident | StrLit | "(" Rule ")") RuleAttr?;
-Import = "use" IdentPath;
-Alias = "alias" (Ident | StrLit) IdentPath;
+EntryPoint: Ast = Program -> { Ast::EntryPoint(Box::new(toks[0].clone())) }% ;
+
+Program: Ast = Program Alias ";" -> { {} }%
+    |  Program Import ";" -> {}% 
+    |  Program RuleDecl ";" -> {}% 
+    |  Alias ";" -> {}% 
+    |  Import ";" -> {}% 
+    |  RuleDecl  ";" -> {}%;
+
+IdentPath: Ast = IdentPath PathAccess Ident -> {}%
+    | Ident -> {}%;
+
+RuleDecl: Ast = IdentPath "=" Rule -> {}%;
+
+Rule: Ast = Rule Pipe RulePipe -> {}%
+    | RulePipe -> {}%;
+
+RulePipe: Ast = RulePipe RuleItem -> {}% | RuleItem -> {}%;
+
+RuleItem: Ast = IdentPath -> {}%
+    | StrLit -> {}%;
+
+Import: Ast = "use" IdentPath -> {}%;
+
+Alias: Ast = "alias" Ident IdentPath -> {}%
+    | AliasWord StrLit IdentPath -> {}%;
