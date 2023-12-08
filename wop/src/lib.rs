@@ -9,36 +9,28 @@ pub enum Ast {
     Token(Sym),
     EntryPoint(Box<Gramem>),
     Program(Vec<Gramem /* Ast::RuleDecl | Ast::Import | Ast::Alias */>),
-    RuleDecl(SrcRef, Vec<Vec<Gramem>>),
-    Rule(Vec<Vec<Gramem>>),
+    RuleDecl(RuleDecl),
+    Rule(Vec<RulePipe>),
     RulePipe(Vec<Gramem>),
-    RuleItem(Box<RuleItem>),
-    RuleAttr(Attr),
+    RuleItem(SrcRef),
     Import(SrcRef),
     Alias(SrcRef, SrcRef),
     IdentPath(SrcRef),
 }
 
 impl Ast {
-    pub fn as_rule_item(&self) -> Option<&RuleItem> {
+    pub fn get_src_ref(&self) -> Option<SrcRef> {
         match self {
-            Ast::RuleItem(item) => Some(item),
+            Self::RuleItem(o) => Some(*o),
+            Self::IdentPath(o) => Some(*o),
             _ => None,
         }
     }
 }
 
-pub type RuleItem = (Gramem, Attr);
+pub type RuleDecl = (SrcRef, SrcRef, Vec<RulePipe>);
+pub type RulePipe = (Vec<Gramem>, SrcRef);
 pub type Gramem = Token<Meta<Ast>, Sym>;
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default)]
-pub enum Attr {
-    #[default]
-    Normal,
-    Optional,
-    Repeated,
-    Variadic,
-}
 
 #[derive(Logos, Debug, PartialEq, PartialOrd, Clone, Copy, Ord, Eq)]
 pub enum Sym {
@@ -66,14 +58,8 @@ pub enum Sym {
     #[token("::")]
     PathAccess,
 
-    #[token("?")]
-    Optional,
-
-    #[token("*")]
-    Variadic, // Optional + Repeated
-
-    #[token("+")]
-    Repeated,
+    #[token(":")]
+    TwoDots,
 
     #[regex(r#"[a-zA-Z_]\w*"#)]
     Ident,
@@ -90,6 +76,10 @@ pub enum Sym {
     #[regex(r#"//[^\n]*\r?"#, logos::skip)]
     LineComment,
 
+    /// Matches a entire function tail definition: arrow ("->"), return type and a expression
+    #[regex(r#"->[\s]*\{[^\}]*\}"#)]
+    CodeBlock,
+
     #[error]
     Error,
 
@@ -97,6 +87,7 @@ pub enum Sym {
     #[regex(r"[ \t\n\r]+", logos::skip)]
     Ws,
 
+    /// End of file
     Eof,
 
     // Nonterminals
@@ -109,7 +100,6 @@ pub enum Sym {
     RulePipe,
     RuleDecl,
     IdentPath,
-    RuleAttr,
     RuleItem,
 }
 
@@ -123,29 +113,32 @@ pub fn grammar() -> Grammar<Sym> {
 
     let rules = lrp::grammar_map! {
     EntryPoint -> Program,
+
     Program -> Program Alias Sc
-    |  Program Import Sc
-    |  Program RuleDecl Sc
-    |  Alias Sc
-    |  Import Sc
-    |  RuleDecl Sc,
+        |  Program Import Sc
+        |  Program RuleDecl Sc
+        |  Alias Sc
+        |  Import Sc
+        |  RuleDecl Sc,
+
     IdentPath -> IdentPath PathAccess Ident
-    | Ident,
-    RuleDecl -> Ident Assign Rule,
-    Rule -> Rule Pipe RulePipe
-    | RulePipe,
-    RuleAttr -> Optional | Variadic | Repeated,
+        | Ident,
+
+    RuleDecl -> IdentPath TwoDots IdentPath Assign Rule,
+
+    Rule -> Rule Pipe RulePipe CodeBlock
+        | RulePipe CodeBlock,
+
     RulePipe -> RulePipe RuleItem | RuleItem,
-    RuleItem -> Ident RuleAttr
-    | Ident
-    | StrLit RuleAttr
-    | StrLit
-    | OpenParen Rule CloseParen RuleAttr
-    | OpenParen Rule CloseParen,
+
+    RuleItem -> IdentPath
+        | StrLit,
+
     Import -> UseWord IdentPath,
+
     Alias -> AliasWord Ident IdentPath
-    | AliasWord StrLit IdentPath
-        };
+        | AliasWord StrLit IdentPath
+    };
 
     Grammar::new(EntryPoint, rules, Eof)
 }

@@ -1,7 +1,7 @@
 use logos::Logos;
 use lrp::{Meta, Span, Token};
 use std::{fs, time::Instant};
-use wop::{builder::Builder, Ast, Attr, Gramem};
+use wop::{builder::Builder, Ast, Gramem};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::env::args().nth(1).unwrap();
@@ -36,12 +36,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start = Instant::now();
     builder.process(&dfa.items[0], &file);
     let elapsed = start.elapsed();
-    println!(
-        "CODE BUILDER OUTPUT (after {:?}): {builder:?}",
-        elapsed
-    );
+    println!("CODE BUILDER OUTPUT (after {:?}): {builder:?}", elapsed);
 
-    println!("PRODUCED CODE (after {:?}):\n\x1B[1;33m{}\x1B[0;m", elapsed, builder.dump(&file));
+    println!(
+        "PRODUCED CODE (after {:?}):\n\x1B[1;33m{}\x1B[0;m",
+        elapsed,
+        builder.dump_grammar(&file)
+    );
     res
 }
 
@@ -69,30 +70,21 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
         Ast::Token(s) => println!("{tab_spc}|> sym: {s:?}"),
         Ast::EntryPoint(g) => print_nested(g.as_ref(), "", lvl, txt),
         Ast::Program(gs) => print_iter_nested(gs.iter(), "- ", lvl, txt),
-        Ast::RuleAttr(a) => println!(
-            "{tab_spc}|> type: {a:?} ({})",
-            match a {
-                Attr::Normal => " ",
-                Attr::Optional => "?",
-                Attr::Repeated => "+",
-                Attr::Variadic => "*",
-            }
-        ),
-        Ast::RuleDecl(g, gs) => {
-            println!(
-                "{tab_spc}|> rule_name: \x1B[1;33m\"{}\"\x1B[0;m",
-                g.from_source(txt)
-            );
-            for (i, gss) in gs.iter().enumerate() {
-                println!("{tab_spc}|> production {i}:");
-                print_iter_nested(gss.iter(), "- ", lvl + 1, txt);
-            }
+        Ast::RuleDecl((rule_ident, rule_ty, rule)) => {
+            // println!(
+            //     "{tab_spc}|> rule_name: \x1B[1;33m\"{}\"\x1B[0;m",
+            //     g.from_source(txt)
+            // );
+            // for (i, gss) in gs.iter().enumerate() {
+            //     println!("{tab_spc}|> production {i}:");
+            //     print_iter_nested(gss.iter(), "- ", lvl + 1, txt);
+            // }
         }
         Ast::Rule(gs) => {
-            for (i, gss) in gs.iter().enumerate() {
-                println!("{tab_spc}|> production {i}:");
-                print_iter_nested(gss.iter(), "- ", lvl + 1, txt);
-            }
+            // for (i, gss) in gs.iter().enumerate() {
+            //     println!("{tab_spc}|> production {i}:");
+            //     print_iter_nested(gss.iter(), "- ", lvl + 1, txt);
+            // }
         }
         Ast::RulePipe(gs) => {
             print_iter_nested(gs.iter(), "- ", lvl, txt);
@@ -104,8 +96,7 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
         }
         Ast::IdentPath(g) => println!("{tab_spc} {}", g.from_source(txt)),
         Ast::RuleItem(g) => {
-            print_nested(&g.0, "", lvl, txt);
-            println!("{tab_spc}|> type: {:?}", g.1)
+            println!("{tab_spc}|> item: {:?}", g.from_source(txt));
         }
     }
 }
