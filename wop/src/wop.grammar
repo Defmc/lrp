@@ -1,11 +1,11 @@
-use wop::Sym;
+use wop::Sym::*;
 use wop::Ast;
 
-alias ";" Sym::Sc;
-alias "::" Sym::PathAccess;
-alias "=" Sym::Assign;
-alias "alias" Sym::AliasWord;
-alias "use" Sym::UseWord;
+alias ";" Sc;
+alias "::" PathAccess;
+alias "=" Assign;
+alias "alias" AliasWord;
+alias "use" UseWord;
 
 EntryPoint: Ast = Program -> { Ast::EntryPoint(Box::new(toks[0].clone())) }% ;
 

@@ -19,7 +19,7 @@ pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {
         ],
     );
     map.insert(Sym::IdentPath, vec![ident_path_extend, ident_path_origin]);
-    map.insert(Sym::Import, vec![import]);
+    map.insert(Sym::Import, vec![import, import]);
     map.insert(Sym::Alias, vec![alias; 2]);
     map.insert(Sym::RulePipe, vec![rule_pipe_extend, rule_pipe]);
     map.insert(Sym::RuleDecl, vec![rule_decl]);
@@ -80,9 +80,17 @@ fn ident_path_extend(toks: &[Gramem]) -> Meta<Ast> {
 fn import(toks: &[Gramem]) -> Meta<Ast> {
     debug_assert_eq!(toks[0].ty, Sym::UseWord);
     debug_assert_eq!(toks[1].ty, Sym::IdentPath);
+    let end = if let Some(tk) = toks.get(2) {
+        debug_assert_eq!(tk.ty, Sym::PathAccess);
+        debug_assert_eq!(toks[3].ty, Sym::Glob);
+        toks[3].item.span.end
+    } else {
+        toks[1].item.span.end
+    };
+
     Meta::new(
-        Ast::Import(toks[1].item.span),
-        Span::new(toks[0].item.span.start, toks[1].item.span.end),
+        Ast::Import(Span::new(toks[1].item.span.start, end)),
+        Span::new(toks[0].item.span.start, end),
     )
 }
 

@@ -61,6 +61,9 @@ pub enum Sym {
     #[token(":")]
     TwoDots,
 
+    #[token("*")]
+    Glob,
+
     #[regex(r#"[a-zA-Z_]\w*"#)]
     Ident,
 
@@ -134,7 +137,8 @@ pub fn grammar() -> Grammar<Sym> {
     RuleItem -> IdentPath
         | StrLit,
 
-    Import -> UseWord IdentPath,
+    Import -> UseWord IdentPath PathAccess Glob
+        | UseWord IdentPath,
 
     Alias -> AliasWord Ident IdentPath
         | AliasWord StrLit IdentPath
