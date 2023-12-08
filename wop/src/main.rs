@@ -71,20 +71,32 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
         Ast::EntryPoint(g) => print_nested(g.as_ref(), "", lvl, txt),
         Ast::Program(gs) => print_iter_nested(gs.iter(), "- ", lvl, txt),
         Ast::RuleDecl((rule_ident, rule_ty, rule)) => {
-            // println!(
-            //     "{tab_spc}|> rule_name: \x1B[1;33m\"{}\"\x1B[0;m",
-            //     g.from_source(txt)
-            // );
-            // for (i, gss) in gs.iter().enumerate() {
-            //     println!("{tab_spc}|> production {i}:");
-            //     print_iter_nested(gss.iter(), "- ", lvl + 1, txt);
-            // }
+            println!(
+                "{tab_spc}|> rule_name: \x1B[1;33m\"{}\"\x1B[0;m",
+                rule_ident.from_source(txt)
+            );
+            println!(
+                "{tab_spc}|> rule_type: \x1B[1;33m\"{}\"\x1B[0;m",
+                rule_ty.from_source(txt)
+            );
+            for (i, gs) in rule.iter().enumerate() {
+                println!("{tab_spc}|> production {i}:");
+                print_iter_nested(gs.0.iter(), "- ", lvl + 1, txt);
+                println!(
+                    "{tab_spc}|> reductor {i}: \x1B[1;33m\"{}\"\x1B[0;m",
+                    gs.1.from_source(txt).strip_prefix("->").unwrap()
+                );
+            }
         }
         Ast::Rule(gs) => {
-            // for (i, gss) in gs.iter().enumerate() {
-            //     println!("{tab_spc}|> production {i}:");
-            //     print_iter_nested(gss.iter(), "- ", lvl + 1, txt);
-            // }
+            for (i, gs) in gs.iter().enumerate() {
+                println!("{tab_spc}|> production {i}:");
+                print_iter_nested(gs.0.iter(), "- ", lvl + 1, txt);
+                println!(
+                    "{tab_spc}|> reductor {i}: \x1B[1;33m\"{}\"\x1B[0;m",
+                    gs.1.from_source(txt).strip_prefix("->").unwrap()
+                );
+            }
         }
         Ast::RulePipe(gs) => {
             print_iter_nested(gs.iter(), "- ", lvl, txt);
