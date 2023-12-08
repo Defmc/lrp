@@ -161,7 +161,7 @@ impl Builder {
             for (i, imp) in impls.iter().enumerate() {
                 writeln!(
                     out,
-                    "\tfn lrp_wop_{r_name}_{i}(toks: &[Gramem]) -> lrp::Meta<{ty}> {{\n\t\tMeta::new({}, lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end))\n\t}}",
+                    "\tfn lrp_wop_{r_name}_{i}(toks: &[Gramem]) -> lrp::Meta<{ty}> {{\n\t\tlrp::Meta::new({}, lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end))\n\t}}",
                     imp.from_source(src).strip_prefix("->").unwrap().strip_suffix("%").unwrap()
                 )
                 .unwrap();
