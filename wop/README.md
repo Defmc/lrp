@@ -1,5 +1,5 @@
-#  A easy-to-use, compilation-driven interface for the `lrp` parser library
-Writing direct grammars suck: handling lexer's input, creating tiny different rule productions, creating the reductor table and some other stuffs that we don't care about. This library is focused on simplify this process, the only external thing you need is a lexer like [logos](https://crates.io/crates/logos)
+#  An easy-to-use, compilation-driven interface for the `lrp` parser library
+Writing direct grammars suck: handling the lexer's input, creating tiny different rule productions, creating the reductor table and some other stuffs that we don't care about. This library is focused on simplifying this process, the only external thing you need is a lexer like [logos](https://crates.io/crates/logos)
 
 ## A grammar example
 ```cpp
@@ -41,7 +41,7 @@ assert_eq!(builder1, builder2);
 ```
 
 ## Using it
-To use, just build it from `Builder` and call `builder.dump_grammar()` to generate the code for the grammar:
+To use it, just build it from `Builder` and call `builder.dump_grammar()` to generate the code for the grammar:
 ```rs
 format!("let grammar = Grammar::new(Sym::EntryPoint, {}, Sym::Eof)", builder.dump_grammar(src)) // `src` is the source code for the grammar we used above
 ```
@@ -51,7 +51,7 @@ And for DFA building, remember to dump the reduct_map:
 format!("parser.dfa(buf, {})", builder.dump_reduct_map(src))
 ```
 
-Fun fact: This project use itself.
+Fun fact: This project uses itself.
 
 Ideas:
 - [x] `Builder::dump_grammar` // should return a `RuleMap`
