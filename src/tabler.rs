@@ -184,6 +184,8 @@ where
         firsts
     }
 
+    /// Filters by positions that contains some symbol at the top. I.e:
+    /// sym_filter({ [S -> .C C; $], [S -> .d C; $]}, C) = { [S -> .C C; $] }
     #[must_use]
     pub fn sym_filter(state: &State<T>, sym: &T) -> State<T> {
         state

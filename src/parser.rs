@@ -93,6 +93,7 @@ where
         self.parse(buffer, self.empty::<I::IntoIter>()).is_ok()
     }
 
+    /// Returns the state's index generated from that passed kernel
     #[must_use]
     fn state_from_kernel(&self, kernel: &State<T>) -> Option<usize> {
         let final_kernel = self.final_kernel(kernel)?;
@@ -104,6 +105,10 @@ where
         Some(kernel)
     }
 
+    /// Merges positions that contains the same body, but different lookaheads. I.e:
+    /// merged({ [S -> C.C; $], [S -> C.C; c]}) = { [S -> C.C; $ c] }
+    /// # Panics
+    /// Never.
     #[must_use]
     fn merged(states: State<T>) -> State<T> {
         let mut new = State::new();

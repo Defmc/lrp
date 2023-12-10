@@ -73,7 +73,8 @@ where
                 if self.table.grammar.is_terminal(&top) {
                     continue;
                 }
-                let look = pos.locus().map_or_else(
+                // TODO: Remove `clone`
+                let look = pos.next().map_or_else(
                     || pos.look.clone(),
                     |locus| self.table.first_of(&Set::from([locus])),
                 );
@@ -90,9 +91,8 @@ where
         self.proc_closures_first_row();
         let mut idx = 0;
         while idx < self.table.states.len() {
-            let row = self.table.states[idx].clone();
             for s in self.table.grammar.symbols() {
-                let Some((kernel, closures)) = self.goto(&row, &s) else {
+                let Some((kernel, closures)) = self.goto(&self.table.states[idx], &s) else {
                     continue;
                 };
                 let old_val = self.table.kernels.insert(kernel, self.table.states.len());
@@ -121,15 +121,20 @@ where
     /// # Panics
     /// Never.
     #[must_use]
-    pub fn decision(&self, start: &T, pos: &Position<T>, row: &State<T>) -> Map<T, Action<T>> {
+    pub fn decision(
+        &self,
+        entry_point: &T,
+        pos: &Position<T>,
+        row: &State<T>,
+    ) -> Map<T, Action<T>> {
         pos.top().map_or_else(
             || {
                 pos.look
                     .iter()
                     .map(|l| {
                         (
-                            <T>::clone(l),
-                            if &pos.rule == start {
+                            l.clone(),
+                            if &pos.rule == entry_point {
                                 Action::Acc
                             } else {
                                 Action::Reduce(pos.rule.clone(), pos.seq.clone())
@@ -138,20 +143,23 @@ where
                     })
                     .collect()
             },
-            |locus| {
-                let filter = Tabler::sym_filter(row, &locus);
+            |top| {
+                let filter = Tabler::sym_filter(row, &top);
                 let state = self
                     .state_from_kernel(&filter)
                     .expect("`kernels` is incomplete");
-                if self.table.grammar.is_terminal(&locus) {
-                    Map::from([(locus, Action::Shift(state))])
+                if self.table.grammar.is_terminal(&top) {
+                    Map::from([(top, Action::Shift(state))])
                 } else {
-                    Map::from([(locus, Action::Goto(state))])
+                    Map::from([(top, Action::Goto(state))])
                 }
             },
         )
     }
 
+    /// Propagates a closure until there's no more states to generate from it
+    /// Following the transitive definition: prop_closure(prop_closure(S)) = prop_closure(S), but
+    /// S != prop_closure(S)
     #[must_use]
     pub fn prop_closure(&self, seed: State<T>) -> State<T> {
         transitive(seed, |s| self.closure(s))

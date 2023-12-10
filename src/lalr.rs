@@ -101,7 +101,7 @@ where
                 if self.table.grammar.is_terminal(&top) {
                     continue;
                 }
-                let look = pos.locus().map_or_else(
+                let look = pos.next().map_or_else(
                     || pos.look.clone(),
                     |locus| self.table.first_of(&Set::from([locus])),
                 );

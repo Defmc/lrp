@@ -36,8 +36,10 @@ where
         Self { look, ..self }
     }
 
+    /// Returns the next item after current position. I.e:
+    /// locus([S -> C. D f; $]) = f
     #[must_use]
-    pub fn locus(&self) -> Option<T> {
+    pub fn next(&self) -> Option<T> {
         self.peek(1)
     }
 
@@ -46,9 +48,11 @@ where
         self.seq.0.get(self.point + qty).cloned()
     }
 
+    /// Returns the current position item. I.e:
+    /// locus([S -> C. D f; $]) = D
     #[must_use]
     pub fn top(&self) -> Option<T> {
-        self.seq.0.get(self.point).cloned()
+        self.peek(0)
     }
 
     #[must_use]
