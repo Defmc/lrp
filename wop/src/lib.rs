@@ -12,7 +12,7 @@ pub enum Ast {
     RuleDecl(RuleDecl),
     Rule(Vec<RulePipe>),
     RulePipe(Vec<Gramem>),
-    RuleItem(SrcRef),
+    RuleItem(Box<Gramem>),
     Import(SrcRef),
     Alias(SrcRef, SrcRef),
     IdentPath(SrcRef),
@@ -22,7 +22,7 @@ impl Ast {
     #[must_use]
     pub const fn get_src_ref(&self) -> Option<SrcRef> {
         match self {
-            Self::RuleItem(o) | Self::IdentPath(o) => Some(*o),
+            Self::IdentPath(o) => Some(*o),
             _ => None,
         }
     }

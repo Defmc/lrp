@@ -1,4 +1,4 @@
-use crate::{Ast, Gramem, RulePipe};
+use crate::{Ast, Gramem, RulePipe, Sym};
 use std::{collections::HashMap, fmt::Write};
 
 pub type SrcRef = lrp::Span;
@@ -39,6 +39,12 @@ impl Builder {
         let mut prods = Vec::new();
         let mut reductors = Vec::new();
         for prod in rule {
+            assert_ne!(
+                prod.1.from_source(src),
+                "",
+                "missing code block for {:?}",
+                rule_ident.from_source(src)
+            );
             let (p, r) = self.get_complete_rule(prod, src);
             prods.extend(p);
             reductors.extend(r);
@@ -79,31 +85,49 @@ impl Builder {
         //     &mut prods[len..]
         // }
         for g in &pipe.0 {
-            println!("{g:?}");
-            let src_ref = g.item.item.get_src_ref().unwrap();
-            push_all(
-                &mut prods,
-                *self
-                    .aliases
-                    .get(src_ref.from_source(src))
-                    .unwrap_or(&g.item.span),
-            );
-            // Sym::Rule => match g.item.item {
-            //     Ast::Rule(ref v) => {
-            //         let mut new_prods = Vec::new();
-            //         for prod in &prods {
-            //             for var in v {
-            //                 for new_var in self.get_complete_rule(var, src) {
-            //                     let mut prod = prod.clone();
-            //                     prod.extend(new_var);
-            //                     new_prods.push(prod);
-            //                 }
-            //             }
-            //         }
-            //         prods = new_prods;
-            //     }
-            //     _ => unreachable!(),
-            // },
+            let g = match g.item.item {
+                Ast::RuleItem(ref i) => i,
+                _ => unreachable!(),
+            };
+            match g.ty {
+                Sym::StrLit => push_all(
+                    &mut prods,
+                    *self
+                        .aliases
+                        .get(g.item.span.from_source(src))
+                        .unwrap_or_else(|| {
+                            eprintln!(
+                                "using literal string for {} (maybe is missing an alias?)",
+                                g.item.span.from_source(src)
+                            );
+                            &g.item.span
+                        }),
+                ),
+                Sym::IdentPath => push_all(
+                    &mut prods,
+                    *self
+                        .aliases
+                        .get(g.item.span.from_source(src))
+                        .unwrap_or(&g.item.span),
+                ),
+                Sym::Rule => match g.item.item {
+                    Ast::Rule(ref v) => {
+                        let mut new_prods = Vec::new();
+                        for prod in &prods {
+                            for var in v {
+                                for new_var in self.get_complete_rule(var, src).0 {
+                                    let mut prod = prod.clone();
+                                    prod.extend(new_var);
+                                    new_prods.push(prod);
+                                }
+                            }
+                        }
+                        prods = new_prods;
+                    }
+                    _ => unreachable!(),
+                },
+                _ => unreachable!("{g:?}"),
+            }
         }
         let prods_size_it = 0..prods.len();
         (prods, prods_size_it.map(|_| pipe.1).collect())

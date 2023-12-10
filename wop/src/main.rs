@@ -37,7 +37,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start = Instant::now();
     builder.process(&dfa.items[0], &file);
     let elapsed = start.elapsed();
-    println!("CODE BUILDER OUTPUT (after {elapsed:?}): {builder:?}");
 
     println!(
         "PRODUCED GRAMMAR CODE (after {elapsed:?}):\n\x1B[1;33m{}\x1B[0;m",
@@ -50,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     println!("WRITING DUMP");
     let start = Instant::now();
-    let out = File::create("src/out.rs")?;
+    let out = File::create("out.rs")?;
     let mut writer = BufWriter::new(out);
     writeln!(
         writer,
@@ -62,7 +61,7 @@ use lrp::{{Grammar, ReductMap, Span}};
 #[allow(unused_imports)]
 #[must_use]
 pub fn grammar() -> Grammar<Sym> {{
-    Grammar::new(EntryPoint, {}, Eof)
+    Grammar::new(Sym::EntryPoint, {}, Sym::Eof)
 }}"#,
         builder.dump_grammar(&file)
     )?;
@@ -116,7 +115,7 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
                 print_iter_nested(gs.0.iter(), "- ", lvl + 1, txt);
                 println!(
                     "{tab_spc}|> reductor {i}: \x1B[1;33m\"{}\"\x1B[0;m",
-                    gs.1.from_source(txt).strip_prefix("->").unwrap()
+                    gs.1.from_source(txt).strip_prefix("->").unwrap_or("(null)")
                 );
             }
         }
@@ -126,7 +125,7 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
                 print_iter_nested(gs.0.iter(), "- ", lvl + 1, txt);
                 println!(
                     "{tab_spc}|> reductor {i}: \x1B[1;33m\"{}\"\x1B[0;m",
-                    gs.1.from_source(txt).strip_prefix("->").unwrap()
+                    gs.1.from_source(txt).strip_prefix("->").unwrap_or("(null)")
                 );
             }
         }
@@ -139,8 +138,6 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
             println!("{tab_spc}|> definition: {}", h.from_source(txt));
         }
         Ast::IdentPath(g) => println!("{tab_spc} {}", g.from_source(txt)),
-        Ast::RuleItem(g) => {
-            println!("{tab_spc}|> item: {:?}", g.from_source(txt));
-        }
+        Ast::RuleItem(g) => print_nested(g.as_ref(), "", lvl, txt),
     }
 }

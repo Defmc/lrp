@@ -8,20 +8,13 @@ alias "alias" AliasWord;
 alias "use" UseWord;
 alias "*" Glob;
 alias ":" TwoDots;
+alias "(" OpenParen;
+alias ")" CloseParen;
+// A comment just for test
 
 EntryPoint: Ast = Program -> { Ast::EntryPoint(Box::new(toks[0].clone())) }% ;
 
-Program: Ast = Program Alias ";" -> { 
-    let program = &toks[0];
-    let extension = toks[1].clone();
-    let mut program_vec = match program.item.item {
-        Ast::Program(ref v) => v.clone(),
-        _ => unreachable!(),
-    };
-    program_vec.push(extension);
-    Ast::Program(program_vec)
-}%
-    |  Program Import ";" -> {
+Program: Ast = Program (Import | Alias | RuleDecl) ";" -> { 
     let program = &toks[0];
     let extension = toks[1].clone();
     let mut program_vec = match program.item.item {
@@ -31,19 +24,7 @@ Program: Ast = Program Alias ";" -> {
     program_vec.push(extension);
     Ast::Program(program_vec)
     }% 
-    |  Program RuleDecl ";" -> {
-    let program = &toks[0];
-    let extension = toks[1].clone();
-    let mut program_vec = match program.item.item {
-        Ast::Program(ref v) => v.clone(),
-        _ => unreachable!(),
-    };
-    program_vec.push(extension);
-    Ast::Program(program_vec)
-    }% 
-    |  Alias ";" -> { Ast::Program(toks[..1].to_vec()) }% 
-    |  Import ";" -> { Ast::Program(toks[..1].to_vec()) }% 
-    |  RuleDecl  ";" -> { Ast::Program(toks[..1].to_vec()) }%;
+    |  (Alias | Import | RuleDecl) ";" -> { Ast::Program(toks[..1].to_vec()) }% ;
 
 IdentPath: Ast = IdentPath PathAccess Ident -> {
     let ip = toks[0].clone();
@@ -74,12 +55,30 @@ Rule: Ast = Rule Pipe RulePipe CodeBlock -> {
     };
     Ast::Rule(rule_vec)
 }%
+    | Rule Pipe RulePipe -> {
+        let mut rule_vec = match toks[0].item.item {
+            Ast::Rule(ref vv) => vv.clone(),
+            _ => unreachable!(),
+        };
+        match toks[2].item.item {
+            Ast::RulePipe(ref v) => rule_vec.push((v.clone(), Span::new(0, 0))),
+            _ => unreachable!(),
+        };
+        Ast::Rule(rule_vec)
+    }%
+
     | RulePipe CodeBlock -> {
     let Ast::RulePipe(ref prod) = toks[0].item.item else {
         unreachable!()
     };
     Ast::Rule(vec![(prod.clone(), toks[1].item.span)])
-    }%;
+}%
+    | RulePipe -> {
+    let Ast::RulePipe(ref prod) = toks[0].item.item else {
+        unreachable!()
+    };
+    Ast::Rule(vec![(prod.clone(), Span::new(0, 0))])
+}%;
 
 RulePipe: Ast = RulePipe RuleItem -> {
     let mut v = match toks[0].item.item {
@@ -93,23 +92,17 @@ RulePipe: Ast = RulePipe RuleItem -> {
     Ast::RulePipe(toks[..1].to_vec())
 }%;
 
-RuleItem: Ast = IdentPath -> {
-    Ast::RuleItem(toks[0].item.span)
+RuleItem: Ast = (IdentPath | StrLit) -> {
+    Ast::RuleItem(Box::new(toks[0].clone()))
 }%
-    | StrLit -> {
-    Ast::RuleItem(toks[0].item.span)
+    | "(" Rule ")" -> {
+    Ast::RuleItem(Box::new(toks[1].clone()))
 }%;
 
-Import: Ast = "use" IdentPath "::" "*" -> {
-    Ast::Import(Span::new(toks[1].item.span.start, toks[3].item.span.end))
-}%
-    | "use" IdentPath -> {
-    Ast::Import(toks[1].item.span)
+Import: Ast = "use" (IdentPath "::" "*" | IdentPath) -> {
+    Ast::Import(Span::new(toks[1].item.span.start, toks.last().unwrap().item.span.end))
 }%;
 
-Alias: Ast = "alias" Ident IdentPath -> {
+Alias: Ast = "alias" (Ident | StrLit) IdentPath -> {
     Ast::Alias(toks[1].item.span, toks[2].item.span)
-}%
-    | AliasWord StrLit IdentPath -> {
-    Ast::Alias(toks[1].item.span, toks[2].item.span)
-    }%;
+}%;
