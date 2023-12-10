@@ -10,7 +10,7 @@ alias "*" Glob;
 alias ":" TwoDots;
 alias "(" OpenParen;
 alias ")" CloseParen;
-// A comment just for test
+alias "?" Optional;
 
 EntryPoint: Ast = Program -> { Ast::EntryPoint(Box::new(toks[0].clone())) }% ;
 
@@ -44,40 +44,22 @@ RuleDecl: Ast = IdentPath ":" IdentPath "=" Rule -> {
     Ast::RuleDecl((ident, ty, rule_vec))
 }%;
 
-Rule: Ast = Rule Pipe RulePipe CodeBlock -> {
+Rule: Ast = Rule Pipe RulePipe CodeBlock? -> {
     let mut rule_vec = match toks[0].item.item {
         Ast::Rule(ref vv) => vv.clone(),
         _ => unreachable!(),
     };
     match toks[2].item.item {
-        Ast::RulePipe(ref v) => rule_vec.push((v.clone(), toks[3].item.span)),
+        Ast::RulePipe(ref v) => rule_vec.push((v.clone(), toks.get(3).map(|g| g.item.span).unwrap_or(Span::new(0, 0)))),
         _ => unreachable!(),
     };
     Ast::Rule(rule_vec)
 }%
-    | Rule Pipe RulePipe -> {
-        let mut rule_vec = match toks[0].item.item {
-            Ast::Rule(ref vv) => vv.clone(),
-            _ => unreachable!(),
-        };
-        match toks[2].item.item {
-            Ast::RulePipe(ref v) => rule_vec.push((v.clone(), Span::new(0, 0))),
-            _ => unreachable!(),
-        };
-        Ast::Rule(rule_vec)
-    }%
-
-    | RulePipe CodeBlock -> {
+    | RulePipe CodeBlock? -> {
     let Ast::RulePipe(ref prod) = toks[0].item.item else {
         unreachable!()
     };
-    Ast::Rule(vec![(prod.clone(), toks[1].item.span)])
-}%
-    | RulePipe -> {
-    let Ast::RulePipe(ref prod) = toks[0].item.item else {
-        unreachable!()
-    };
-    Ast::Rule(vec![(prod.clone(), Span::new(0, 0))])
+    Ast::Rule(vec![(prod.clone(), toks.get(1).map(|g| g.item.span).unwrap_or(Span::new(0, 0)))])
 }%;
 
 RulePipe: Ast = RulePipe RuleItem -> {
@@ -92,11 +74,11 @@ RulePipe: Ast = RulePipe RuleItem -> {
     Ast::RulePipe(toks[..1].to_vec())
 }%;
 
-RuleItem: Ast = (IdentPath | StrLit) -> {
-    Ast::RuleItem(Box::new(toks[0].clone()))
+RuleItem: Ast = (IdentPath | StrLit) Optional? -> {
+    Ast::RuleItem(Box::new(toks[0].clone()), toks.len() > 1)
 }%
-    | "(" Rule ")" -> {
-    Ast::RuleItem(Box::new(toks[1].clone()))
+    | "(" Rule ")" Optional -> {
+    Ast::RuleItem(Box::new(toks[1].clone()), toks.len() > 3)
 }%;
 
 Import: Ast = "use" (IdentPath "::" "*" | IdentPath) -> {

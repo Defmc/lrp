@@ -12,7 +12,7 @@ pub enum Ast {
     RuleDecl(RuleDecl),
     Rule(Vec<RulePipe>),
     RulePipe(Vec<Gramem>),
-    RuleItem(Box<Gramem>),
+    RuleItem(Box<Gramem>, /* optional */ bool),
     Import(SrcRef),
     Alias(SrcRef, SrcRef),
     IdentPath(SrcRef),
@@ -63,6 +63,9 @@ pub enum Sym {
 
     #[token("*")]
     Glob,
+
+    #[token("?")]
+    Optional,
 
     #[regex(r#"[a-zA-Z_]\w*"#)]
     Ident,

@@ -138,6 +138,9 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
             println!("{tab_spc}|> definition: {}", h.from_source(txt));
         }
         Ast::IdentPath(g) => println!("{tab_spc} {}", g.from_source(txt)),
-        Ast::RuleItem(g) => print_nested(g.as_ref(), "", lvl, txt),
+        Ast::RuleItem(g, o) => {
+            print_nested(g.as_ref(), "", lvl, txt);
+            println!("{tab_spc}|> optional: {o}")
+        }
     }
 }

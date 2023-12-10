@@ -76,19 +76,13 @@ impl Builder {
             }
         }
         let mut prods = vec![vec![]];
-        // fn clone_all(prods: &mut Vec<Vec<SrcRef>>) -> &mut [Vec<Span>] {
-        //     let len = prods.len();
-        //     prods.reserve(prods.len());
-        //     for i in 0..prods.len() {
-        //         prods.push(prods[i].clone());
-        //     }
-        //     &mut prods[len..]
-        // }
         for g in &pipe.0 {
-            let g = match g.item.item {
-                Ast::RuleItem(ref i) => i,
-                _ => unreachable!(),
+            let (g, optional) = if let Ast::RuleItem(ref i, o) = g.item.item {
+                (i, o)
+            } else {
+                unreachable!()
             };
+            let clones = if optional { prods.clone() } else { Vec::new() };
             match g.ty {
                 Sym::StrLit => push_all(
                     &mut prods,
@@ -128,6 +122,7 @@ impl Builder {
                 },
                 _ => unreachable!("{g:?}"),
             }
+            prods.extend(clones);
         }
         let prods_size_it = 0..prods.len();
         (prods, prods_size_it.map(|_| pipe.1).collect())
