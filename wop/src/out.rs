@@ -1,4 +1,4 @@
-use crate::{Gramem, Meta, Sym};
+use crate::{Ast, Gramem, Meta, Sym};
 use lrp::{Grammar, ReductMap, Span};
 
 #[allow(clippy::enum_glob_use)]

@@ -1,5 +1,5 @@
 #  An easy-to-use, compilation-driven interface for the `lrp` parser library
-Writing direct grammars suck: handling the lexer's input, creating tiny different rule productions, creating the reductor table and some other stuffs that we don't care about. This library is focused on simplifying this process, the only external thing you need is a lexer like [logos](https://crates.io/crates/logos)
+Writing direct grammars sucks: handling the lexer's input, creating tiny different rule productions, creating the reductor table and some other stuffs that we don't care about. This library is focused on simplifying this process, the only external thing you need is a lexer like [logos](https://crates.io/crates/logos)
 
 ## A grammar example
 ```cpp
