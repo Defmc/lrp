@@ -1,45 +1,63 @@
+#  A easy-to-use, compilation-driven interface for the `lrp` parser library
+Writing direct grammars suck: handling lexer's input, creating tiny different rule productions, creating the reductor table and some other stuffs that we don't care about. This library is focused on simplify this process, the only external thing you need is a lexer like [logos](https://crates.io/crates/logos)
+
+## A grammar example
 ```cpp
 use my_crate::Ast;
-use my_crate::Sym;
+use my_crate::Sym::*; // Each module should be imported separetely (there's no { } support yet)
 
-alias Number = Sym::Number;
-alias "+" = Sym::Add;
-alias "(" = Sym::OpenParen;
-alias ")" = Sym::CloseParen;
+// you can define alias for idents and string literals
+alias Number = Number;
+alias "+" = Add;
+alias "(" = OpenParen;
+alias ")" = CloseParen;
 
-// :alias for codeblock (REQUIRED), * for clone it
-Ast::Add: Ast = Number:*n1 "+" Number:*n2 {
+Add: Ast = Number:*n1 "+" Number:*n2 -> {
     Ast::Add(n1, n2)
-};
+}%;
 
-Ast::Expr: Ast = Sym::Add:*a {
+Expr: Ast = Sym::Add:*a -> {
 /* Meta::new( */
     Ast::Expr(a)/*,
     Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end)
 )*/
-}
-    | "(" Sym::Expr:*e ")" {
+}%
+    | "(" Sym::Expr:*e ")" -> {
     Ast::Expr(e)
-};
+}%;
 
-Ast::EntryPoint: Ast = Sym::Expr:*e {
+EntryPoint: Ast = Sym::Expr:*e -> {
     Ast::EntryPoint(e)
-}
+}%
 ```
+
+## Building it
+Just use `parse` or `from_str` for `Builder`:
+```rs
+let src = include_str!("your.grammar");
+let builder1 = src.parse::<wop::Builder>();
+let builder2 = wop::Builder::from_str(src);
+assert_eq!(builder1, builder2);
+```
+
+## Using it
 To use, just build it from `Builder` and call `builder.dump_grammar()` to generate the code for the grammar:
 ```rs
-format!("let grammar = Grammar::new(Sym::EntryPoint, {}, Sym::Eof)", builder.dump_grammar())
+format!("let grammar = Grammar::new(Sym::EntryPoint, {}, Sym::Eof)", builder.dump_grammar(src)) // `src` is the source code for the grammar we used above
 ```
 
 And for DFA building, remember to dump the reduct_map:
 ```rs
-format!("parser.dfa(buf, {})", builder.dump_reduct_map())
+format!("parser.dfa(buf, {})", builder.dump_reduct_map(src))
 ```
 
 Fun fact: This project use itself.
 
 Ideas:
 - [x] `Builder::dump_grammar` // should return a `RuleMap`
-- [] For composite rules (with `( x | y)`), the codeblock will be applied to both
+- [x] For composite rules (with `( x | y)`), the codeblock will be applied to both
 - [x] Impl codeblocks
+- [] Impl item alias
+- [] Impl item alias cloning
+- [] Impl optional item
 - [] Allow to set custom slice entry for codeblocks
