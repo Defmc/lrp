@@ -139,7 +139,7 @@ where
     /// # Errors
     /// The same of `dfa::travel`
     pub fn start(&mut self) -> BaseResult<(), Error<M>> {
-        self.trace(|_| {})
+        self.trace(|_| ())
     }
 
     /// # Errors

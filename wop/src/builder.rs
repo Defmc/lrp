@@ -1,5 +1,5 @@
 use crate::{Ast, Gramem, RulePipe, Sym};
-use std::{collections::HashMap, fmt::Write};
+use std::{collections::HashMap, fmt::Write, str::FromStr};
 
 pub type SrcRef = lrp::Span;
 
@@ -206,5 +206,17 @@ impl Builder {
 
         out.push_str("\tmap\n}");
         out
+    }
+}
+
+impl FromStr for Builder {
+    type Err = lrp::Error<Sym>;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let lexer = crate::lexer(s);
+        let mut dfa = crate::build_parser(lexer);
+        dfa.start()?;
+        let mut builder = Self::default();
+        builder.process(&dfa.items[0], s);
+        Ok(builder)
     }
 }

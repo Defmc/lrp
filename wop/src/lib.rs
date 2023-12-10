@@ -106,7 +106,7 @@ pub enum Sym {
     RuleItem,
 }
 
-use lrp::{Dfa, Grammar, Parser, Slr, Token};
+use lrp::{Dfa, Parser, Slr, Token};
 pub mod out;
 
 pub fn lexer<'source>(
