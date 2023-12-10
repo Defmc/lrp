@@ -3,6 +3,10 @@ use std::{collections::HashMap, fmt::Write, str::FromStr};
 
 pub type SrcRef = lrp::Span;
 
+pub const GRAMMAR_LINTS: &str = "unused_imports, clippy::enum_glob_use";
+pub const REDUCTOR_LINTS: &str =
+    "non_snake_case, clippy::enum_glob_use, unused_braces, unused_imports";
+
 #[derive(Debug, Default)]
 pub struct Builder {
     pub aliases: HashMap<String, SrcRef>,

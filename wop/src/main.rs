@@ -57,21 +57,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 use crate::{{Ast, Gramem, Meta, Sym}};
 use lrp::{{Grammar, ReductMap, Span}};
 
-#[allow(clippy::enum_glob_use)]
-#[allow(unused_imports)]
+#[allow({})]
 #[must_use]
 pub fn grammar() -> Grammar<Sym> {{
     Grammar::new(Sym::EntryPoint, {}, Sym::Eof)
 }}"#,
+        wop::builder::GRAMMAR_LINTS,
         builder.dump_grammar(&file)
     )?;
 
     writeln!(
         writer,
         r#"
-#[allow(non_snake_case)]
+#[allow({})]
 pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {}"#,
-        builder.dump_reductor(&file)
+        wop::builder::REDUCTOR_LINTS,
+        builder.dump_reductor(&file),
     )?;
     println!("ELAPSED TIME: {:?}", start.elapsed());
     res
