@@ -139,9 +139,15 @@ fn print_nested(tok: &Gramem, prefix: &str, lvl: usize, txt: &str) {
             println!("{tab_spc}|> definition: {}", h.from_source(txt));
         }
         Ast::IdentPath(g) => println!("{tab_spc} {}", g.from_source(txt)),
-        Ast::RuleItem(g, o) => {
+        Ast::RuleItem(g, o, a) => {
             print_nested(g.as_ref(), "", lvl, txt);
-            println!("{tab_spc}|> optional: {o}")
+            println!("{tab_spc}|> optional: {o}");
+            print!("{tab_spc}|> alias: ");
+            if let Some(a) = a {
+                println!("{:?}", a.from_source(txt));
+            } else {
+                println!("(null)");
+            }
         }
     }
 }

@@ -74,11 +74,17 @@ RulePipe: Ast = RulePipe RuleItem -> {
     Ast::RulePipe(toks[..1].to_vec())
 }%;
 
-RuleItem: Ast = (IdentPath | StrLit) Optional? -> {
-    Ast::RuleItem(Box::new(toks[0].clone()), toks.len() > 1)
+RuleItem: Ast = (IdentPath | StrLit) Optional? ":" Ident -> {
+    Ast::RuleItem(Box::new(toks[0].clone()), toks.len() > 3, Some(toks.last().unwrap().item.span))
 }%
-    | "(" Rule ")" Optional -> {
-    Ast::RuleItem(Box::new(toks[1].clone()), toks.len() > 3)
+    | (IdentPath | StrLit) Optional? -> {
+    Ast::RuleItem(Box::new(toks[0].clone()), toks.len() > 1, None)
+}%
+    | "(" Rule ")" Optional? ":" Ident -> {
+    Ast::RuleItem(Box::new(toks[1].clone()), toks.len() > 5, Some(toks.last().unwrap().item.span))
+}%
+    | "(" Rule ")" Optional? -> {
+    Ast::RuleItem(Box::new(toks[1].clone()), toks.len() > 3, None)
 }%;
 
 Import: Ast = "use" (IdentPath "::" "*" | IdentPath) -> {

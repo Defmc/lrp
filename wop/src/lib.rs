@@ -12,7 +12,11 @@ pub enum Ast {
     RuleDecl(RuleDecl),
     Rule(Vec<RulePipe>),
     RulePipe(Vec<Gramem>),
-    RuleItem(Box<Gramem>, /* optional */ bool),
+    RuleItem(
+        /* item */ Box<Gramem>,
+        /* optional */ bool,
+        /* alias */ Option<SrcRef>,
+    ),
     Import(SrcRef),
     Alias(SrcRef, SrcRef),
     IdentPath(SrcRef),

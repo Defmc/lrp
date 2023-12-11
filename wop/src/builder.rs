@@ -12,7 +12,42 @@ pub struct Builder {
     pub aliases: HashMap<String, SrcRef>,
     pub rules: HashMap<String, Vec<Vec<SrcRef>>>,
     pub reductors: HashMap<String, (SrcRef, Vec<SrcRef>)>,
+    pub item_aliases: HashMap<String, Vec<Vec<ItemAlias>>>,
     pub imports: Vec<SrcRef>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ItemAlias {
+    pub alias: SrcRef,
+    pub optional: Option<bool>,
+    pub index: usize,
+    pub final_index: Option<usize>,
+    pub active: bool,
+}
+
+impl ItemAlias {
+    pub fn dump(&self, src: &str) -> String {
+        let mut s = String::new();
+        self.write(&mut s, src).unwrap();
+        s
+    }
+
+    pub fn write(&self, out: &mut impl Write, src: &str) -> Result<(), std::fmt::Error> {
+        if !self.active {
+            return Ok(());
+        }
+        let alias = self.alias.from_source(src);
+        let index = if let Some(findex) = self.final_index {
+            format!("{:?}", (self.index..findex))
+        } else {
+            self.index.to_string()
+        };
+        match self.optional {
+            Some(true) => writeln!(out, "let {alias} = Some(&toks[{index}]);"),
+            Some(false) => writeln!(out, "let {alias} = None;"),
+            None => writeln!(out, "let {alias} = &toks[{index}];"),
+        }
+    }
 }
 
 impl Builder {
@@ -42,6 +77,7 @@ impl Builder {
     fn rule_decl(&mut self, rule_ident: SrcRef, rule_ty: SrcRef, rule: &[RulePipe], src: &str) {
         let mut prods = Vec::new();
         let mut reductors = Vec::new();
+        let mut item_aliases = Vec::new();
         for prod in rule {
             assert_ne!(
                 prod.1.from_source(src),
@@ -49,9 +85,10 @@ impl Builder {
                 "missing code block for {:?}",
                 rule_ident.from_source(src)
             );
-            let (p, r) = self.get_complete_rule(prod, src);
+            let (p, r, a) = self.get_complete_rule(prod, src);
             prods.extend(p);
             reductors.extend(r);
+            item_aliases.extend(a);
         }
 
         assert!(
@@ -71,24 +108,47 @@ impl Builder {
             "rule {} was already defined",
             rule_ident.from_source(src)
         );
+        assert!(
+            self.item_aliases
+                .insert(rule_ident.from_source(src).to_string(), item_aliases)
+                .is_none(),
+            "rule {} was already defined",
+            rule_ident.from_source(src)
+        );
     }
 
-    fn get_complete_rule(&self, pipe: &RulePipe, src: &str) -> (Vec<Vec<SrcRef>>, Vec<SrcRef>) {
-        fn push_all(prods: &mut [Vec<SrcRef>], item: SrcRef) {
+    fn get_complete_rule(
+        &self,
+        pipe: &RulePipe,
+        src: &str,
+    ) -> (Vec<Vec<SrcRef>>, Vec<SrcRef>, Vec<Vec<ItemAlias>>) {
+        fn push_all_prods(prods: &mut [Vec<SrcRef>], item: SrcRef) {
             for prod in prods.iter_mut() {
                 prod.push(item);
             }
         }
         let mut prods = vec![vec![]];
-        for g in &pipe.0 {
-            let (g, optional) = if let Ast::RuleItem(ref i, o) = g.item.item {
-                (i, o)
+        let mut item_aliases = vec![vec![]];
+        for (index, g) in pipe.0.iter().enumerate() {
+            let (g, optional, alias) = if let Ast::RuleItem(ref i, o, a) = g.item.item {
+                (i, o, a)
             } else {
                 unreachable!()
             };
+            let item_alias = ItemAlias {
+                alias: alias.unwrap_or(SrcRef::new(0, 0)),
+                optional: if optional { Some(true) } else { None },
+                index,
+                final_index: None,
+                active: alias.is_some(),
+            };
+            item_aliases
+                .iter_mut()
+                .for_each(|v| v.push(item_alias.clone()));
+
             let clones = if optional { prods.clone() } else { Vec::new() };
             match g.ty {
-                Sym::StrLit => push_all(
+                Sym::StrLit => push_all_prods(
                     &mut prods,
                     *self
                         .aliases
@@ -101,7 +161,7 @@ impl Builder {
                             &g.item.span
                         }),
                 ),
-                Sym::IdentPath => push_all(
+                Sym::IdentPath => push_all_prods(
                     &mut prods,
                     *self
                         .aliases
@@ -127,9 +187,21 @@ impl Builder {
                 _ => unreachable!("{g:?}"),
             }
             prods.extend(clones);
+            if optional {
+                let disables: Vec<_> = item_aliases
+                    .iter()
+                    .cloned()
+                    .map(|v| {
+                        let mut v = v;
+                        v.last_mut().unwrap().optional = Some(false);
+                        v
+                    })
+                    .collect();
+                item_aliases.extend(disables);
+            }
         }
         let prods_size_it = 0..prods.len();
-        (prods, prods_size_it.map(|_| pipe.1).collect())
+        (prods, prods_size_it.map(|_| pipe.1).collect(), item_aliases)
     }
 
     fn token_decl(&mut self, tk: SrcRef, alias: SrcRef, src: &str) {
@@ -189,9 +261,13 @@ impl Builder {
         for (r_name, (ty, impls)) in &self.reductors {
             let ty = ty.from_source(src);
             for (i, imp) in impls.iter().enumerate() {
+                let mut item_aliases = String::new();
+                for alias in &self.item_aliases[r_name][i] {
+                    alias.write(&mut item_aliases, src);
+                }
                 writeln!(
                     out,
-                    "\tfn lrp_wop_{r_name}_{i}(toks: &[Gramem]) -> lrp::Meta<{ty}> {{\n\t\tlrp::Meta::new({}, lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end))\n\t}}",
+                    "\tfn lrp_wop_{r_name}_{i}(toks: &[Gramem]) -> lrp::Meta<{ty}> {{\n\t\tlrp::Meta::new({{ {item_aliases} {}}}, lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end))\n\t}}",
                     imp.from_source(src).strip_prefix("->").unwrap().strip_suffix('%').unwrap()
                 )
                 .unwrap();
