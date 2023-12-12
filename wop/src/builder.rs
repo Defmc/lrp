@@ -1,5 +1,9 @@
 use crate::{Ast, Gramem, RulePipe, Sym};
-use std::{collections::HashMap, fmt::Write, str::FromStr};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Write,
+    str::FromStr,
+};
 
 pub type SrcRef = lrp::Span;
 
@@ -14,7 +18,7 @@ pub struct Builder {
     pub imports: Vec<SrcRef>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Hash)]
 pub struct ItemAlias {
     pub alias: SrcRef,
     pub optional: Option<bool>,
@@ -170,7 +174,7 @@ impl Builder {
             };
             match item.ty {
                 Sym::StrLit => prod.production.push(*get_definition(true)),
-                Sym::IdentPath => prod.production.push(*get_definition(true)),
+                Sym::IdentPath => prod.production.push(*get_definition(false)),
                 Sym::Rule => match item.item.item {
                     Ast::Rule(ref variants) => {
                         let mut prods = Vec::new();
@@ -187,6 +191,15 @@ impl Builder {
                             }
                             let news = self.get_from_single_production(&prod, variant, src);
                             prods.extend(news);
+                        }
+                        self.set_sub_aliases(&prod, &mut prods);
+                        if is_optional {
+                            let mut ignored_prod = prod.clone();
+                            ignored_prod.production.pop();
+                            if alias.is_some() {
+                                ignored_prod.aliases.pop();
+                            }
+                            prods.push(ignored_prod);
                         }
                         if i < pipe.len() {
                             prods = self.get_production(&prods, &pipe[i + 1..], src);
@@ -211,6 +224,35 @@ impl Builder {
             }
         }
         vec![prod]
+    }
+
+    /// Sets the aliases for each production as a optional item alias, except for the ones defined
+    /// in `base`. Also, adds a `None` alias for the productions that doesn't have a alias defined
+    /// in another.
+    pub fn set_sub_aliases(&self, base: &ProductionBuild, productions: &mut RuleBuild) {
+        let base_aliases: HashSet<_> = base.aliases.iter().map(|a| a.alias).collect();
+        let prods_aliases: HashSet<_> = productions
+            .iter()
+            .flat_map(|a| a.aliases.iter())
+            .map(|a| a.alias)
+            .collect();
+        let prods_aliases: HashSet<_> = prods_aliases.difference(&base_aliases).collect();
+        for prod in productions.iter_mut() {
+            for alias_name in &prods_aliases {
+                if let Some(prod_alias) = prod.aliases.iter_mut().find(|a| a.alias == **alias_name)
+                {
+                    prod_alias.optional = Some(true);
+                } else {
+                    let item_alias = ItemAlias {
+                        alias: **alias_name,
+                        optional: Some(false),
+                        index: 0,
+                        final_index: None,
+                    };
+                    prod.aliases.push(item_alias);
+                }
+            }
+        }
     }
 
     fn token_decl(&mut self, tk: SrcRef, alias: SrcRef, src: &str) {
