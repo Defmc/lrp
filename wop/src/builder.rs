@@ -18,9 +18,9 @@ pub struct Builder {
     pub imports: Vec<SrcRef>,
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 pub struct ItemAlias {
-    pub alias: SrcRef,
+    pub alias: String,
     pub optional: Option<bool>,
     pub index: usize,
     pub final_index: Option<usize>,
@@ -54,7 +54,7 @@ impl ItemAlias {
     }
 
     pub fn write(&self, out: &mut impl Write, src: &str) -> Result<(), std::fmt::Error> {
-        let alias = self.alias.from_source(src);
+        let alias = &self.alias;
         let index = if let Some(findex) = self.final_index {
             format!("{:?}", (self.index..findex))
         } else {
@@ -152,7 +152,7 @@ impl Builder {
             };
             if let Some(alias) = alias {
                 let item_alias = ItemAlias {
-                    alias,
+                    alias: alias.from_source(src).to_string(),
                     optional: if is_optional { Some(true) } else { None },
                     index: 0, // automatically configured
                     final_index: None,
@@ -197,7 +197,23 @@ impl Builder {
                             let mut ignored_prod = prod.clone();
                             ignored_prod.production.pop();
                             if alias.is_some() {
-                                ignored_prod.aliases.pop();
+                                ignored_prod.aliases.last_mut().unwrap().optional = Some(false);
+                            }
+                            for alias in &prods[0].aliases {
+                                if ignored_prod
+                                    .aliases
+                                    .iter()
+                                    .position(|a| a.alias == alias.alias)
+                                    .is_none()
+                                {
+                                    let item_alias = ItemAlias {
+                                        alias: alias.alias.clone(),
+                                        optional: Some(false),
+                                        index: 0,
+                                        final_index: None,
+                                    };
+                                    ignored_prod.aliases.push(item_alias);
+                                }
                             }
                             prods.push(ignored_prod);
                         }
@@ -230,21 +246,26 @@ impl Builder {
     /// in `base`. Also, adds a `None` alias for the productions that doesn't have a alias defined
     /// in another.
     pub fn set_sub_aliases(&self, base: &ProductionBuild, productions: &mut RuleBuild) {
-        let base_aliases: HashSet<_> = base.aliases.iter().map(|a| a.alias).collect();
+        println!("productions: {productions:#?}");
+        let base_aliases: HashSet<_> = base.aliases.iter().map(|a| a.alias.clone()).collect();
         let prods_aliases: HashSet<_> = productions
             .iter()
             .flat_map(|a| a.aliases.iter())
-            .map(|a| a.alias)
+            .map(|a| a.alias.clone())
             .collect();
         let prods_aliases: HashSet<_> = prods_aliases.difference(&base_aliases).collect();
+        println!("production aliases: {prods_aliases:?}");
         for prod in productions.iter_mut() {
+            println!("prod aliases: {:?}", prod.aliases);
             for alias_name in &prods_aliases {
                 if let Some(prod_alias) = prod.aliases.iter_mut().find(|a| a.alias == **alias_name)
                 {
+                    println!("item alias {alias_name} founded. Reassigning");
                     prod_alias.optional = Some(true);
                 } else {
+                    println!("item alias {alias_name} not founded. Creating one");
                     let item_alias = ItemAlias {
-                        alias: **alias_name,
+                        alias: (*alias_name).clone(),
                         optional: Some(false),
                         index: 0,
                         final_index: None,
