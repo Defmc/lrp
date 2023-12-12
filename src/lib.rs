@@ -80,7 +80,7 @@ impl<T> Meta<T> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Token<T, M> {
     pub item: T,
     pub ty: M,
