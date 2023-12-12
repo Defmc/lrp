@@ -68,7 +68,7 @@ pub use tabler::*;
 pub mod pos;
 pub use pos::*;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 pub struct Meta<T> {
     pub item: T,
     pub span: Span,
