@@ -47,7 +47,7 @@ where
                 .iter()
                 .filter_map(|rc| {
                     assert!(
-                        rc.0.len() > 0,
+                        !rc.0.is_empty(),
                         "productions should have at least one symbol"
                     );
                     if rc.0[0] == rule.name {
@@ -189,7 +189,7 @@ where
     }
 
     /// Filters by positions that contains some symbol at the top. I.e:
-    /// sym_filter({ [S -> .C C; $], [S -> .d C; $]}, C) = { [S -> .C C; $] }
+    /// `sym_filter`({ [S -> .C C; $], [S -> .d C; $]}, C) = { [S -> .C C; $] }
     #[must_use]
     pub fn sym_filter(state: &State<T>, sym: &T) -> State<T> {
         state

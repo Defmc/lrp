@@ -55,11 +55,10 @@ impl ItemAlias {
 
     pub fn write(&self, out: &mut impl Write, src: &str) -> Result<(), std::fmt::Error> {
         let alias = self.alias.from_source(src);
-        let index = if let Some(findex) = self.final_index {
-            format!("{:?}", (self.index..findex))
-        } else {
-            self.index.to_string()
-        };
+        let index = self.final_index.map_or_else(
+            || self.index.to_string(),
+            |findex| format!("{:?}", self.index..findex),
+        );
         match self.optional {
             Some(true) => writeln!(out, "let {alias} = Some(&toks[{index}]);"),
             // since Rust can't infer the type of `{alias}` just with a `None`, and since they
@@ -201,12 +200,7 @@ impl Builder {
                             // after`self.set_sub_aliases` all prods follow the expression
                             // `prods[x].aliases.len() = prods[x + 1].aliases.len()`
                             for alias in &prods[0].aliases {
-                                if ignored_prod
-                                    .aliases
-                                    .iter()
-                                    .position(|a| a.alias == alias.alias)
-                                    .is_none()
-                                {
+                                if !ignored_prod.aliases.iter().any(|a| a.alias == alias.alias) {
                                     let item_alias = ItemAlias {
                                         alias: alias.alias,
                                         optional: Some(false),
@@ -235,9 +229,8 @@ impl Builder {
                 }
                 if i < pipe.len() {
                     return self.get_production(&[prod, ignored_prod], &pipe[i + 1..], src);
-                } else {
-                    return vec![prod, ignored_prod];
                 }
+                return vec![prod, ignored_prod];
             }
         }
         vec![prod]
@@ -301,7 +294,7 @@ impl Builder {
         });
         writeln!(out, "\tlet mut map = lrp::RuleMap::new();").unwrap();
         for (r_name, impls) in &self.rules {
-            Self::write_rule(&mut out, r_name, &impls, src);
+            Self::write_rule(&mut out, r_name, impls, src);
         }
         out.push_str("\n\tmap\n}");
         out

@@ -158,8 +158,8 @@ where
     }
 
     /// Propagates a closure until there's no more states to generate from it
-    /// Following the transitive definition: prop_closure(prop_closure(S)) = prop_closure(S), but
-    /// S != prop_closure(S)
+    /// Following the transitive definition: `prop_closure(prop_closure(S))` = `prop_closure(S)`, but
+    /// S != `prop_closure`(S)
     #[must_use]
     pub fn prop_closure(&self, seed: State<T>) -> State<T> {
         transitive(seed, |s| self.closure(s))
