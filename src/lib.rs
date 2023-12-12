@@ -38,7 +38,7 @@ pub type State<T> = Set<Position<T>>;
 /// A = . . . . T -> {T: FOLLOW(A)}
 pub type Table<T> = Map<T, Set<T>>;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum Sym<T, U> {
     Term(T),
     NoTerm(U),
