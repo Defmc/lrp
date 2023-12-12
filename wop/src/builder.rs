@@ -195,10 +195,11 @@ impl Builder {
                         self.set_sub_aliases(&prod, &mut prods);
                         if is_optional {
                             let mut ignored_prod = prod.clone();
-                            ignored_prod.production.pop();
                             if alias.is_some() {
                                 ignored_prod.aliases.last_mut().unwrap().optional = Some(false);
                             }
+                            // after`self.set_sub_aliases` all prods follow the expression
+                            // `prods[x].aliases.len() = prods[x + 1].aliases.len()`
                             for alias in &prods[0].aliases {
                                 if ignored_prod
                                     .aliases
