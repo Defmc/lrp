@@ -20,7 +20,6 @@ pub struct ItemAlias {
     pub optional: Option<bool>,
     pub index: usize,
     pub final_index: Option<usize>,
-    pub active: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -32,6 +31,16 @@ pub struct ProductionBuild {
     pub aliases: Vec<ItemAlias>,
 }
 
+impl ProductionBuild {
+    pub fn push_alias(&mut self, mut alias: ItemAlias) {
+        alias.index += self.production.len();
+        if let Some(final_index) = alias.final_index.as_mut() {
+            *final_index += self.production.len();
+        }
+        self.aliases.push(alias);
+    }
+}
+
 pub type RuleBuild = Vec<ProductionBuild>;
 impl ItemAlias {
     pub fn dump(&self, src: &str) -> String {
@@ -41,9 +50,6 @@ impl ItemAlias {
     }
 
     pub fn write(&self, out: &mut impl Write, src: &str) -> Result<(), std::fmt::Error> {
-        if !self.active {
-            return Ok(());
-        }
         let alias = self.alias.from_source(src);
         let index = if let Some(findex) = self.final_index {
             format!("{:?}", (self.index..findex))
@@ -134,6 +140,15 @@ impl Builder {
             } else {
                 unreachable!()
             };
+            if let Some(alias) = alias {
+                let item_alias = ItemAlias {
+                    alias,
+                    optional: if is_optional { Some(true) } else { None },
+                    index: 0, // automatically configured
+                    final_index: None,
+                };
+                prod.push_alias(item_alias);
+            }
             let get_definition = |should_have: bool| {
                 self.aliases
                     .get(item.item.span.from_source(src))
@@ -160,6 +175,10 @@ impl Builder {
                                 "sub-rules like {} shouldn't have a codeblock",
                                 g.item.span.from_source(src)
                             );
+                            if alias.is_some() {
+                                prod.aliases.last_mut().unwrap().final_index =
+                                    Some(prod.production.len() + variant.len());
+                            }
                             let news = self.get_from_single_production(&prod, variant, src);
                             prods.extend(news);
                         }
