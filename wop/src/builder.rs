@@ -194,6 +194,9 @@ impl Builder {
             if is_optional {
                 let mut ignored_prod = prod.clone();
                 ignored_prod.production.pop();
+                if alias.is_some() {
+                    ignored_prod.aliases.last_mut().unwrap().optional = Some(false);
+                }
                 if i < pipe.len() {
                     return self.get_production(&[prod, ignored_prod], &pipe[i + 1..], src);
                 } else {
