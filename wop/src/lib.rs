@@ -33,7 +33,7 @@ impl Ast {
 }
 
 pub type RuleDecl = (SrcRef, SrcRef, Vec<RulePipe>);
-pub type RulePipe = (Vec<Gramem>, SrcRef);
+pub type RulePipe = (Vec<Gramem>, /* codeblock */ SrcRef);
 pub type Gramem = Token<Meta<Ast>, Sym>;
 
 #[derive(Logos, Debug, PartialEq, PartialOrd, Clone, Copy, Ord, Eq)]

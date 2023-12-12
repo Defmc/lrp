@@ -14,7 +14,7 @@ alias "?" Optional;
 
 EntryPoint: Ast = Program -> { Ast::EntryPoint(Box::new(toks[0].clone())) }% ;
 
-Program: Ast = Program (Import | Alias | RuleDecl) ";" -> { 
+Program: Ast = Program:test (Import | Alias | RuleDecl) ";" -> { 
     let program = &toks[0];
     let extension = toks[1].clone();
     let mut program_vec = match program.item.item {

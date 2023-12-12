@@ -110,21 +110,79 @@ impl Builder {
     }
 
     fn get_production(&self, origin: &[ProductionBuild], pipe: &[Gramem], src: &str) -> RuleBuild {
-        let mut out = Vec::new();
-        // Sym::StrLit => push_all_prods(
-        //     &mut prods,
-        //     *self
-        //         .aliases
-        //         .get(g.item.span.from_source(src))
-        //         .unwrap_or_else(|| {
-        //             eprintln!(
-        //                 "using literal string for {} (maybe is missing an alias?)",
-        //                 g.item.span.from_source(src)
-        //             );
-        //             &g.item.span
-        //         }),
-        // ),
-        out
+        if pipe.is_empty() {
+            origin.to_vec()
+        } else {
+            let mut out = Vec::new();
+            for origin in origin {
+                out.extend(self.get_from_single_production(origin, pipe, src));
+            }
+            out
+        }
+    }
+
+    fn get_from_single_production(
+        &self,
+        origin: &ProductionBuild,
+        pipe: &[Gramem],
+        src: &str,
+    ) -> RuleBuild {
+        let mut prod = origin.clone();
+        for (i, g) in pipe.iter().enumerate() {
+            let (item, is_optional, alias) = if let Ast::RuleItem(ref i, o, a) = g.item.item {
+                (i.as_ref(), o, a)
+            } else {
+                unreachable!()
+            };
+            let get_definition = |should_have: bool| {
+                self.aliases
+                    .get(item.item.span.from_source(src))
+                    .unwrap_or_else(|| {
+                        if should_have {
+                            eprintln!(
+                                "using literal string for {} (maybe is missing an alias?)",
+                                item.item.span.from_source(src)
+                            );
+                        }
+                        &item.item.span
+                    })
+            };
+            match item.ty {
+                Sym::StrLit => prod.production.push(*get_definition(true)),
+                Sym::IdentPath => prod.production.push(*get_definition(true)),
+                Sym::Rule => match item.item.item {
+                    Ast::Rule(ref variants) => {
+                        let mut prods = Vec::new();
+                        for (variant, a) in variants {
+                            assert_eq!(
+                                a,
+                                &SrcRef::new(0, 0),
+                                "sub-rules like {} shouldn't have a codeblock",
+                                g.item.span.from_source(src)
+                            );
+                            let news = self.get_from_single_production(&prod, variant, src);
+                            prods.extend(news);
+                        }
+                        if i < pipe.len() {
+                            prods = self.get_production(&prods, &pipe[i + 1..], src);
+                        }
+                        return prods;
+                    }
+                    _ => unreachable!(),
+                },
+                _ => unreachable!("{item:?}"),
+            }
+            if is_optional {
+                let mut ignored_prod = prod.clone();
+                ignored_prod.production.pop();
+                if i < pipe.len() {
+                    return self.get_production(&[prod, ignored_prod], &pipe[i + 1..], src);
+                } else {
+                    return vec![prod, ignored_prod];
+                }
+            }
+        }
+        vec![prod]
     }
 
     fn token_decl(&mut self, tk: SrcRef, alias: SrcRef, src: &str) {
