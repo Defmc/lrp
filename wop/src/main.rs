@@ -36,17 +36,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = Builder::default();
     let start = Instant::now();
     builder.process(&dfa.items[0], &file);
-    let elapsed = start.elapsed();
+    println!("ELAPSED TIME: {:?}", start.elapsed());
 
-    println!(
-        "PRODUCED GRAMMAR CODE (after {elapsed:?}):\n\x1B[1;33m{}\x1B[0;m",
-        builder.dump_grammar(&file)
-    );
-    println!(
-        "PRODUCED REDUCTOR CODE (after({:?}):\n\x1B[1;33m{}\x1B[0;m",
-        elapsed,
-        builder.dump_reductor(&file)
-    );
     println!("WRITING DUMP");
     let start = Instant::now();
     let out = File::create("out.rs")?;
