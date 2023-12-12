@@ -20,7 +20,7 @@ pub struct Builder {
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 pub struct ItemAlias {
-    pub alias: String,
+    pub alias: SrcRef,
     pub optional: Option<bool>,
     pub index: usize,
     pub final_index: Option<usize>,
@@ -54,7 +54,7 @@ impl ItemAlias {
     }
 
     pub fn write(&self, out: &mut impl Write, src: &str) -> Result<(), std::fmt::Error> {
-        let alias = &self.alias;
+        let alias = self.alias.from_source(src);
         let index = if let Some(findex) = self.final_index {
             format!("{:?}", (self.index..findex))
         } else {
@@ -152,7 +152,7 @@ impl Builder {
             };
             if let Some(alias) = alias {
                 let item_alias = ItemAlias {
-                    alias: alias.from_source(src).to_string(),
+                    alias,
                     optional: if is_optional { Some(true) } else { None },
                     index: 0, // automatically configured
                     final_index: None,
@@ -192,7 +192,7 @@ impl Builder {
                             let news = self.get_from_single_production(&prod, variant, src);
                             prods.extend(news);
                         }
-                        self.set_sub_aliases(&prod, &mut prods);
+                        self.set_sub_aliases(&prod, &mut prods, src);
                         if is_optional {
                             let mut ignored_prod = prod.clone();
                             if alias.is_some() {
@@ -208,7 +208,7 @@ impl Builder {
                                     .is_none()
                                 {
                                     let item_alias = ItemAlias {
-                                        alias: alias.alias.clone(),
+                                        alias: alias.alias,
                                         optional: Some(false),
                                         index: 0,
                                         final_index: None,
@@ -246,22 +246,25 @@ impl Builder {
     /// Sets the aliases for each production as a optional item alias, except for the ones defined
     /// in `base`. Also, adds a `None` alias for the productions that doesn't have a alias defined
     /// in another.
-    pub fn set_sub_aliases(&self, base: &ProductionBuild, productions: &mut RuleBuild) {
-        let base_aliases: HashSet<_> = base.aliases.iter().map(|a| a.alias.clone()).collect();
+    pub fn set_sub_aliases(&self, base: &ProductionBuild, productions: &mut RuleBuild, src: &str) {
+        let base_aliases: HashSet<_> = base.aliases.iter().map(|a| a.alias).collect();
         let prods_aliases: HashSet<_> = productions
             .iter()
             .flat_map(|a| a.aliases.iter())
-            .map(|a| a.alias.clone())
+            .map(|a| a.alias)
             .collect();
         let prods_aliases: HashSet<_> = prods_aliases.difference(&base_aliases).collect();
         for prod in productions.iter_mut() {
             for alias_name in &prods_aliases {
-                if let Some(prod_alias) = prod.aliases.iter_mut().find(|a| a.alias == **alias_name)
+                if let Some(prod_alias) = prod
+                    .aliases
+                    .iter_mut()
+                    .find(|a| a.alias.from_source(src) == alias_name.from_source(src))
                 {
                     prod_alias.optional = Some(true);
                 } else {
                     let item_alias = ItemAlias {
-                        alias: (*alias_name).clone(),
+                        alias: **alias_name,
                         optional: Some(false),
                         index: 0,
                         final_index: None,
