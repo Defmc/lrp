@@ -46,6 +46,10 @@ where
                 .prods
                 .iter()
                 .filter_map(|rc| {
+                    assert!(
+                        rc.0.len() > 0,
+                        "productions should have at least one symbol"
+                    );
                     if rc.0[0] == rule.name {
                         None
                     } else {

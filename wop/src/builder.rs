@@ -246,7 +246,6 @@ impl Builder {
     /// in `base`. Also, adds a `None` alias for the productions that doesn't have a alias defined
     /// in another.
     pub fn set_sub_aliases(&self, base: &ProductionBuild, productions: &mut RuleBuild) {
-        println!("productions: {productions:#?}");
         let base_aliases: HashSet<_> = base.aliases.iter().map(|a| a.alias.clone()).collect();
         let prods_aliases: HashSet<_> = productions
             .iter()
@@ -254,16 +253,12 @@ impl Builder {
             .map(|a| a.alias.clone())
             .collect();
         let prods_aliases: HashSet<_> = prods_aliases.difference(&base_aliases).collect();
-        println!("production aliases: {prods_aliases:?}");
         for prod in productions.iter_mut() {
-            println!("prod aliases: {:?}", prod.aliases);
             for alias_name in &prods_aliases {
                 if let Some(prod_alias) = prod.aliases.iter_mut().find(|a| a.alias == **alias_name)
                 {
-                    println!("item alias {alias_name} founded. Reassigning");
                     prod_alias.optional = Some(true);
                 } else {
-                    println!("item alias {alias_name} not founded. Creating one");
                     let item_alias = ItemAlias {
                         alias: (*alias_name).clone(),
                         optional: Some(false),
