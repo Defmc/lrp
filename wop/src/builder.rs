@@ -58,7 +58,13 @@ impl ItemAlias {
         };
         match self.optional {
             Some(true) => writeln!(out, "let {alias} = Some(&toks[{index}]);"),
-            Some(false) => writeln!(out, "let {alias} = None;"),
+            // since Rust can't infer the type of `{alias}` just with a `None`, and since they
+            // aren't a real type declaration inside this struct, we bind the type from `toks[0]`
+            // and set to `None`. Also, it needs to be shadowed to prevent mutations.
+            Some(false) => writeln!(
+                out,
+                "let mut {alias} = Some(&toks[0]); {alias} = None; let {alias} = {alias};"
+            ),
             None => writeln!(out, "let {alias} = &toks[{index}];"),
         }
     }
