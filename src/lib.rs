@@ -110,7 +110,7 @@ pub fn to_tokens<T: Clone>(it: impl IntoIterator<Item = T>) -> impl Iterator<Ite
 /// let src = [0, 1, 2, 3, 4];
 /// assert_eq!(i.from_source(&src), &[0, 1]);
 /// ```
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Hash)]
 pub struct Span {
     pub start: usize,
     pub end: usize,
