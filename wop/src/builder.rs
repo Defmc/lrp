@@ -16,6 +16,7 @@ pub struct Builder {
     pub aliases: HashMap<String, SrcRef>,
     pub rules: HashMap<String, RuleBuild>,
     pub imports: Vec<SrcRef>,
+    pub entry_type: String,
 }
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
@@ -74,6 +75,14 @@ impl ItemAlias {
 }
 
 impl Builder {
+    #[must_use]
+    pub fn new(entry_type: String) -> Self {
+        Self {
+            entry_type,
+            ..Default::default()
+        }
+    }
+
     #[must_use]
     pub fn get_program_instructions(ast: &Gramem) -> &Vec<Gramem> {
         if let Ast::Program(p) = &ast.item.item {
@@ -324,20 +333,27 @@ impl Builder {
     /// Never.
     #[must_use]
     pub fn dump_reductor(&self, src: &str) -> String {
+        assert_ne!(self.entry_type, String::default(), "`entry_type` undefined");
         let mut out = "{\n".to_string();
         self.imports.iter().for_each(|i| {
             writeln!(out, "\tuse {};", i.from_source(src)).unwrap();
         });
         writeln!(out, "\tlet mut map = lrp::ReductMap::new();\n").unwrap();
         for (r_name, prods) in &self.rules {
-            Self::write_rule_reduction(&mut out, r_name, prods, src);
+            Self::write_rule_reduction(&mut out, &self.entry_type, r_name, prods, src);
         }
 
         out.push_str("\tmap\n}");
         out
     }
 
-    pub fn write_rule_reduction(out: &mut String, name: &str, prods: &RuleBuild, src: &str) {
+    pub fn write_rule_reduction(
+        out: &mut String,
+        entry_type: &str,
+        name: &str,
+        prods: &RuleBuild,
+        src: &str,
+    ) {
         let ty = prods[0].ty.from_source(src);
         for (i, prod) in prods.iter().enumerate() {
             let mut item_aliases = String::new();
@@ -346,7 +362,7 @@ impl Builder {
             }
             writeln!(
                     out,
-                    "\tfn lrp_wop_{name}_{i}(toks: &[Gramem]) -> lrp::Meta<{ty}> {{\n\t\tlrp::Meta::new({{ {item_aliases} {}}}, lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end))\n\t}}",
+                    "\tfn lrp_wop_{name}_{i}(toks: &[{entry_type}]) -> lrp::Meta<{ty}> {{\n\t\tlrp::Meta::new({{ {item_aliases} {}}}, lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end))\n\t}}",
                     prod.codeblock.from_source(src).strip_prefix("->").unwrap().strip_suffix('%').unwrap()
                 )
                 .unwrap();

@@ -33,7 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     print_nested(&dfa.items[0], "", 0, &file);
 
     println!("BUILDING OUTPUT");
-    let mut builder = Builder::default();
+    let mut builder = Builder::new("Gramem".to_string());
     let start = Instant::now();
     builder.process(&dfa.items[0], &file);
     println!("ELAPSED TIME: {:?}", start.elapsed());

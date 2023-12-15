@@ -57,7 +57,8 @@ Ideas:
 - [x] `Builder::dump_grammar` // should return a `RuleMap`
 - [x] For composite rules (with `( x | y)`), the codeblock will be applied to both
 - [x] Impl codeblocks
-- [] Impl item alias
+- [x] Impl item alias
+- [x] Impl optional item
+- [x] Allow to set custom slice entry
 - [] Impl item alias cloning
-- [] Impl optional item
-- [] Allow to set custom slice entry for codeblocks
+- [x] Allow custom token entries

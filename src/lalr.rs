@@ -239,7 +239,7 @@ where
                     .iter()
                     .map(|l| {
                         (
-                            <T>::clone(l),
+                            l.clone(),
                             if &pos.rule == start {
                                 Action::Acc
                             } else {
