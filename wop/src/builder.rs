@@ -9,7 +9,7 @@ pub type SrcRef = lrp::Span;
 
 pub const GRAMMAR_LINTS: &str = "unused_imports, clippy::enum_glob_use";
 pub const REDUCTOR_LINTS: &str =
-    "non_snake_case, clippy::enum_glob_use, unused_braces, unused_imports, unused_assignments";
+    "non_snake_case, clippy::enum_glob_use, unused_braces, unused_imports, unused_assignments, clippy::unnecessary_literal_unwrap";
 
 #[derive(Debug, Default)]
 pub struct Builder {
