@@ -61,28 +61,25 @@ impl ItemAlias {
             || self.index.to_string(),
             |findex| format!("{:?}", self.index..findex),
         );
-        let access = if self.clone {
-            format!("toks[{index}].clone()")
+        let suffix = if self.clone {
+            self.final_index
+                .map_or_else(|| "].clone()", |_| "].to_vec()")
         } else {
-            format!("&toks[{index}]")
+            "]"
         };
+        let prefix = if self.clone { "toks[" } else { "&toks[" };
         match self.optional {
-            Some(true) => writeln!(out, "let {alias} = Some({access});"),
+            Some(true) => writeln!(out, "let {alias} = Some({prefix}{index}{suffix});"),
             // since Rust can't infer the type of `{alias}` just with a `None`, and since they
             // aren't a real type declaration inside this struct, we bind the type from `toks[0]`
             // and set to `None`. Also, it needs to be shadowed to prevent mutations.
             Some(false) => {
-                let access = if self.clone {
-                    "toks[0].clone()"
-                } else {
-                    "&toks[0]"
-                };
                 writeln!(
                     out,
-                    "let mut {alias} = Some({access}); {alias} = None; let {alias} = {alias};"
+                    "let mut {alias} = Some({prefix}0{suffix}); {alias} = None; let {alias} = {alias};"
                 )
             }
-            None => writeln!(out, "let {alias} = {access};"),
+            None => writeln!(out, "let {alias} = {prefix}{index}{suffix};"),
         }
     }
 }
