@@ -16,23 +16,23 @@ Add: Ast = Number:&n1 "+" Number:&n2 -> {
     Ast::Add(n1, n2)
 }%;
 
-Expr: Ast = Sym::Add:&a -> {
+Expr: Ast = Add:&a -> {
 /* Meta::new( */
     Ast::Expr(a)/*,
     Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end)
 )*/
 }%
-    | "(" Sym::Expr:&e ")" -> {
+    | "(" Expr:&e ")" -> {
     Ast::Expr(e)
 }%;
 
-EntryPoint: Ast = Sym::Expr:&e -> {
+EntryPoint: Ast = Expr:&e -> {
     Ast::EntryPoint(e)
 }%
 ```
 
 ## Building it
-Just use `parse` or `from_str` for `Builder`:
+Just use `parse` or `from_str` for `Builder` and set the entry type (the tokens type):
 ```rs
 let src = include_str!("your.grammar");
 let builder1 = src.parse::<wop::Builder>();
