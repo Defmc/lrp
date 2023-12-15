@@ -25,6 +25,7 @@ pub struct ItemAlias {
     pub optional: Option<bool>,
     pub index: usize,
     pub final_index: Option<usize>,
+    pub clone: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -60,16 +61,28 @@ impl ItemAlias {
             || self.index.to_string(),
             |findex| format!("{:?}", self.index..findex),
         );
+        let access = if self.clone {
+            format!("toks[{index}].clone()")
+        } else {
+            format!("&toks[{index}]")
+        };
         match self.optional {
-            Some(true) => writeln!(out, "let {alias} = Some(&toks[{index}]);"),
+            Some(true) => writeln!(out, "let {alias} = Some({access});"),
             // since Rust can't infer the type of `{alias}` just with a `None`, and since they
             // aren't a real type declaration inside this struct, we bind the type from `toks[0]`
             // and set to `None`. Also, it needs to be shadowed to prevent mutations.
-            Some(false) => writeln!(
-                out,
-                "let mut {alias} = Some(&toks[0]); {alias} = None; let {alias} = {alias};"
-            ),
-            None => writeln!(out, "let {alias} = &toks[{index}];"),
+            Some(false) => {
+                let access = if self.clone {
+                    "toks[0].clone()"
+                } else {
+                    "&toks[0]"
+                };
+                writeln!(
+                    out,
+                    "let mut {alias} = Some({access}); {alias} = None; let {alias} = {alias};"
+                )
+            }
+            None => writeln!(out, "let {alias} = {access};"),
         }
     }
 }
@@ -153,17 +166,19 @@ impl Builder {
     ) -> RuleBuild {
         let mut prod = origin.clone();
         for (i, g) in pipe.iter().enumerate() {
-            let (item, is_optional, alias) = if let Ast::RuleItem(ref i, o, a) = g.item.item {
-                (i.as_ref(), o, a)
-            } else {
-                unreachable!()
-            };
+            let (item, is_optional, alias, clone) =
+                if let Ast::RuleItem(ref i, o, a, c) = g.item.item {
+                    (i.as_ref(), o, a, c)
+                } else {
+                    unreachable!()
+                };
             if let Some(alias) = alias {
                 let item_alias = ItemAlias {
                     alias,
                     optional: if is_optional { Some(true) } else { None },
                     index: 0, // automatically configured
                     final_index: None,
+                    clone,
                 };
                 prod.push_alias(item_alias);
             }
@@ -215,6 +230,7 @@ impl Builder {
                                         optional: Some(false),
                                         index: 0,
                                         final_index: None,
+                                        clone,
                                     };
                                     ignored_prod.aliases.push(item_alias);
                                 }
@@ -270,6 +286,7 @@ impl Builder {
                         optional: Some(false),
                         index: 0,
                         final_index: None,
+                        clone: false, // FIXME
                     };
                     prod.aliases.push(item_alias);
                 }

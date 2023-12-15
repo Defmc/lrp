@@ -12,21 +12,21 @@ alias "+" = Add;
 alias "(" = OpenParen;
 alias ")" = CloseParen;
 
-Add: Ast = Number:*n1 "+" Number:*n2 -> {
+Add: Ast = Number:&n1 "+" Number:&n2 -> {
     Ast::Add(n1, n2)
 }%;
 
-Expr: Ast = Sym::Add:*a -> {
+Expr: Ast = Sym::Add:&a -> {
 /* Meta::new( */
     Ast::Expr(a)/*,
     Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end)
 )*/
 }%
-    | "(" Sym::Expr:*e ")" -> {
+    | "(" Sym::Expr:&e ")" -> {
     Ast::Expr(e)
 }%;
 
-EntryPoint: Ast = Sym::Expr:*e -> {
+EntryPoint: Ast = Sym::Expr:&e -> {
     Ast::EntryPoint(e)
 }%
 ```

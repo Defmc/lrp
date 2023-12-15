@@ -16,6 +16,7 @@ pub enum Ast {
         /* item */ Box<Gramem>,
         /* optional */ bool,
         /* alias */ Option<SrcRef>,
+        /* should clone */ bool,
     ),
     Import(SrcRef),
     Alias(SrcRef, SrcRef),
@@ -70,6 +71,9 @@ pub enum Sym {
 
     #[token("?")]
     Optional,
+
+    #[token("&")]
+    Clone,
 
     #[regex(r#"[a-zA-Z_]\w*"#)]
     Ident,

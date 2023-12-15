@@ -11,6 +11,7 @@ alias ":" TwoDots;
 alias "(" OpenParen;
 alias ")" CloseParen;
 alias "?" Optional;
+alias "&" Clone;
 
 EntryPoint: Ast = Program -> { Ast::EntryPoint(Box::new(toks[0].clone())) }% ;
 
@@ -26,10 +27,8 @@ Program: Ast = Program (Import | Alias | RuleDecl) ";" -> {
 }% 
     |  (Alias | Import | RuleDecl) ";" -> { Ast::Program(toks[..1].to_vec()) }% ;
 
-IdentPath: Ast = IdentPath PathAccess Ident -> {
-    let ip = toks[0].clone();
-    let extension = toks[2].clone();
-    let span = Span::new(ip.item.span.start, extension.item.span.end);
+IdentPath: Ast = IdentPath:&ip PathAccess Ident:&ext -> {
+    let span = Span::new(ip.item.span.start, ext.item.span.end);
     Ast::IdentPath(span)
 }%
     | Ident -> { Ast::IdentPath(toks[0].item.span) }%;
@@ -50,7 +49,7 @@ Rule: Ast = Rule Pipe RulePipe CodeBlock?:cb -> {
         _ => unreachable!(),
     };
     match toks[2].item.item {
-        Ast::RulePipe(ref v) => rule_vec.push((v.clone(), cb.map_or(|| Span::new(0, 0), |g| g.item.span))),
+        Ast::RulePipe(ref v) => rule_vec.push((v.clone(), cb.map_or_else(|| Span::new(0, 0), |g| g.item.span))),
         _ => unreachable!(),
     };
     Ast::Rule(rule_vec)
@@ -59,7 +58,7 @@ Rule: Ast = Rule Pipe RulePipe CodeBlock?:cb -> {
     let Ast::RulePipe(ref prod) = toks[0].item.item else {
         unreachable!()
     };
-    Ast::Rule(vec![(prod.clone(), cb.map_or(|| Span::new(0, 0), |g| g.item.span))])
+    Ast::Rule(vec![(prod.clone(), cb.map_or_else(|| Span::new(0, 0), |g| g.item.span))])
 }%;
 
 RulePipe: Ast = RulePipe RuleItem -> {
@@ -74,11 +73,11 @@ RulePipe: Ast = RulePipe RuleItem -> {
     Ast::RulePipe(toks[..1].to_vec())
 }%;
 
-RuleItem: Ast = (IdentPath | StrLit) Optional?:opt (":" Ident:id)? -> {
-    Ast::RuleItem(Box::new(toks[0].clone()), opt.is_some(), id.map(|id| id.item.span))
+RuleItem: Ast = (IdentPath | StrLit) Optional?:opt (":" "&"?:cl Ident:id)? -> {
+    Ast::RuleItem(Box::new(toks[0].clone()), opt.is_some(), id.map(|id| id.item.span), cl.is_some())
 }%
-    | "(" Rule ")" Optional?:opt (":" Ident:id)? -> {
-    Ast::RuleItem(Box::new(toks[1].clone()), opt.is_some(), id.map(|id| id.item.span))
+    | "(" Rule ")" Optional?:opt (":" "&"?:cl Ident:id)? -> {
+    Ast::RuleItem(Box::new(toks[1].clone()), opt.is_some(), id.map(|id| id.item.span), cl.is_some())
 }%;
 
 Import: Ast = "use" (IdentPath "::" "*" | IdentPath) -> {
