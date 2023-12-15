@@ -282,8 +282,9 @@ impl Builder {
                         alias: **alias_name,
                         optional: Some(false),
                         index: 0,
+                        // FIXME: Will it ALWAYS be nothing?
                         final_index: None,
-                        clone: false, // FIXME
+                        clone: false,
                     };
                     prod.aliases.push(item_alias);
                 }

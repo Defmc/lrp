@@ -13,19 +13,18 @@ alias ")" CloseParen;
 alias "?" Optional;
 alias "&" Clone;
 
-EntryPoint: Ast = Program -> { Ast::EntryPoint(Box::new(toks[0].clone())) }% ;
+EntryPoint: Ast = Program:&p -> { Ast::EntryPoint(Box::new(p)) }% ;
 
-Program: Ast = Program (Import | Alias | RuleDecl) ";" -> { 
+Program: Ast = Program (Import:&ext | Alias:&ext | RuleDecl:&ext) ";" -> { 
     let program = &toks[0];
-    let extension = toks[1].clone();
     let mut program_vec = match program.item.item {
         Ast::Program(ref v) => v.clone(),
         _ => unreachable!(),
     };
-    program_vec.push(extension);
+    program_vec.push(ext.unwrap());
     Ast::Program(program_vec)
 }% 
-    |  (Alias | Import | RuleDecl) ";" -> { Ast::Program(toks[..1].to_vec()) }% ;
+    |  (Alias | Import | RuleDecl):&p ";" -> { Ast::Program(p) }% ;
 
 IdentPath: Ast = IdentPath:&ip PathAccess Ident:&ext -> {
     let span = Span::new(ip.item.span.start, ext.item.span.end);
@@ -61,23 +60,23 @@ Rule: Ast = Rule Pipe RulePipe CodeBlock?:cb -> {
     Ast::Rule(vec![(prod.clone(), cb.map_or_else(|| Span::new(0, 0), |g| g.item.span))])
 }%;
 
-RulePipe: Ast = RulePipe RuleItem -> {
+RulePipe: Ast = RulePipe RuleItem:&item -> {
     let mut v = match toks[0].item.item {
         Ast::RulePipe(ref v) => v.clone(),
         _ => unreachable!(),
     };
-    v.push(toks[1].clone());
+    v.push(item);
     Ast::RulePipe(v)
 }%
     | RuleItem -> {
     Ast::RulePipe(toks[..1].to_vec())
 }%;
 
-RuleItem: Ast = (IdentPath | StrLit) Optional?:opt (":" "&"?:cl Ident:id)? -> {
-    Ast::RuleItem(Box::new(toks[0].clone()), opt.is_some(), id.map(|id| id.item.span), cl.is_some())
+RuleItem: Ast = (IdentPath:&item | StrLit:&item) Optional?:opt (":" "&"?:cl Ident:id)? -> {
+    Ast::RuleItem(Box::new(item.unwrap()), opt.is_some(), id.map(|id| id.item.span), cl.is_some())
 }%
-    | "(" Rule ")" Optional?:opt (":" "&"?:cl Ident:id)? -> {
-    Ast::RuleItem(Box::new(toks[1].clone()), opt.is_some(), id.map(|id| id.item.span), cl.is_some())
+    | "(" Rule:&rule ")" Optional?:opt (":" "&"?:cl Ident:id)? -> {
+    Ast::RuleItem(Box::new(rule), opt.is_some(), id.map(|id| id.item.span), cl.is_some())
 }%;
 
 Import: Ast = "use" (IdentPath "::" "*" | IdentPath) -> {

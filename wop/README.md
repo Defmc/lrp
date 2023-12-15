@@ -60,5 +60,5 @@ Ideas:
 - [x] Impl item alias
 - [x] Impl optional item
 - [x] Allow to set custom slice entry
-- [] Impl item alias cloning
+- [x] Impl item alias cloning
 - [x] Allow custom token entries
