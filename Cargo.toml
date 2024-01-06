@@ -6,7 +6,7 @@ license = "MIT"
 description = "A set of parsers for Rust lazy coders"
 repository = "https://github.com/Defmc/lrp"
 keyword = ["lr", "slr", "lalr", "parser"]
-categories = ["accessibility", "compilers", "encoding", "parser implementations"]
+categories = ["accessibility", "compilers", "encoding", "parser-implementations"]
 
 [dependencies]
 prettytable-rs = "0.10.0"
