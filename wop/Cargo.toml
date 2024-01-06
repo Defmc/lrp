@@ -2,9 +2,14 @@
 name = "wop"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "An front-end to lrp"
+repository = "https://github.com/Defmc/lrp/tree/main/wop"
+keyword = ["lr", "slr", "lalr", "parser"]
+categories = ["accessibility", "compilers", "encoding", "parser-implementations"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 logos = "0.12.1"
-lrp = { path = "../"}
+lrp = "0.1.0"

@@ -11,6 +11,47 @@ pub fn grammar() -> Grammar<Sym> {
             use crate::Sym::*;
             let mut map = lrp::RuleMap::new();
             map.insert(
+                EntryPoint,
+                lrp::grammar::Rule::new(EntryPoint, vec![vec![Program]]),
+            );
+            map.insert(
+                IdentPath,
+                lrp::grammar::Rule::new(
+                    IdentPath,
+                    vec![vec![IdentPath, PathAccess, Ident], vec![Ident]],
+                ),
+            );
+            map.insert(
+                RulePipe,
+                lrp::grammar::Rule::new(RulePipe, vec![vec![RulePipe, RuleItem], vec![RuleItem]]),
+            );
+            map.insert(
+                Rule,
+                lrp::grammar::Rule::new(
+                    Rule,
+                    vec![
+                        vec![Rule, Pipe, RulePipe, CodeBlock],
+                        vec![Rule, Pipe, RulePipe],
+                        vec![RulePipe, CodeBlock],
+                        vec![RulePipe],
+                    ],
+                ),
+            );
+            map.insert(
+                Program,
+                lrp::grammar::Rule::new(
+                    Program,
+                    vec![
+                        vec![Program, Import, Sc],
+                        vec![Program, Alias, Sc],
+                        vec![Program, RuleDecl, Sc],
+                        vec![Alias, Sc],
+                        vec![Import, Sc],
+                        vec![RuleDecl, Sc],
+                    ],
+                ),
+            );
+            map.insert(
                 RuleItem,
                 lrp::grammar::Rule::new(
                     RuleItem,
@@ -37,33 +78,6 @@ pub fn grammar() -> Grammar<Sym> {
                 ),
             );
             map.insert(
-                IdentPath,
-                lrp::grammar::Rule::new(
-                    IdentPath,
-                    vec![vec![IdentPath, PathAccess, Ident], vec![Ident]],
-                ),
-            );
-            map.insert(
-                EntryPoint,
-                lrp::grammar::Rule::new(EntryPoint, vec![vec![Program]]),
-            );
-            map.insert(
-                Rule,
-                lrp::grammar::Rule::new(
-                    Rule,
-                    vec![
-                        vec![Rule, Pipe, RulePipe, CodeBlock],
-                        vec![Rule, Pipe, RulePipe],
-                        vec![RulePipe, CodeBlock],
-                        vec![RulePipe],
-                    ],
-                ),
-            );
-            map.insert(
-                RulePipe,
-                lrp::grammar::Rule::new(RulePipe, vec![vec![RulePipe, RuleItem], vec![RuleItem]]),
-            );
-            map.insert(
                 Import,
                 lrp::grammar::Rule::new(
                     Import,
@@ -80,20 +94,6 @@ pub fn grammar() -> Grammar<Sym> {
                     vec![
                         vec![AliasWord, Ident, IdentPath],
                         vec![AliasWord, StrLit, IdentPath],
-                    ],
-                ),
-            );
-            map.insert(
-                Program,
-                lrp::grammar::Rule::new(
-                    Program,
-                    vec![
-                        vec![Program, Import, Sc],
-                        vec![Program, Alias, Sc],
-                        vec![Program, RuleDecl, Sc],
-                        vec![Alias, Sc],
-                        vec![Import, Sc],
-                        vec![RuleDecl, Sc],
                     ],
                 ),
             );
@@ -116,421 +116,25 @@ pub fn grammar() -> Grammar<Sym> {
     clippy::enum_glob_use,
     unused_braces,
     unused_imports,
-    unused_assignments,
-    clippy::unnecessary_literal_unwrap
+    unused_assignments
 )]
 pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {
     use crate::Ast;
     use crate::Sym::*;
     let mut map = lrp::ReductMap::new();
 
-    fn lrp_wop_RuleItem_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
+    fn lrp_wop_EntryPoint_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
         lrp::Meta::new(
             {
-                let item = Some(toks[0].clone());
-                let opt = Some(toks[1].clone());
-                let cl = Some(toks[3].clone());
-                let id = Some(toks[4].clone());
+                let p = toks[0].clone();
                 {
-                    Ast::RuleItem(
-                        Box::new(item.unwrap()),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
+                    Ast::EntryPoint(Box::new(p))
                 }
             },
             lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
         )
     }
-    fn lrp_wop_RuleItem_1(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let item = Some(toks[0].clone());
-                let opt = Some(toks[1].clone());
-                let cl = Some(toks[3].clone());
-                let id = Some(toks[3].clone());
-                {
-                    Ast::RuleItem(
-                        Box::new(item.unwrap()),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_2(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let item = Some(toks[0].clone());
-                let opt = Some(toks[1].clone());
-                let mut cl = Some(&toks[0]);
-                cl = None;
-                let cl = cl;
-                let mut id = Some(&toks[0]);
-                id = None;
-                let id = id;
-                {
-                    Ast::RuleItem(
-                        Box::new(item.unwrap()),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_3(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let item = Some(toks[0].clone());
-                let mut opt = Some(toks[0].clone());
-                opt = None;
-                let opt = opt;
-                let cl = Some(toks[2].clone());
-                let id = Some(toks[3].clone());
-                {
-                    Ast::RuleItem(
-                        Box::new(item.unwrap()),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_4(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let item = Some(toks[0].clone());
-                let mut opt = Some(toks[0].clone());
-                opt = None;
-                let opt = opt;
-                let cl = Some(toks[2].clone());
-                let id = Some(toks[2].clone());
-                {
-                    Ast::RuleItem(
-                        Box::new(item.unwrap()),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_5(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let item = Some(toks[0].clone());
-                let mut opt = Some(toks[0].clone());
-                opt = None;
-                let opt = opt;
-                let mut cl = Some(&toks[0]);
-                cl = None;
-                let cl = cl;
-                let mut id = Some(&toks[0]);
-                id = None;
-                let id = id;
-                {
-                    Ast::RuleItem(
-                        Box::new(item.unwrap()),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_6(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let item = Some(toks[0].clone());
-                let opt = Some(toks[1].clone());
-                let cl = Some(toks[3].clone());
-                let id = Some(toks[4].clone());
-                {
-                    Ast::RuleItem(
-                        Box::new(item.unwrap()),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_7(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let item = Some(toks[0].clone());
-                let opt = Some(toks[1].clone());
-                let cl = Some(toks[3].clone());
-                let id = Some(toks[3].clone());
-                {
-                    Ast::RuleItem(
-                        Box::new(item.unwrap()),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_8(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let item = Some(toks[0].clone());
-                let opt = Some(toks[1].clone());
-                let mut cl = Some(&toks[0]);
-                cl = None;
-                let cl = cl;
-                let mut id = Some(&toks[0]);
-                id = None;
-                let id = id;
-                {
-                    Ast::RuleItem(
-                        Box::new(item.unwrap()),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_9(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let item = Some(toks[0].clone());
-                let mut opt = Some(toks[0].clone());
-                opt = None;
-                let opt = opt;
-                let cl = Some(toks[2].clone());
-                let id = Some(toks[3].clone());
-                {
-                    Ast::RuleItem(
-                        Box::new(item.unwrap()),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_10(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let item = Some(toks[0].clone());
-                let mut opt = Some(toks[0].clone());
-                opt = None;
-                let opt = opt;
-                let cl = Some(toks[2].clone());
-                let id = Some(toks[2].clone());
-                {
-                    Ast::RuleItem(
-                        Box::new(item.unwrap()),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_11(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let item = Some(toks[0].clone());
-                let mut opt = Some(toks[0].clone());
-                opt = None;
-                let opt = opt;
-                let mut cl = Some(&toks[0]);
-                cl = None;
-                let cl = cl;
-                let mut id = Some(&toks[0]);
-                id = None;
-                let id = id;
-                {
-                    Ast::RuleItem(
-                        Box::new(item.unwrap()),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_12(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let rule = toks[1].clone();
-                let opt = Some(toks[3].clone());
-                let cl = Some(toks[5].clone());
-                let id = Some(toks[6].clone());
-                {
-                    Ast::RuleItem(
-                        Box::new(rule),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_13(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let rule = toks[1].clone();
-                let opt = Some(toks[3].clone());
-                let cl = Some(toks[5].clone());
-                let id = Some(toks[5].clone());
-                {
-                    Ast::RuleItem(
-                        Box::new(rule),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_14(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let rule = toks[1].clone();
-                let opt = Some(toks[3].clone());
-                let mut cl = Some(&toks[0]);
-                cl = None;
-                let cl = cl;
-                let mut id = Some(&toks[0]);
-                id = None;
-                let id = id;
-                {
-                    Ast::RuleItem(
-                        Box::new(rule),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_15(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let rule = toks[1].clone();
-                let mut opt = Some(toks[0].clone());
-                opt = None;
-                let opt = opt;
-                let cl = Some(toks[4].clone());
-                let id = Some(toks[5].clone());
-                {
-                    Ast::RuleItem(
-                        Box::new(rule),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_16(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let rule = toks[1].clone();
-                let mut opt = Some(toks[0].clone());
-                opt = None;
-                let opt = opt;
-                let cl = Some(toks[4].clone());
-                let id = Some(toks[4].clone());
-                {
-                    Ast::RuleItem(
-                        Box::new(rule),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RuleItem_17(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let rule = toks[1].clone();
-                let mut opt = Some(toks[0].clone());
-                opt = None;
-                let opt = opt;
-                let mut cl = Some(&toks[0]);
-                cl = None;
-                let cl = cl;
-                let mut id = Some(&toks[0]);
-                id = None;
-                let id = id;
-                {
-                    Ast::RuleItem(
-                        Box::new(rule),
-                        opt.is_some(),
-                        id.map(|id| id.item.span),
-                        cl.is_some(),
-                    )
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    map.insert(
-        RuleItem,
-        vec![
-            lrp_wop_RuleItem_0,
-            lrp_wop_RuleItem_1,
-            lrp_wop_RuleItem_2,
-            lrp_wop_RuleItem_3,
-            lrp_wop_RuleItem_4,
-            lrp_wop_RuleItem_5,
-            lrp_wop_RuleItem_6,
-            lrp_wop_RuleItem_7,
-            lrp_wop_RuleItem_8,
-            lrp_wop_RuleItem_9,
-            lrp_wop_RuleItem_10,
-            lrp_wop_RuleItem_11,
-            lrp_wop_RuleItem_12,
-            lrp_wop_RuleItem_13,
-            lrp_wop_RuleItem_14,
-            lrp_wop_RuleItem_15,
-            lrp_wop_RuleItem_16,
-            lrp_wop_RuleItem_17,
-        ],
-    );
+    map.insert(EntryPoint, vec![lrp_wop_EntryPoint_0]);
 
     fn lrp_wop_IdentPath_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
         lrp::Meta::new(
@@ -557,18 +161,32 @@ pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {
     }
     map.insert(IdentPath, vec![lrp_wop_IdentPath_0, lrp_wop_IdentPath_1]);
 
-    fn lrp_wop_EntryPoint_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
+    fn lrp_wop_RulePipe_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
         lrp::Meta::new(
             {
-                let p = toks[0].clone();
                 {
-                    Ast::EntryPoint(Box::new(p))
+                    let mut v = match toks[0].item.item {
+                        Ast::RulePipe(ref v) => v.clone(),
+                        _ => unreachable!(),
+                    };
+                    v.push(toks[1].clone());
+                    Ast::RulePipe(v)
                 }
             },
             lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
         )
     }
-    map.insert(EntryPoint, vec![lrp_wop_EntryPoint_0]);
+    fn lrp_wop_RulePipe_1(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                {
+                    Ast::RulePipe(toks[..1].to_vec())
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    map.insert(RulePipe, vec![lrp_wop_RulePipe_0, lrp_wop_RulePipe_1]);
 
     fn lrp_wop_Rule_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
         lrp::Meta::new(
@@ -661,84 +279,6 @@ pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {
             lrp_wop_Rule_3,
         ],
     );
-
-    fn lrp_wop_RulePipe_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                let item = toks[1].clone();
-                {
-                    let mut v = match toks[0].item.item {
-                        Ast::RulePipe(ref v) => v.clone(),
-                        _ => unreachable!(),
-                    };
-                    v.push(item);
-                    Ast::RulePipe(v)
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_RulePipe_1(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                {
-                    Ast::RulePipe(toks[..1].to_vec())
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    map.insert(RulePipe, vec![lrp_wop_RulePipe_0, lrp_wop_RulePipe_1]);
-
-    fn lrp_wop_Import_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                {
-                    Ast::Import(Span::new(
-                        toks[1].item.span.start,
-                        toks.last().unwrap().item.span.end,
-                    ))
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_Import_1(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                {
-                    Ast::Import(Span::new(
-                        toks[1].item.span.start,
-                        toks.last().unwrap().item.span.end,
-                    ))
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    map.insert(Import, vec![lrp_wop_Import_0, lrp_wop_Import_1]);
-
-    fn lrp_wop_Alias_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                {
-                    Ast::Alias(toks[1].item.span, toks[2].item.span)
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    fn lrp_wop_Alias_1(toks: &[Gramem]) -> lrp::Meta<Ast> {
-        lrp::Meta::new(
-            {
-                {
-                    Ast::Alias(toks[1].item.span, toks[2].item.span)
-                }
-            },
-            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
-        )
-    }
-    map.insert(Alias, vec![lrp_wop_Alias_0, lrp_wop_Alias_1]);
 
     fn lrp_wop_Program_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
         lrp::Meta::new(
@@ -835,6 +375,446 @@ pub fn reduct_map() -> ReductMap<Meta<Ast>, Sym> {
             lrp_wop_Program_5,
         ],
     );
+
+    fn lrp_wop_RuleItem_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let opt = Some(toks[1].clone());
+                let cl = Some(toks[3].clone());
+                let id = Some(toks[4].clone());
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[0].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_1(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let opt = Some(toks[1].clone());
+                let cl = Some(toks[3].clone());
+                let id = Some(toks[3].clone());
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[0].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_2(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let opt = Some(toks[1].clone());
+                let mut cl = Some(&toks[0]);
+                cl = None;
+                let cl = cl;
+                let mut id = Some(&toks[0]);
+                id = None;
+                let id = id;
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[0].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_3(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let mut opt = Some(toks[0].clone());
+                opt = None;
+                let opt = opt;
+                let cl = Some(toks[2].clone());
+                let id = Some(toks[3].clone());
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[0].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_4(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let mut opt = Some(toks[0].clone());
+                opt = None;
+                let opt = opt;
+                let cl = Some(toks[2].clone());
+                let id = Some(toks[2].clone());
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[0].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_5(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let mut opt = Some(toks[0].clone());
+                opt = None;
+                let opt = opt;
+                let mut cl = Some(&toks[0]);
+                cl = None;
+                let cl = cl;
+                let mut id = Some(&toks[0]);
+                id = None;
+                let id = id;
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[0].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_6(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let opt = Some(toks[1].clone());
+                let cl = Some(toks[3].clone());
+                let id = Some(toks[4].clone());
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[0].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_7(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let opt = Some(toks[1].clone());
+                let cl = Some(toks[3].clone());
+                let id = Some(toks[3].clone());
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[0].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_8(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let opt = Some(toks[1].clone());
+                let mut cl = Some(&toks[0]);
+                cl = None;
+                let cl = cl;
+                let mut id = Some(&toks[0]);
+                id = None;
+                let id = id;
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[0].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_9(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let mut opt = Some(toks[0].clone());
+                opt = None;
+                let opt = opt;
+                let cl = Some(toks[2].clone());
+                let id = Some(toks[3].clone());
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[0].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_10(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let mut opt = Some(toks[0].clone());
+                opt = None;
+                let opt = opt;
+                let cl = Some(toks[2].clone());
+                let id = Some(toks[2].clone());
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[0].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_11(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let mut opt = Some(toks[0].clone());
+                opt = None;
+                let opt = opt;
+                let mut cl = Some(&toks[0]);
+                cl = None;
+                let cl = cl;
+                let mut id = Some(&toks[0]);
+                id = None;
+                let id = id;
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[0].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_12(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let opt = Some(toks[3].clone());
+                let cl = Some(toks[5].clone());
+                let id = Some(toks[6].clone());
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[1].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_13(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let opt = Some(toks[3].clone());
+                let cl = Some(toks[5].clone());
+                let id = Some(toks[5].clone());
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[1].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_14(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let opt = Some(toks[3].clone());
+                let mut cl = Some(&toks[0]);
+                cl = None;
+                let cl = cl;
+                let mut id = Some(&toks[0]);
+                id = None;
+                let id = id;
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[1].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_15(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let mut opt = Some(toks[0].clone());
+                opt = None;
+                let opt = opt;
+                let cl = Some(toks[4].clone());
+                let id = Some(toks[5].clone());
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[1].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_16(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let mut opt = Some(toks[0].clone());
+                opt = None;
+                let opt = opt;
+                let cl = Some(toks[4].clone());
+                let id = Some(toks[4].clone());
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[1].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_RuleItem_17(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                let mut opt = Some(toks[0].clone());
+                opt = None;
+                let opt = opt;
+                let mut cl = Some(&toks[0]);
+                cl = None;
+                let cl = cl;
+                let mut id = Some(&toks[0]);
+                id = None;
+                let id = id;
+                {
+                    Ast::RuleItem(
+                        Box::new(toks[1].clone()),
+                        opt.is_some(),
+                        id.map(|id| id.item.span),
+                        cl.is_some(),
+                    )
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    map.insert(
+        RuleItem,
+        vec![
+            lrp_wop_RuleItem_0,
+            lrp_wop_RuleItem_1,
+            lrp_wop_RuleItem_2,
+            lrp_wop_RuleItem_3,
+            lrp_wop_RuleItem_4,
+            lrp_wop_RuleItem_5,
+            lrp_wop_RuleItem_6,
+            lrp_wop_RuleItem_7,
+            lrp_wop_RuleItem_8,
+            lrp_wop_RuleItem_9,
+            lrp_wop_RuleItem_10,
+            lrp_wop_RuleItem_11,
+            lrp_wop_RuleItem_12,
+            lrp_wop_RuleItem_13,
+            lrp_wop_RuleItem_14,
+            lrp_wop_RuleItem_15,
+            lrp_wop_RuleItem_16,
+            lrp_wop_RuleItem_17,
+        ],
+    );
+
+    fn lrp_wop_Import_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                {
+                    Ast::Import(Span::new(
+                        toks[1].item.span.start,
+                        toks.last().unwrap().item.span.end,
+                    ))
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_Import_1(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                {
+                    Ast::Import(Span::new(
+                        toks[1].item.span.start,
+                        toks.last().unwrap().item.span.end,
+                    ))
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    map.insert(Import, vec![lrp_wop_Import_0, lrp_wop_Import_1]);
+
+    fn lrp_wop_Alias_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                {
+                    Ast::Alias(toks[1].item.span, toks[2].item.span)
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    fn lrp_wop_Alias_1(toks: &[Gramem]) -> lrp::Meta<Ast> {
+        lrp::Meta::new(
+            {
+                {
+                    Ast::Alias(toks[1].item.span, toks[2].item.span)
+                }
+            },
+            lrp::Span::new(toks[0].item.span.start, toks.last().unwrap().item.span.end),
+        )
+    }
+    map.insert(Alias, vec![lrp_wop_Alias_0, lrp_wop_Alias_1]);
 
     fn lrp_wop_RuleDecl_0(toks: &[Gramem]) -> lrp::Meta<Ast> {
         lrp::Meta::new(
