@@ -3,6 +3,10 @@ name = "lrp"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
+description = "A set of parsers for Rust lazy coders"
+repository = "https://github.com/Defmc/lrp"
+keyword = ["lr", "slr", "lalr", "parser"]
+categories = ["accessibility", "compilers", "encoding", "parser implementations"]
 
 [dependencies]
 prettytable-rs = "0.10.0"
